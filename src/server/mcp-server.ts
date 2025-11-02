@@ -38,6 +38,16 @@ import {
   handleGetSymbol,
   type GetSymbolInput,
 } from '../tools/get-symbol-tool.js';
+import {
+  TOOL_NAME as FIND_RELATED_DOCS_TOOL_NAME,
+  TOOL_DESCRIPTION as FIND_RELATED_DOCS_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getFindRelatedDocsInputSchema,
+  handleFindRelatedDocs,
+  type FindRelatedDocsInput,
+} from '../tools/find-related-docs-tool.js';
+import { DocCodeLinker } from '../parser/doc-code-linker.js';
+import { SymbolExtractor } from '../parser/symbol-extractor.js';
+import { MarkdownParser } from '../parser/markdown-parser.js';
 
 export class MCPServer {
   private server: Server;
@@ -49,6 +59,7 @@ export class MCPServer {
   private hybridSearchEngine?: HybridSearchEngine;
   private embeddingEngine?: EmbeddingEngine;
   private vectorStore?: VectorStorePlugin;
+  private docCodeLinker?: DocCodeLinker;
 
   constructor(
     name = 'lsp-mcp',
@@ -64,6 +75,13 @@ export class MCPServer {
     this.hybridSearchEngine = hybridSearchEngine;
     this.embeddingEngine = embeddingEngine;
     this.vectorStore = vectorStore;
+
+    // DocCodeLinkerを初期化（SymbolExtractorとMarkdownParserが必要）
+    if (vectorStore) {
+      const symbolExtractor = new SymbolExtractor();
+      const markdownParser = new MarkdownParser();
+      this.docCodeLinker = new DocCodeLinker(symbolExtractor, markdownParser);
+    }
 
     // MCPサーバーインスタンスを作成
     this.server = new Server(
@@ -153,6 +171,15 @@ export class MCPServer {
         });
       }
 
+      // find_related_docsツールを登録
+      if (this.docCodeLinker && this.vectorStore) {
+        tools.push({
+          name: FIND_RELATED_DOCS_TOOL_NAME,
+          description: FIND_RELATED_DOCS_TOOL_DESCRIPTION,
+          inputSchema: getFindRelatedDocsInputSchema(),
+        });
+      }
+
       return { tools };
     });
 
@@ -238,6 +265,30 @@ export class MCPServer {
           // ツールハンドラーを実行
           const result = await handleGetSymbol(
             args as GetSymbolInput,
+            this.vectorStore
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // find_related_docsツール
+        if (toolName === FIND_RELATED_DOCS_TOOL_NAME) {
+          if (!this.docCodeLinker || !this.vectorStore) {
+            throw new Error('DocCodeLinker or Vector store is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleFindRelatedDocs(
+            args as FindRelatedDocsInput,
+            this.docCodeLinker,
             this.vectorStore
           );
 
