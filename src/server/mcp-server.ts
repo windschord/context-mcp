@@ -16,6 +16,7 @@ import { toMCPError } from '../utils/errors.js';
 import { IndexingService } from '../services/indexing-service.js';
 import { HybridSearchEngine } from '../services/hybrid-search-engine.js';
 import type { EmbeddingEngine } from '../embedding/types.js';
+import type { VectorStorePlugin } from '../storage/types.js';
 import {
   TOOL_NAME as INDEX_PROJECT_TOOL_NAME,
   TOOL_DESCRIPTION as INDEX_PROJECT_TOOL_DESCRIPTION,
@@ -30,6 +31,13 @@ import {
   handleSearchCode,
   type SearchCodeInput,
 } from '../tools/search-code-tool.js';
+import {
+  TOOL_NAME as GET_SYMBOL_TOOL_NAME,
+  TOOL_DESCRIPTION as GET_SYMBOL_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getGetSymbolInputSchema,
+  handleGetSymbol,
+  type GetSymbolInput,
+} from '../tools/get-symbol-tool.js';
 
 export class MCPServer {
   private server: Server;
@@ -40,19 +48,22 @@ export class MCPServer {
   private indexingService?: IndexingService;
   private hybridSearchEngine?: HybridSearchEngine;
   private embeddingEngine?: EmbeddingEngine;
+  private vectorStore?: VectorStorePlugin;
 
   constructor(
     name = 'lsp-mcp',
     version = '0.1.0',
     indexingService?: IndexingService,
     hybridSearchEngine?: HybridSearchEngine,
-    embeddingEngine?: EmbeddingEngine
+    embeddingEngine?: EmbeddingEngine,
+    vectorStore?: VectorStorePlugin
   ) {
     this.name = name;
     this.version = version;
     this.indexingService = indexingService;
     this.hybridSearchEngine = hybridSearchEngine;
     this.embeddingEngine = embeddingEngine;
+    this.vectorStore = vectorStore;
 
     // MCPサーバーインスタンスを作成
     this.server = new Server(
@@ -133,6 +144,15 @@ export class MCPServer {
         });
       }
 
+      // get_symbolツールを登録
+      if (this.vectorStore) {
+        tools.push({
+          name: GET_SYMBOL_TOOL_NAME,
+          description: GET_SYMBOL_TOOL_DESCRIPTION,
+          inputSchema: getGetSymbolInputSchema(),
+        });
+      }
+
       return { tools };
     });
 
@@ -196,6 +216,29 @@ export class MCPServer {
             args as SearchCodeInput,
             this.hybridSearchEngine,
             this.embeddingEngine
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // get_symbolツール
+        if (toolName === GET_SYMBOL_TOOL_NAME) {
+          if (!this.vectorStore) {
+            throw new Error('Vector store is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleGetSymbol(
+            args as GetSymbolInput,
+            this.vectorStore
           );
 
           // MCPレスポンス形式で返す
