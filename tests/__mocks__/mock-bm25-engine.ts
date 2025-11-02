@@ -16,6 +16,14 @@ export class MockBM25Engine {
     this.documents.set(documentId, text);
   }
 
+  async indexDocument(documentId: string, text: string): Promise<void> {
+    this.documents.set(documentId, text);
+  }
+
+  async deleteDocument(documentId: string): Promise<void> {
+    this.documents.delete(documentId);
+  }
+
   async removeDocument(documentId: string): Promise<void> {
     this.documents.delete(documentId);
   }

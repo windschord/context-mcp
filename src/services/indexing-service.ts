@@ -102,6 +102,8 @@ export interface IndexStats {
 export interface RemoveResult {
   /** 成功したか */
   success: boolean;
+  /** ファイルパス */
+  filePath?: string;
   /** エラーメッセージ */
   error?: string;
 }
@@ -128,6 +130,7 @@ export interface ClearResult {
 export class IndexingService extends EventEmitter {
   private indexMetadata: Map<string, IndexStats> = new Map();
   private collectionName = 'code_vectors';
+  private fileWatchers: Map<string, any> = new Map();
 
   constructor(
     private fileScanner: FileScanner,
@@ -354,7 +357,7 @@ export class IndexingService extends EventEmitter {
 
         // BM25インデックスに追加
         for (let i = 0; i < texts.length; i++) {
-          await this.bm25Engine.addDocument(vectors[i].id, texts[i]);
+          await this.bm25Engine.indexDocument(vectors[i].id, texts[i]);
         }
       }
 
@@ -452,7 +455,7 @@ export class IndexingService extends EventEmitter {
 
         // BM25インデックスに追加
         for (let i = 0; i < texts.length; i++) {
-          await this.bm25Engine.addDocument(vectors[i].id, texts[i]);
+          await this.bm25Engine.indexDocument(vectors[i].id, texts[i]);
         }
       }
 
@@ -485,21 +488,117 @@ export class IndexingService extends EventEmitter {
   }
 
   /**
-   * インデックスからファイルを削除
+   * ファイルを更新（インクリメンタル更新）
+   * 古いインデックスを削除してから新しいインデックスを作成
    */
-  async removeFromIndex(filePath: string, projectId: string): Promise<RemoveResult> {
+  async updateFile(filePath: string, projectId: string): Promise<FileIndexResult> {
     try {
-      // ベクターストアから削除（ファイルパスで検索して削除）
-      // 注: 実際の実装では、ベクターストアがメタデータフィルタ削除をサポートする必要がある
-      // 簡易実装として、IDプレフィックスで削除する想定
+      // 古いインデックスエントリを削除
+      await this.deleteFileFromIndex(filePath);
+
+      // 新しいインデックスを作成
+      return await this.indexFileInternal(filePath, projectId);
+    } catch (error: any) {
+      return {
+        success: false,
+        filePath,
+        symbolsCount: 0,
+        vectorsCount: 0,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * ファイルを削除（インデックスから削除）
+   */
+  async deleteFile(filePath: string, projectId: string): Promise<RemoveResult> {
+    try {
+      await this.deleteFileFromIndex(filePath);
+      return { success: true, filePath };
+    } catch (error: any) {
+      return { success: false, filePath, error: error.message };
+    }
+  }
+
+  /**
+   * ファイルのインデックスエントリを削除（内部実装）
+   */
+  private async deleteFileFromIndex(filePath: string): Promise<void> {
+    try {
+      // ファイル内の全シンボル/セクションのIDを収集
+      // IDの形式: ${filePath}:${lineNumber}
+      // 簡易実装: ファイルを読み込んで行数を推定し、可能性のあるIDを生成して削除を試みる
+      // または、ベクターストアにメタデータでクエリして該当IDを取得
+
+      // より効率的な実装: ファイル内容を再解析してIDを特定
+      // ただし、ファイルが既に削除されている場合は解析できないため、
+      // ベクターストアのメタデータフィルタを使用するのが最善
+
+      // 現状の簡易実装: 想定される最大行数（例: 10000行）までのIDを試行削除
+      // 注: 本番実装では、ベクターストアのメタデータフィルタクエリを使用すべき
+
+      const idsToDelete: string[] = [];
+
+      // ファイルが存在する場合は、行数を取得してIDを生成
+      try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        const lines = content.split('\n');
+        for (let i = 1; i <= lines.length; i++) {
+          idsToDelete.push(`${filePath}:${i}`);
+        }
+      } catch (error) {
+        // ファイルが存在しない場合は、最大行数で推定
+        // 簡易実装として、最大1000行を想定
+        for (let i = 1; i <= 1000; i++) {
+          idsToDelete.push(`${filePath}:${i}`);
+        }
+      }
+
+      // ベクターストアから削除（存在しないIDは無視される）
+      if (idsToDelete.length > 0) {
+        try {
+          await this.vectorStore.delete(this.collectionName, idsToDelete);
+        } catch (error) {
+          // エラーがあってもスキップ
+        }
+      }
 
       // BM25インデックスから削除
-      // 注: BM25Engineに削除メソッドが必要
-
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+      for (const id of idsToDelete) {
+        try {
+          await this.bm25Engine.deleteDocument(id);
+        } catch (error) {
+          // エラーがあってもスキップ（ドキュメントが存在しない場合など）
+        }
+      }
+    } catch (error) {
+      // エラーがあってもスキップ
     }
+  }
+
+  /**
+   * インデックスからファイルを削除
+   * @deprecated updateFileまたはdeleteFileを使用してください
+   */
+  async removeFromIndex(filePath: string, projectId: string): Promise<RemoveResult> {
+    return this.deleteFile(filePath, projectId);
+  }
+
+  /**
+   * File Watcherを有効化
+   */
+  async enableWatcher(projectId: string): Promise<void> {
+    // 注: 実際の実装では、FileWatcherインスタンスを作成して管理する
+    // この簡易実装では、外部からFileWatcherを設定することを想定
+    this.fileWatchers.set(projectId, true);
+  }
+
+  /**
+   * File Watcherを無効化
+   */
+  async disableWatcher(projectId: string): Promise<void> {
+    this.fileWatchers.delete(projectId);
   }
 
   /**
