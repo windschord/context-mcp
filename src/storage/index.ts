@@ -13,3 +13,6 @@ export type {
 } from './types';
 
 export { VectorStorePluginRegistry } from './types';
+export { MilvusPlugin } from './milvus-plugin';
+export { DockerManager } from './docker-manager';
+export type { DockerManagerConfig } from './docker-manager';
