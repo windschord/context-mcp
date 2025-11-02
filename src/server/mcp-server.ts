@@ -8,9 +8,19 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   InitializeRequestSchema,
   InitializeResult,
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { logger } from '../utils/logger.js';
 import { toMCPError } from '../utils/errors.js';
+import { IndexingService } from '../services/indexing-service.js';
+import {
+  TOOL_NAME as INDEX_PROJECT_TOOL_NAME,
+  TOOL_DESCRIPTION as INDEX_PROJECT_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getIndexProjectInputSchema,
+  handleIndexProject,
+  type IndexProjectInput,
+} from '../tools/index-project-tool.js';
 
 export class MCPServer {
   private server: Server;
@@ -18,10 +28,12 @@ export class MCPServer {
   private name: string;
   private version: string;
   private isShutdown = false;
+  private indexingService?: IndexingService;
 
-  constructor(name = 'lsp-mcp', version = '0.1.0') {
+  constructor(name = 'lsp-mcp', version = '0.1.0', indexingService?: IndexingService) {
     this.name = name;
     this.version = version;
+    this.indexingService = indexingService;
 
     // MCPサーバーインスタンスを作成
     this.server = new Server(
@@ -43,6 +55,9 @@ export class MCPServer {
 
     // initialize ハンドラーを設定
     this.setupInitializeHandler();
+
+    // ツールハンドラーを設定
+    this.setupToolHandlers();
   }
 
   /**
@@ -69,6 +84,103 @@ export class MCPServer {
         };
       }
     );
+  }
+
+  /**
+   * ツールハンドラーをセットアップ
+   */
+  private setupToolHandlers(): void {
+    // ListToolsRequestハンドラー
+    this.server.setRequestHandler(ListToolsRequestSchema, async () => {
+      logger.debug('ListToolsRequest received');
+
+      const tools = [];
+
+      // index_projectツールを登録
+      if (this.indexingService) {
+        tools.push({
+          name: INDEX_PROJECT_TOOL_NAME,
+          description: INDEX_PROJECT_TOOL_DESCRIPTION,
+          inputSchema: getIndexProjectInputSchema(),
+        });
+      }
+
+      return { tools };
+    });
+
+    // CallToolRequestハンドラー
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      const { name: toolName, arguments: args } = request.params;
+
+      logger.debug('CallToolRequest received', { toolName, args });
+
+      try {
+        // index_projectツール
+        if (toolName === INDEX_PROJECT_TOOL_NAME) {
+          if (!this.indexingService) {
+            throw new Error('Indexing service is not available');
+          }
+
+          // 進捗トークンを取得
+          const progressToken = request.params._meta?.progressToken;
+
+          // 進捗コールバック
+          const progressCallback = progressToken
+            ? (progress: number, message: string) => {
+                this.server.notification({
+                  method: 'notifications/progress',
+                  params: {
+                    progressToken,
+                    progress,
+                    total: 100,
+                    message,
+                  },
+                });
+              }
+            : undefined;
+
+          // ツールハンドラーを実行
+          const result = await handleIndexProject(
+            args as IndexProjectInput,
+            this.indexingService,
+            progressCallback
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // 未知のツール
+        throw new Error(`Unknown tool: ${toolName}`);
+      } catch (error: any) {
+        logger.error('Tool execution error', toMCPError(error));
+
+        // エラーレスポンス
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  success: false,
+                  error: error.message,
+                },
+                null,
+                2
+              ),
+            },
+          ],
+          isError: true,
+        };
+      }
+    });
   }
 
   /**
