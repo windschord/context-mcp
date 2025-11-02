@@ -153,3 +153,55 @@ export interface SymbolExtractionResult {
   hasError: boolean;
   errors?: ParserError[];
 }
+
+/**
+ * Comment types
+ */
+export enum CommentType {
+  SingleLine = 'single_line',
+  MultiLine = 'multi_line',
+  DocComment = 'doc_comment', // JSDoc, docstring, doc comment, JavaDoc etc.
+}
+
+/**
+ * Special markers in comments
+ */
+export enum CommentMarker {
+  TODO = 'TODO',
+  FIXME = 'FIXME',
+  NOTE = 'NOTE',
+  HACK = 'HACK',
+  XXX = 'XXX',
+  BUG = 'BUG',
+}
+
+/**
+ * Comment information extracted from source code
+ */
+export interface CommentInfo {
+  type: CommentType;
+  content: string;
+  position: NodePosition;
+  marker?: CommentMarker;
+  associatedSymbol?: string; // Name of the associated code element (function, class, etc.)
+  tags?: CommentTag[]; // For doc comments (JSDoc, docstring, etc.)
+}
+
+/**
+ * Comment tag information (for JSDoc, docstring, etc.)
+ */
+export interface CommentTag {
+  name: string; // e.g., "param", "return", "throws"
+  value: string;
+  description?: string;
+}
+
+/**
+ * Comment extraction result
+ */
+export interface CommentExtractionResult {
+  comments: CommentInfo[];
+  language: Language;
+  hasError: boolean;
+  errors?: ParserError[];
+}
