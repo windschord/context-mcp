@@ -21,7 +21,7 @@ export default {
     }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@babel)/)',
+    'node_modules/(?!((@babel)|(@modelcontextprotocol))/)',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',

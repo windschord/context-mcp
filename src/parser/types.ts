@@ -72,3 +72,84 @@ export interface TraversalOptions {
   skipErrors?: boolean;
   maxDepth?: number;
 }
+
+/**
+ * Symbol types
+ */
+export enum SymbolType {
+  Function = 'function',
+  Method = 'method',
+  Class = 'class',
+  Interface = 'interface',
+  Struct = 'struct',
+  Variable = 'variable',
+  Constant = 'constant',
+  Parameter = 'parameter',
+  Trait = 'trait',
+  Enum = 'enum',
+}
+
+/**
+ * Symbol scope
+ */
+export enum SymbolScope {
+  Global = 'global',
+  Class = 'class',
+  Function = 'function',
+  Block = 'block',
+  Module = 'module',
+}
+
+/**
+ * Parameter information
+ */
+export interface ParameterInfo {
+  name: string;
+  type?: string;
+  defaultValue?: string;
+  isOptional?: boolean;
+}
+
+/**
+ * Symbol information extracted from AST
+ */
+export interface SymbolInfo {
+  name: string;
+  type: SymbolType;
+  scope: SymbolScope;
+  position: NodePosition;
+
+  // Function/Method specific
+  parameters?: ParameterInfo[];
+  returnType?: string;
+
+  // Class/Interface/Struct specific
+  extends?: string[];
+  implements?: string[];
+  members?: SymbolInfo[];
+
+  // Variable/Constant specific
+  valueType?: string;
+  initialValue?: string;
+
+  // Common
+  docstring?: string;
+  isExported?: boolean;
+  isAsync?: boolean;
+  isStatic?: boolean;
+  isPrivate?: boolean;
+  isAbstract?: boolean;
+
+  // Arduino specific
+  isArduinoSpecialFunction?: boolean; // setup or loop
+}
+
+/**
+ * Symbol extraction result
+ */
+export interface SymbolExtractionResult {
+  symbols: SymbolInfo[];
+  language: Language;
+  hasError: boolean;
+  errors?: ParserError[];
+}

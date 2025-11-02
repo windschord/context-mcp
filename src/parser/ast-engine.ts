@@ -114,23 +114,33 @@ export class ASTEngine {
 
     // 単一行の場合
     if (startLine === endLine) {
-      return lines[startLine].substring(startColumn, endColumn);
+      const line = lines[startLine];
+      return line ? line.substring(startColumn, endColumn) : '';
     }
 
     // 複数行の場合
     const result: string[] = [];
 
     // 最初の行
-    result.push(lines[startLine].substring(startColumn));
+    const firstLine = lines[startLine];
+    if (firstLine) {
+      result.push(firstLine.substring(startColumn));
+    }
 
     // 中間の行
     for (let i = startLine + 1; i < endLine; i++) {
-      result.push(lines[i]);
+      const line = lines[i];
+      if (line) {
+        result.push(line);
+      }
     }
 
     // 最後の行
     if (endLine < lines.length) {
-      result.push(lines[endLine].substring(0, endColumn));
+      const lastLine = lines[endLine];
+      if (lastLine) {
+        result.push(lastLine.substring(0, endColumn));
+      }
     }
 
     return result.join('\n');
