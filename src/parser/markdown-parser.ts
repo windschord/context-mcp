@@ -87,7 +87,6 @@ export class MarkdownParser {
 
     // 行番号マッピング用
     const lines = content.split('\n');
-    let currentLine = 0;
 
     // markedのトークナイザーを使用してパース
     const markedInstance = await getMarked();
@@ -289,13 +288,14 @@ export class MarkdownParser {
    */
   private getLineNumber(raw: string, lines: string[], startLine: number = 0): number {
     // rawテキストの最初の行を使って行番号を特定
-    const firstLine = raw.split('\n')[0].trim();
+    const firstLine = raw.split('\n')[0]?.trim();
     if (!firstLine) {
       return startLine;
     }
 
     for (let i = startLine; i < lines.length; i++) {
-      if (lines[i].trim() === firstLine || lines[i].includes(firstLine)) {
+      const line = lines[i];
+      if (line && (line.trim() === firstLine || line.includes(firstLine))) {
         return i;
       }
     }
