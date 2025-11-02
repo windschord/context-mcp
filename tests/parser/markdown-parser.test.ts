@@ -27,8 +27,8 @@ describe('MarkdownParser', () => {
   });
 
   describe('parse', () => {
-    it('Markdownファイルの全体を解析できること', () => {
-      const result = parser.parse(sampleContent);
+    it('Markdownファイルの全体を解析できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result).toBeDefined();
       expect(result.headings).toBeDefined();
@@ -40,8 +40,8 @@ describe('MarkdownParser', () => {
   });
 
   describe('Headings Extraction', () => {
-    it('見出し構造（h1-h6）を抽出できること', () => {
-      const result = parser.parse(sampleContent);
+    it('見出し構造（h1-h6）を抽出できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result.headings.length).toBeGreaterThan(0);
 
@@ -59,8 +59,8 @@ describe('MarkdownParser', () => {
       expect(h3Headings.length).toBeGreaterThan(0);
     });
 
-    it('見出しの階層構造を保持できること', () => {
-      const result = parser.parse(sampleContent);
+    it('見出しの階層構造を保持できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       const headings = result.headings;
 
@@ -76,8 +76,8 @@ describe('MarkdownParser', () => {
       }
     });
 
-    it('各見出しに位置情報が含まれること', () => {
-      const result = parser.parse(sampleContent);
+    it('各見出しに位置情報が含まれること', async () => {
+      const result = await parser.parse(sampleContent);
 
       result.headings.forEach((heading) => {
         expect(heading.line).toBeGreaterThanOrEqual(0);
@@ -87,14 +87,14 @@ describe('MarkdownParser', () => {
   });
 
   describe('Code Blocks Extraction', () => {
-    it('コードブロックを抽出できること', () => {
-      const result = parser.parse(sampleContent);
+    it('コードブロックを抽出できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result.codeBlocks.length).toBeGreaterThan(0);
     });
 
-    it('言語タグ付きコードブロックを識別できること', () => {
-      const result = parser.parse(sampleContent);
+    it('言語タグ付きコードブロックを識別できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       // TypeScriptコードブロック
       const tsBlock = result.codeBlocks.find(
@@ -111,8 +111,8 @@ describe('MarkdownParser', () => {
       expect(pyBlock?.code).toContain('def greet');
     });
 
-    it('言語タグなしコードブロックを処理できること', () => {
-      const result = parser.parse(sampleContent);
+    it('言語タグなしコードブロックを処理できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       const noLangBlock = result.codeBlocks.find(
         (block) => !block.language || block.language === ''
@@ -120,8 +120,8 @@ describe('MarkdownParser', () => {
       expect(noLangBlock).toBeDefined();
     });
 
-    it('コードブロックの行番号情報が含まれること', () => {
-      const result = parser.parse(sampleContent);
+    it('コードブロックの行番号情報が含まれること', async () => {
+      const result = await parser.parse(sampleContent);
 
       result.codeBlocks.forEach((block) => {
         expect(block.startLine).toBeGreaterThanOrEqual(0);
@@ -131,14 +131,14 @@ describe('MarkdownParser', () => {
   });
 
   describe('Links Extraction', () => {
-    it('リンク情報を抽出できること', () => {
-      const result = parser.parse(sampleContent);
+    it('リンク情報を抽出できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result.links.length).toBeGreaterThan(0);
     });
 
-    it('リンクテキストとURLを取得できること', () => {
-      const result = parser.parse(sampleContent);
+    it('リンクテキストとURLを取得できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       const externalLink = result.links.find((link) =>
         link.url.includes('example.com')
@@ -148,8 +148,8 @@ describe('MarkdownParser', () => {
       expect(externalLink?.url).toBeTruthy();
     });
 
-    it('内部リンクと外部リンクを区別できること', () => {
-      const result = parser.parse(sampleContent);
+    it('内部リンクと外部リンクを区別できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       // 内部リンク（相対パス）
       const internalLink = result.links.find((link) =>
@@ -168,14 +168,14 @@ describe('MarkdownParser', () => {
   });
 
   describe('File Path References Detection', () => {
-    it('ファイルパス参照を検出できること', () => {
-      const result = parser.parse(sampleContent);
+    it('ファイルパス参照を検出できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result.filePaths.length).toBeGreaterThan(0);
     });
 
-    it('相対パスと絶対パスを識別できること', () => {
-      const result = parser.parse(sampleContent);
+    it('相対パスと絶対パスを識別できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       // 相対パス
       const relativePath = result.filePaths.find((fp) =>
@@ -192,8 +192,8 @@ describe('MarkdownParser', () => {
       expect(absolutePath?.isAbsolute).toBe(true);
     });
 
-    it('ファイルパスの行番号情報が含まれること', () => {
-      const result = parser.parse(sampleContent);
+    it('ファイルパスの行番号情報が含まれること', async () => {
+      const result = await parser.parse(sampleContent);
 
       result.filePaths.forEach((fp) => {
         expect(fp.line).toBeGreaterThanOrEqual(0);
@@ -202,14 +202,14 @@ describe('MarkdownParser', () => {
   });
 
   describe('Images Extraction', () => {
-    it('画像情報を抽出できること', () => {
-      const result = parser.parse(sampleContent);
+    it('画像情報を抽出できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       expect(result.images.length).toBeGreaterThan(0);
     });
 
-    it('alt textとURLを取得できること', () => {
-      const result = parser.parse(sampleContent);
+    it('alt textとURLを取得できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       const image = result.images[0];
       expect(image).toBeDefined();
@@ -217,8 +217,8 @@ describe('MarkdownParser', () => {
       expect(image.url).toBeTruthy();
     });
 
-    it('ローカル画像と外部画像を区別できること', () => {
-      const result = parser.parse(sampleContent);
+    it('ローカル画像と外部画像を区別できること', async () => {
+      const result = await parser.parse(sampleContent);
 
       // ローカル画像
       const localImage = result.images.find((img) =>
@@ -235,8 +235,8 @@ describe('MarkdownParser', () => {
   });
 
   describe('Edge Cases', () => {
-    it('空のMarkdownを処理できること', () => {
-      const result = parser.parse('');
+    it('空のMarkdownを処理できること', async () => {
+      const result = await parser.parse('');
 
       expect(result.headings.length).toBe(0);
       expect(result.codeBlocks.length).toBe(0);
@@ -245,23 +245,23 @@ describe('MarkdownParser', () => {
       expect(result.images.length).toBe(0);
     });
 
-    it('見出しのみのMarkdownを処理できること', () => {
+    it('見出しのみのMarkdownを処理できること', async () => {
       const markdown = '# Title\n## Section';
-      const result = parser.parse(markdown);
+      const result = await parser.parse(markdown);
 
       expect(result.headings.length).toBe(2);
       expect(result.codeBlocks.length).toBe(0);
     });
 
-    it('コードブロックのみのMarkdownを処理できること', () => {
+    it('コードブロックのみのMarkdownを処理できること', async () => {
       const markdown = '```typescript\nconst x = 1;\n```';
-      const result = parser.parse(markdown);
+      const result = await parser.parse(markdown);
 
       expect(result.codeBlocks.length).toBe(1);
       expect(result.headings.length).toBe(0);
     });
 
-    it('不正なMarkdown構文を許容できること', () => {
+    it('不正なMarkdown構文を許容できること', async () => {
       const markdown = '# Incomplete heading\n```\nUnclosed code block';
       expect(() => parser.parse(markdown)).not.toThrow();
     });

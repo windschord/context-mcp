@@ -4,6 +4,7 @@ export type { PlatformIOEnvironment, PlatformIOConfig } from './platformio-parse
 export { ASTEngine } from './ast-engine.js';
 export { SymbolExtractor } from './symbol-extractor.js';
 export { CommentExtractor } from './comment-extractor.js';
+export { MarkdownParser } from './markdown-parser.js';
 export { Language, SymbolType, SymbolScope, CommentType, CommentMarker } from './types.js';
 export type {
   ParseResult,
@@ -20,3 +21,11 @@ export type {
   CommentTag,
   CommentExtractionResult,
 } from './types.js';
+export type {
+  HeadingNode,
+  CodeBlockNode,
+  LinkNode,
+  FilePathReference,
+  ImageNode,
+  MarkdownDocument,
+} from './markdown-parser.js';

@@ -8,6 +8,7 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^marked$': '<rootDir>/tests/__mocks__/marked.ts',
   },
   transform: {
     '^.+\\.ts$': ['ts-jest', {
@@ -21,7 +22,7 @@ export default {
     }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!((@babel)|(@modelcontextprotocol))/)',
+    'node_modules/(?!((@babel)|(@modelcontextprotocol)|marked))',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',
