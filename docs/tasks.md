@@ -8,15 +8,15 @@
 #### タスク1.1: プロジェクト初期化とパッケージ設定
 **説明**: Node.jsプロジェクトの初期化、TypeScript設定、必要な依存関係のインストール
 **受入基準**:
-- [ ] package.jsonが作成され、必要なスクリプトが定義されている
-- [ ] tsconfig.jsonが適切に設定されている（strict mode有効）
-- [ ] ESLintとPrettierが設定されている
-- [ ] 基本的なディレクトリ構造が作成されている（src/, tests/, docs/）
-- [ ] .gitignoreと.npmignoreが適切に設定されている
+- [x] package.jsonが作成され、必要なスクリプトが定義されている
+- [x] tsconfig.jsonが適切に設定されている（strict mode有効）
+- [x] ESLintとPrettierが設定されている
+- [x] 基本的なディレクトリ構造が作成されている（src/, tests/, docs/）
+- [x] .gitignoreと.npmignoreが適切に設定されている
 
 **依存関係**: なし
 **推定工数**: 2時間
-**ステータス**: `TODO`
+**ステータス**: `DONE`
 
 #### タスク1.2: MCP SDKの統合とサーバー骨格作成
 **説明**: @modelcontextprotocol/sdkを導入し、MCPサーバーの基本構造を実装
