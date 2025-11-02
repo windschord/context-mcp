@@ -4,7 +4,7 @@
  * Milvus standalone（ローカルDocker）とZilliz Cloud（クラウド）の両方に対応
  */
 
-import { MilvusClient, DataType, ErrorCode } from '@zilliz/milvus2-sdk-node';
+import { MilvusClient, DataType } from '@zilliz/milvus2-sdk-node';
 import type {
   VectorStorePlugin,
   VectorStoreConfig,
@@ -61,7 +61,7 @@ export class MilvusPlugin implements VectorStorePlugin {
   private retryConfig: RetryConfig;
 
   constructor(retryConfig: Partial<RetryConfig> = {}) {
-    this.logger = new Logger({ prefix: 'MilvusPlugin' });
+    this.logger = new Logger();
     this.retryConfig = { ...DEFAULT_RETRY_CONFIG, ...retryConfig };
   }
 
@@ -103,16 +103,23 @@ export class MilvusPlugin implements VectorStorePlugin {
   async connect(config: VectorStoreConfig): Promise<void> {
     this.logger.info('Connecting to Milvus...');
 
-    const milvusConfig = config.config as MilvusPluginConfig;
-    this.config = milvusConfig;
+    const milvusConfig = config.config as Record<string, unknown>;
+    this.config = {
+      address: milvusConfig['address'] as string,
+      token: milvusConfig['token'] as string | undefined,
+      username: milvusConfig['username'] as string | undefined,
+      password: milvusConfig['password'] as string | undefined,
+      ssl: milvusConfig['ssl'] as boolean | undefined,
+      standalone: milvusConfig['standalone'] as boolean | undefined,
+    };
 
     await this.retryWithBackoff(async () => {
       this.client = new MilvusClient({
-        address: milvusConfig.address,
-        token: milvusConfig.token,
-        username: milvusConfig.username,
-        password: milvusConfig.password,
-        ssl: milvusConfig.ssl || false,
+        address: this.config!.address,
+        token: this.config!.token,
+        username: this.config!.username,
+        password: this.config!.password,
+        ssl: this.config!.ssl || false,
       });
 
       // 接続テスト: バージョン情報を取得

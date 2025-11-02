@@ -56,7 +56,7 @@ export class DockerManager {
     this.dockerComposePath =
       config.dockerComposePath ||
       path.join(this.projectRoot, DOCKER_COMPOSE_FILENAME);
-    this.logger = new Logger({ prefix: 'DockerManager' });
+    this.logger = new Logger();
   }
 
   /**
