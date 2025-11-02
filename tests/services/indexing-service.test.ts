@@ -406,6 +406,129 @@ function hello() {
 
       expect(result.success).toBe(true);
     });
+
+    test('updateFile: ファイル変更時に古いインデックスを削除して新しいインデックスを挿入', async () => {
+      const testFile = path.join(testProjectPath, 'update.ts');
+      await fs.writeFile(testFile, 'export const oldValue = 1;');
+
+      // 初回インデックス化
+      await indexingService.indexFile(testFile, 'project-1');
+
+      // ファイルを更新
+      await fs.writeFile(testFile, 'export const newValue = 2; // Changed');
+
+      // updateFile を呼び出し
+      const result = await indexingService.updateFile(testFile, 'project-1');
+
+      expect(result.success).toBe(true);
+      expect(result.filePath).toBe(testFile);
+      expect(result.symbolsCount).toBeGreaterThan(0);
+    });
+
+    test('updateFile: 存在しないファイルはエラーを返す', async () => {
+      const nonExistentFile = path.join(testProjectPath, 'non-existent.ts');
+
+      const result = await indexingService.updateFile(nonExistentFile, 'project-1');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBeDefined();
+    });
+
+    test('updateFile: 構文エラーがあるファイルも処理を継続', async () => {
+      const testFile = path.join(testProjectPath, 'error.ts');
+      await fs.writeFile(testFile, 'function broken(');
+
+      const result = await indexingService.updateFile(testFile, 'project-1');
+
+      expect(result.success).toBe(true);
+      expect(result.hasErrors).toBe(true);
+    });
+
+    test('deleteFile: ファイル削除時にインデックスから削除', async () => {
+      const testFile = path.join(testProjectPath, 'delete.ts');
+      await fs.writeFile(testFile, 'export const value = 1;');
+
+      // インデックス化
+      await indexingService.indexFile(testFile, 'project-1');
+
+      // ファイル削除
+      const result = await indexingService.deleteFile(testFile, 'project-1');
+
+      expect(result.success).toBe(true);
+      expect(result.filePath).toBe(testFile);
+    });
+
+    test('deleteFile: 存在しないファイルの削除もエラーにならない', async () => {
+      const nonExistentFile = path.join(testProjectPath, 'non-existent.ts');
+
+      const result = await indexingService.deleteFile(nonExistentFile, 'project-1');
+
+      expect(result.success).toBe(true);
+    });
+
+    test('updateFile: Markdownファイルの更新', async () => {
+      const testFile = path.join(testProjectPath, 'update.md');
+      await fs.writeFile(testFile, '# Old Title\nOld content');
+
+      // 初回インデックス化
+      await indexingService.indexFile(testFile, 'project-1');
+
+      // ファイルを更新
+      await fs.writeFile(testFile, '# New Title\nNew content');
+
+      // updateFile を呼び出し
+      const result = await indexingService.updateFile(testFile, 'project-1');
+
+      expect(result.success).toBe(true);
+      expect(result.vectorsCount).toBeGreaterThan(0);
+    });
+
+    test('updateFile: 差分更新時のエラーはプロセス全体を停止しない', async () => {
+      const goodFile = path.join(testProjectPath, 'good.ts');
+      const badFile = path.join(testProjectPath, 'bad.ts');
+
+      await fs.writeFile(goodFile, 'export const good = 1;');
+      await fs.writeFile(badFile, 'export const bad = 2;');
+
+      // 初回インデックス化
+      await indexingService.indexFile(goodFile, 'project-1');
+      await indexingService.indexFile(badFile, 'project-1');
+
+      // goodFileは正常に更新
+      await fs.writeFile(goodFile, 'export const good = 999;');
+      const goodResult = await indexingService.updateFile(goodFile, 'project-1');
+      expect(goodResult.success).toBe(true);
+
+      // badFileを不正なファイルに変更（ディレクトリに置き換え）
+      await fs.unlink(badFile);
+      await fs.mkdir(badFile);
+
+      const badResult = await indexingService.updateFile(badFile, 'project-1');
+      expect(badResult.success).toBe(false);
+
+      // goodFileの更新は成功している
+      expect(goodResult.success).toBe(true);
+    });
+
+    test('updateFile: ベクターDBとBM25の両方が更新される', async () => {
+      const testFile = path.join(testProjectPath, 'both.ts');
+      await fs.writeFile(testFile, 'export const initial = 1;');
+
+      // 初回インデックス化
+      await indexingService.indexFile(testFile, 'project-1');
+
+      // スパイを設定してメソッド呼び出しを追跡
+      const vectorStoreSpy = jest.spyOn(vectorStore, 'delete');
+      const bm25Spy = jest.spyOn(bm25Engine, 'deleteDocument');
+
+      // ファイルを更新
+      await fs.writeFile(testFile, 'export const updated = 2;');
+      await indexingService.updateFile(testFile, 'project-1');
+
+      // 削除メソッドが呼ばれたことを確認
+      expect(vectorStoreSpy).toHaveBeenCalled();
+      expect(bm25Spy).toHaveBeenCalled();
+    });
   });
 
   describe('統計情報', () => {
