@@ -4,6 +4,10 @@
   "description": "LSP-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "lsp-mcp": "dist/index.js"
+  },
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
