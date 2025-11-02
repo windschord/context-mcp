@@ -14,6 +14,8 @@ import {
 import { logger } from '../utils/logger.js';
 import { toMCPError } from '../utils/errors.js';
 import { IndexingService } from '../services/indexing-service.js';
+import { HybridSearchEngine } from '../services/hybrid-search-engine.js';
+import type { EmbeddingEngine } from '../embedding/types.js';
 import {
   TOOL_NAME as INDEX_PROJECT_TOOL_NAME,
   TOOL_DESCRIPTION as INDEX_PROJECT_TOOL_DESCRIPTION,
@@ -21,6 +23,13 @@ import {
   handleIndexProject,
   type IndexProjectInput,
 } from '../tools/index-project-tool.js';
+import {
+  TOOL_NAME as SEARCH_CODE_TOOL_NAME,
+  TOOL_DESCRIPTION as SEARCH_CODE_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getSearchCodeInputSchema,
+  handleSearchCode,
+  type SearchCodeInput,
+} from '../tools/search-code-tool.js';
 
 export class MCPServer {
   private server: Server;
@@ -29,11 +38,21 @@ export class MCPServer {
   private version: string;
   private isShutdown = false;
   private indexingService?: IndexingService;
+  private hybridSearchEngine?: HybridSearchEngine;
+  private embeddingEngine?: EmbeddingEngine;
 
-  constructor(name = 'lsp-mcp', version = '0.1.0', indexingService?: IndexingService) {
+  constructor(
+    name = 'lsp-mcp',
+    version = '0.1.0',
+    indexingService?: IndexingService,
+    hybridSearchEngine?: HybridSearchEngine,
+    embeddingEngine?: EmbeddingEngine
+  ) {
     this.name = name;
     this.version = version;
     this.indexingService = indexingService;
+    this.hybridSearchEngine = hybridSearchEngine;
+    this.embeddingEngine = embeddingEngine;
 
     // MCPサーバーインスタンスを作成
     this.server = new Server(
@@ -105,6 +124,15 @@ export class MCPServer {
         });
       }
 
+      // search_codeツールを登録
+      if (this.hybridSearchEngine && this.embeddingEngine) {
+        tools.push({
+          name: SEARCH_CODE_TOOL_NAME,
+          description: SEARCH_CODE_TOOL_DESCRIPTION,
+          inputSchema: getSearchCodeInputSchema(),
+        });
+      }
+
       return { tools };
     });
 
@@ -144,6 +172,30 @@ export class MCPServer {
             args as IndexProjectInput,
             this.indexingService,
             progressCallback
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // search_codeツール
+        if (toolName === SEARCH_CODE_TOOL_NAME) {
+          if (!this.hybridSearchEngine || !this.embeddingEngine) {
+            throw new Error('Hybrid search engine or embedding engine is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleSearchCode(
+            args as SearchCodeInput,
+            this.hybridSearchEngine,
+            this.embeddingEngine
           );
 
           // MCPレスポンス形式で返す
