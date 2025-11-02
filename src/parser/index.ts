@@ -5,6 +5,7 @@ export { ASTEngine } from './ast-engine.js';
 export { SymbolExtractor } from './symbol-extractor.js';
 export { CommentExtractor } from './comment-extractor.js';
 export { MarkdownParser } from './markdown-parser.js';
+export { DocCodeLinker } from './doc-code-linker.js';
 export { Language, SymbolType, SymbolScope, CommentType, CommentMarker } from './types.js';
 export type {
   ParseResult,
@@ -29,3 +30,10 @@ export type {
   ImageNode,
   MarkdownDocument,
 } from './markdown-parser.js';
+export type {
+  ResolvedFilePathReference,
+  SymbolReference,
+  SimilarCodeMatch,
+  RelatedScoreResult,
+  CodeFileInfo,
+} from './doc-code-linker.js';
