@@ -3,7 +3,8 @@ export { PlatformIOParser } from './platformio-parser.js';
 export type { PlatformIOEnvironment, PlatformIOConfig } from './platformio-parser.js';
 export { ASTEngine } from './ast-engine.js';
 export { SymbolExtractor } from './symbol-extractor.js';
-export { Language, SymbolType, SymbolScope } from './types.js';
+export { CommentExtractor } from './comment-extractor.js';
+export { Language, SymbolType, SymbolScope, CommentType, CommentMarker } from './types.js';
 export type {
   ParseResult,
   ExtensionMapping,
@@ -15,4 +16,7 @@ export type {
   SymbolInfo,
   ParameterInfo,
   SymbolExtractionResult,
+  CommentInfo,
+  CommentTag,
+  CommentExtractionResult,
 } from './types.js';
