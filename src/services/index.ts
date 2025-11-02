@@ -6,3 +6,4 @@
 
 export * from './hybrid-search-engine';
 export * from './indexing-service';
+export * from './background-update-queue';
