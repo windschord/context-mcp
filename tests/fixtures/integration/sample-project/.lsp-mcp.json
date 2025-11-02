@@ -1,0 +1,28 @@
+{
+  "mode": "local",
+  "vectorStore": {
+    "backend": "chroma",
+    "config": {
+      "path": "./.lsp-mcp/chroma"
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "local": true
+  },
+  "privacy": {
+    "blockExternalCalls": true
+  },
+  "indexing": {
+    "languages": ["typescript", "python", "go"],
+    "excludePatterns": [
+      "node_modules/**",
+      "dist/**",
+      ".git/**",
+      "*.test.ts",
+      "*.test.py"
+    ],
+    "includeDocuments": true
+  }
+}
