@@ -125,7 +125,7 @@ export class Logger {
       const sanitized: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(data)) {
         // センシティブなキーは隠す
-        if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k))) {
+        if (SENSITIVE_KEYS.some((k) => key.toLowerCase().includes(k.toLowerCase()))) {
           sanitized[key] = '***';
         } else if (typeof value === 'object') {
           // 再帰的にサニタイズ

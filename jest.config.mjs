@@ -13,6 +13,7 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true,
+      isolatedModules: true,
       tsconfig: {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
@@ -20,6 +21,12 @@ export default {
         moduleResolution: 'node',
       },
     }],
+  },
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      isolatedModules: true,
+    },
   },
   transformIgnorePatterns: [
     'node_modules/(?!(@modelcontextprotocol|@xenova|marked))',
