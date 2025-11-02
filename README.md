@@ -41,9 +41,36 @@ npm run dev
 # テスト
 npm test
 
+# テスト（カバレッジ）
+npm run test:coverage
+
+# パフォーマンステスト
+npm run test:performance
+
+# 大規模サンプルプロジェクトの生成（初回のみ）
+npm run perf:generate
+
 # Lint
 npm run lint
 ```
+
+## パフォーマンステスト
+
+パフォーマンステストは10,000ファイルのサンプルプロジェクトを使用して、インデックス化性能、検索性能、メモリ使用量を測定します。
+
+```bash
+# 1. 大規模サンプルプロジェクトの生成（初回のみ、数分かかります）
+npm run perf:generate
+
+# 2. パフォーマンステストの実行（15分程度）
+npm run test:performance
+
+# 3. 結果の確認
+cat docs/performance-report.json
+cat docs/bottleneck-analysis.json
+```
+
+詳細は[パフォーマンステストレポート](docs/performance-report.md)を参照してください。
 
 ## ライセンス
 
