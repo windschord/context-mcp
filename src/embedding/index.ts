@@ -6,3 +6,4 @@
 
 export * from './types';
 export { LocalEmbeddingEngine } from './local-embedding-engine';
+export { CloudEmbeddingEngine } from './cloud-embedding-engine';

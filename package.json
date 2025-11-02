@@ -53,6 +53,7 @@
   "homepage": "https://github.com/yourusername/lsp-mcp#readme",
   "devDependencies": {
     "@babel/core": "^7.28.5",
+    "@babel/helper-validator-identifier": "^7.28.5",
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@jest/globals": "^30.2.0",
@@ -80,12 +81,14 @@
     "chromadb": "^3.1.0",
     "ignore": "^7.0.5",
     "marked": "^16.4.1",
+    "openai": "^6.7.0",
     "tree-sitter": "^0.22.1",
     "tree-sitter-cpp": "^0.23.4",
     "tree-sitter-go": "^0.23.1",
     "tree-sitter-java": "^0.23.2",
     "tree-sitter-python": "^0.23.2",
     "tree-sitter-rust": "^0.23.0",
-    "tree-sitter-typescript": "^0.23.0"
+    "tree-sitter-typescript": "^0.23.0",
+    "voyageai": "^0.0.8"
   }
 }
