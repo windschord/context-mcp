@@ -39,6 +39,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
+    "isolatedModules": true,
 
     /* Completeness */
     "skipLibCheck": true,

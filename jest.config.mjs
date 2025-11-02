@@ -20,6 +20,9 @@ export default {
       },
     }],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(@babel)/)',
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',

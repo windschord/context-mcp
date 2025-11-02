@@ -13,7 +13,7 @@ export const version = '0.1.0';
  */
 export async function main(): Promise<void> {
   // 環境変数からログレベルを取得
-  const logLevelEnv = process.env.LOG_LEVEL?.toUpperCase() || 'INFO';
+  const logLevelEnv = process.env['LOG_LEVEL']?.toUpperCase() || 'INFO';
   const logLevel = LogLevel[logLevelEnv as keyof typeof LogLevel] || LogLevel.INFO;
   logger.setLevel(logLevel);
 

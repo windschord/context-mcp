@@ -17,7 +17,6 @@ export class MCPServer {
   private transport: StdioServerTransport | null = null;
   private name: string;
   private version: string;
-  private isInitialized = false;
   private isShutdown = false;
 
   constructor(name = 'lsp-mcp', version = '0.1.0') {
@@ -57,8 +56,6 @@ export class MCPServer {
           name: this.name,
           version: this.version,
         });
-
-        this.isInitialized = true;
 
         return {
           serverInfo: {

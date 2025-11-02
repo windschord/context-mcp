@@ -243,8 +243,8 @@ export class ConfigManager {
     const overridden = { ...config };
 
     // LSP_MCP_MODE
-    if (process.env.LSP_MCP_MODE) {
-      const mode = process.env.LSP_MCP_MODE as Mode;
+    if (process.env['LSP_MCP_MODE']) {
+      const mode = process.env['LSP_MCP_MODE'] as Mode;
       overridden.mode = mode;
       logger.info(
         `環境変数 LSP_MCP_MODE からモードをオーバーライド: ${mode}`
@@ -252,8 +252,8 @@ export class ConfigManager {
     }
 
     // LSP_MCP_VECTOR_BACKEND
-    if (process.env.LSP_MCP_VECTOR_BACKEND) {
-      const backend = process.env.LSP_MCP_VECTOR_BACKEND as VectorStoreBackend;
+    if (process.env['LSP_MCP_VECTOR_BACKEND']) {
+      const backend = process.env['LSP_MCP_VECTOR_BACKEND'] as VectorStoreBackend;
       overridden.vectorStore = {
         ...overridden.vectorStore,
         backend,
@@ -264,9 +264,8 @@ export class ConfigManager {
     }
 
     // LSP_MCP_EMBEDDING_PROVIDER
-    if (process.env.LSP_MCP_EMBEDDING_PROVIDER) {
-      const provider = process.env
-        .LSP_MCP_EMBEDDING_PROVIDER as EmbeddingProvider;
+    if (process.env['LSP_MCP_EMBEDDING_PROVIDER']) {
+      const provider = process.env['LSP_MCP_EMBEDDING_PROVIDER'] as EmbeddingProvider;
       overridden.embedding = {
         ...overridden.embedding,
         provider,
@@ -277,10 +276,10 @@ export class ConfigManager {
     }
 
     // LSP_MCP_EMBEDDING_API_KEY
-    if (process.env.LSP_MCP_EMBEDDING_API_KEY) {
+    if (process.env['LSP_MCP_EMBEDDING_API_KEY']) {
       overridden.embedding = {
         ...overridden.embedding,
-        apiKey: process.env.LSP_MCP_EMBEDDING_API_KEY,
+        apiKey: process.env['LSP_MCP_EMBEDDING_API_KEY'],
       };
       logger.info(
         '環境変数 LSP_MCP_EMBEDDING_API_KEY から埋め込みAPIキーをオーバーライド'
@@ -288,26 +287,26 @@ export class ConfigManager {
     }
 
     // LSP_MCP_VECTOR_ADDRESS
-    if (process.env.LSP_MCP_VECTOR_ADDRESS) {
+    if (process.env['LSP_MCP_VECTOR_ADDRESS']) {
       overridden.vectorStore = {
         ...overridden.vectorStore,
         config: {
           ...overridden.vectorStore.config,
-          address: process.env.LSP_MCP_VECTOR_ADDRESS,
+          address: process.env['LSP_MCP_VECTOR_ADDRESS'],
         },
       };
       logger.info(
-        `環境変数 LSP_MCP_VECTOR_ADDRESS からベクターDBアドレスをオーバーライド: ${process.env.LSP_MCP_VECTOR_ADDRESS}`
+        `環境変数 LSP_MCP_VECTOR_ADDRESS からベクターDBアドレスをオーバーライド: ${process.env['LSP_MCP_VECTOR_ADDRESS']}`
       );
     }
 
     // LSP_MCP_VECTOR_TOKEN
-    if (process.env.LSP_MCP_VECTOR_TOKEN) {
+    if (process.env['LSP_MCP_VECTOR_TOKEN']) {
       overridden.vectorStore = {
         ...overridden.vectorStore,
         config: {
           ...overridden.vectorStore.config,
-          token: process.env.LSP_MCP_VECTOR_TOKEN,
+          token: process.env['LSP_MCP_VECTOR_TOKEN'],
         },
       };
       logger.info(
