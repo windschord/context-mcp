@@ -22,7 +22,7 @@ export default {
     }],
   },
   transformIgnorePatterns: [
-    'node_modules/(?!((@babel)|(@modelcontextprotocol)|marked))',
+    'node_modules/(?!(@babel|@modelcontextprotocol|@xenova|marked))',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',

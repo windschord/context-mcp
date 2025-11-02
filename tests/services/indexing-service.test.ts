@@ -5,9 +5,9 @@ import { SymbolExtractor } from '../../src/parser/symbol-extractor';
 import { CommentExtractor } from '../../src/parser/comment-extractor';
 import { MarkdownParser } from '../../src/parser/markdown-parser';
 import { DocCodeLinker } from '../../src/parser/doc-code-linker';
-import { LocalEmbeddingEngine } from '../../src/embedding/local-embedding-engine';
-import { ChromaPlugin } from '../../src/storage/chroma-plugin';
-import { BM25Engine } from '../../src/storage/bm25-engine';
+import { MockEmbeddingEngine } from '../__mocks__/mock-embedding-engine';
+import { MockVectorStore } from '../__mocks__/mock-vector-store';
+import { MockBM25Engine } from '../__mocks__/mock-bm25-engine';
 import type { EmbeddingEngine } from '../../src/embedding/types';
 import type { VectorStorePlugin } from '../../src/storage/types';
 import * as fs from 'fs/promises';
@@ -23,10 +23,8 @@ describe('IndexingService', () => {
   let docCodeLinker: DocCodeLinker;
   let embeddingEngine: EmbeddingEngine;
   let vectorStore: VectorStorePlugin;
-  let bm25Engine: BM25Engine;
+  let bm25Engine: MockBM25Engine;
   let testProjectPath: string;
-  let testDbPath: string;
-  let testChromaPath: string;
 
   beforeAll(async () => {
     // Tree-sitterパーサーの初期化
@@ -37,8 +35,6 @@ describe('IndexingService', () => {
   beforeEach(async () => {
     const timestamp = Date.now();
     testProjectPath = path.join(process.cwd(), './tmp', `test-project-${timestamp}`);
-    testDbPath = path.join(process.cwd(), './tmp', `test-indexing-bm25-${timestamp}.db`);
-    testChromaPath = path.join(process.cwd(), './tmp', `test-indexing-chroma-${timestamp}`);
 
     // テストプロジェクトディレクトリを作成
     await fs.mkdir(testProjectPath, { recursive: true });
@@ -48,24 +44,21 @@ describe('IndexingService', () => {
     symbolExtractor = new SymbolExtractor(languageParser);
     commentExtractor = new CommentExtractor();
     markdownParser = new MarkdownParser();
-    docCodeLinker = new DocCodeLinker();
+    docCodeLinker = new DocCodeLinker(symbolExtractor, markdownParser);
 
-    // 埋め込みエンジンの初期化
-    embeddingEngine = new LocalEmbeddingEngine({
-      modelName: 'Xenova/all-MiniLM-L6-v2',
-      batchSize: 8,
-    });
+    // 埋め込みエンジンの初期化（モック使用）
+    embeddingEngine = new MockEmbeddingEngine();
     await embeddingEngine.initialize();
 
-    // ベクターストアの初期化
-    vectorStore = new ChromaPlugin();
+    // ベクターストアの初期化（モック使用）
+    vectorStore = new MockVectorStore();
     await vectorStore.connect({
-      backend: 'chroma',
-      config: { path: testChromaPath },
+      backend: 'mock',
+      config: {},
     });
 
-    // BM25エンジンの初期化
-    bm25Engine = new BM25Engine(testDbPath);
+    // BM25エンジンの初期化（モック使用）
+    bm25Engine = new MockBM25Engine();
     await bm25Engine.initialize();
 
     // Indexing Serviceの初期化
@@ -90,8 +83,6 @@ describe('IndexingService', () => {
     // テストファイルを削除
     try {
       await fs.rm(testProjectPath, { recursive: true, force: true });
-      await fs.unlink(testDbPath);
-      await fs.rm(testChromaPath, { recursive: true, force: true });
     } catch (error) {
       // ファイルが存在しない場合は無視
     }
