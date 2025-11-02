@@ -1,0 +1,875 @@
+# 設計：LSP-MCP（Language Server Protocol based MCP）
+
+## アーキテクチャ概要
+
+LSP-MCPは、レイヤー化されたアーキテクチャを採用し、各レイヤーが明確な責務を持つ構成となっています。
+
+```mermaid
+graph TD
+    A[Claude Code] -->|MCP Protocol| B[MCP Server Layer]
+    B --> C[Search Service]
+    B --> D[Indexing Service]
+
+    C --> E[Hybrid Search Engine]
+    E --> F[BM25 Full-Text Search]
+    E --> G[Vector Search]
+
+    D --> H[AST Parser]
+    D --> I[Document Parser]
+    D --> J[File Watcher]
+
+    H --> K[Tree-sitter]
+    I --> L[Markdown Parser]
+    I --> M[Code Extractor]
+
+    G --> N[Vector DB Client]
+    F --> O[Inverted Index]
+
+    N --> P[(Milvus/Qdrant/Chroma)]
+    O --> Q[(Local Index)]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#f0e1ff
+    style D fill:#f0e1ff
+    style E fill:#e1ffe1
+    style P fill:#ffe1e1
+    style Q fill:#ffe1e1
+```
+
+### レイヤー構成
+
+1. **MCP Server Layer**: Claude Codeとの通信を担当
+2. **Service Layer**: ビジネスロジックの実行（検索、インデックス化）
+3. **Parser Layer**: ソースコードとドキュメントの解析
+4. **Storage Layer**: データの永続化とクエリ実行
+
+## コンポーネント
+
+### コンポーネント1: MCP Server
+**目的**: Model Context Protocolに準拠したサーバー実装
+**責務**:
+- Claude Codeからのリクエスト受信
+- ツール（search, index, status等）のルーティング
+- レスポンスのフォーマット変換
+- エラーハンドリングと適切なエラーメッセージ返却
+
+**インターフェース**:
+- `initialize()`: サーバー初期化
+- `handleToolCall(toolName, params)`: ツール呼び出しハンドラー
+- `shutdown()`: クリーンアップ処理
+
+### コンポーネント2: Indexing Service
+**目的**: プロジェクト全体のインデックス化を管理
+**責務**:
+- ファイルシステムのスキャン
+- ファイル種別の判定（ソースコード、ドキュメント、除外対象）
+- パーサーへの振り分け
+- インデックスデータの保存
+- 進捗状況の追跡
+
+**インターフェース**:
+- `indexProject(rootPath, options)`: プロジェクト全体のインデックス化
+- `indexFile(filePath)`: 単一ファイルのインデックス化
+- `deleteIndex(projectId)`: インデックスの削除
+- `getIndexStatus(projectId)`: インデックス状況の取得
+
+### コンポーネント3: AST Parser
+**目的**: Tree-sitterを使用したソースコード解析
+**責務**:
+- ソースコードのAST生成
+- 関数/クラス/変数定義の抽出
+- docstring/コメントの抽出
+- スコープ情報の解析
+- 依存関係の抽出
+
+**インターフェース**:
+- `parseCode(code, language)`: ASTノードの生成
+- `extractDefinitions(ast)`: シンボル定義の抽出
+- `extractComments(ast)`: コメント情報の抽出
+- `getNodeRange(node)`: ノードの位置情報取得
+
+**対応言語とクエリ**:
+各言語ごとにTree-sitterクエリを定義
+
+**初期対応言語（優先度：高）**:
+- JavaScript / TypeScript
+- Python
+- Go
+- Rust
+- Java
+- C / C++ (Arduino / PlatformIO含む)
+
+```typescript
+// 関数定義の抽出クエリ例（Python）
+(function_definition
+  name: (identifier) @function.name
+  parameters: (parameters) @function.params
+  body: (block) @function.body
+)
+
+// 関数定義の抽出クエリ例（C/C++ - Arduino/PlatformIO対応）
+(function_definition
+  declarator: (function_declarator
+    declarator: (identifier) @function.name
+    parameters: (parameter_list) @function.params)
+  body: (compound_statement) @function.body
+)
+
+// Arduino setup/loop関数の特別な扱い
+(function_definition
+  declarator: (function_declarator
+    declarator: (identifier) @arduino.function
+    (#match? @arduino.function "^(setup|loop)$"))
+)
+```
+
+**特別な対応**:
+- `.ino`ファイル: Arduinoスケッチとして認識、setup()/loop()関数を特別に扱う
+- `platformio.ini`: プロジェクト設定ファイルとして解析、ボード・環境情報を抽出
+
+### コンポーネント4: Document Parser
+**目的**: ドキュメントファイルの解析
+**責務**:
+- Markdownの構造解析（見出し、リスト、コードブロック）
+- コードブロックからの言語・内容抽出
+- ファイルパス・シンボル参照の検出
+- リンク構造の抽出
+
+**インターフェース**:
+- `parseMarkdown(content)`: Markdown AST生成
+- `extractCodeBlocks(ast)`: コードブロック抽出
+- `extractReferences(ast)`: 参照情報の抽出
+- `buildOutline(ast)`: ドキュメント構造の生成
+
+### コンポーネント5: Hybrid Search Engine
+**目的**: ハイブリッド検索の実装
+**責務**:
+- BM25全文検索の実行
+- ベクトル類似検索の実行
+- 両検索結果のマージとランキング
+- 結果のフィルタリング
+
+**インターフェース**:
+- `search(query, options)`: 統合検索
+- `fullTextSearch(query, options)`: 全文検索
+- `vectorSearch(query, options)`: ベクトル検索
+- `mergeResults(fullTextResults, vectorResults)`: 結果のマージ
+
+**検索アルゴリズム**:
+```
+score = α * BM25_score + (1-α) * vector_similarity_score
+where α = 0.3 (デフォルト、設定可能)
+```
+
+### コンポーネント6: Embedding Engine
+**目的**: テキストの埋め込みベクトル生成（ローカル/クラウド対応）
+**責務**:
+- 埋め込みプロバイダーの管理（ローカル/クラウド）
+- テキストのベクトル化
+- バッチ処理とキャッシング
+- モデルのロード・初期化
+
+**インターフェース**:
+- `initialize(provider, config)`: プロバイダー初期化
+- `embed(text)`: 単一テキストの埋め込み
+- `embedBatch(texts[])`: 複数テキストの一括埋め込み
+- `getModelInfo()`: 使用中のモデル情報取得
+
+**サポートプロバイダー**:
+```typescript
+// ローカルプロバイダー（デフォルト）
+- TransformersJsProvider: Transformers.js (all-MiniLM-L6-v2等)
+- ONNXProvider: ONNX Runtime (軽量モデル)
+
+// クラウドプロバイダー（オプション）
+- OpenAIProvider: text-embedding-3-small/large
+- VoyageAIProvider: voyage-code-2
+```
+
+### コンポーネント7: Vector Store
+**目的**: ベクトルデータの管理（ローカル/クラウド対応）
+**責務**:
+- ベクターDBへの保存
+- 類似ベクトル検索
+- メタデータ管理
+- バックエンドの切り替え
+
+**インターフェース**:
+- `connect(backend, config)`: バックエンド接続
+- `upsert(id, vector, metadata)`: ベクトルの挿入/更新
+- `query(vector, topK)`: 類似検索
+- `delete(id)`: ベクトルの削除
+
+**サポートバックエンド**:
+```typescript
+// ローカルバックエンド（デフォルト）
+- MilvusBackend: Milvus standalone (Docker Compose、localhost:19530)
+- ChromaBackend: ChromaDB (Docker不要、軽量)
+- DuckDBBackend: DuckDB (SQLベース、高速)
+
+// クラウドバックエンド（オプション）
+- ZillizBackend: Zilliz Cloud (Milvusマネージドサービス)
+- QdrantBackend: Qdrant Cloud
+```
+
+### コンポーネント8: File Watcher
+**目的**: ファイルシステムの変更監視
+**責務**:
+- ファイル作成/更新/削除の検知
+- 変更イベントのデバウンス処理
+- インデックス更新のトリガー
+
+**インターフェース**:
+- `watch(paths, patterns)`: 監視開始
+- `unwatch()`: 監視停止
+- `onFileChange(callback)`: 変更イベントハンドラー
+
+## データフロー
+
+### シーケンス1: プロジェクトインデックス化
+
+```mermaid
+sequenceDiagram
+    participant CC as Claude Code
+    participant MCP as MCP Server
+    participant IS as Indexing Service
+    participant AP as AST Parser
+    participant DP as Document Parser
+    participant VS as Vector Store
+    participant VDB as Vector DB
+
+    CC->>MCP: index_project(path)
+    MCP->>IS: indexProject(path)
+
+    IS->>IS: scanFiles(path)
+
+    loop For each source file
+        IS->>AP: parseCode(file)
+        AP->>AP: generateAST()
+        AP->>AP: extractDefinitions()
+        AP-->>IS: definitions + metadata
+        IS->>VS: embed(text)
+        VS->>VDB: upsert(vector, metadata)
+    end
+
+    loop For each document file
+        IS->>DP: parseMarkdown(file)
+        DP->>DP: extractStructure()
+        DP->>DP: extractCodeBlocks()
+        DP-->>IS: structure + metadata
+        IS->>VS: embed(text)
+        VS->>VDB: upsert(vector, metadata)
+    end
+
+    IS-->>MCP: IndexResult(stats)
+    MCP-->>CC: Success + Summary
+```
+
+### シーケンス2: セマンティック検索
+
+```mermaid
+sequenceDiagram
+    participant CC as Claude Code
+    participant MCP as MCP Server
+    participant SS as Search Service
+    participant HSE as Hybrid Search Engine
+    participant BM25 as BM25 Search
+    participant VS as Vector Search
+    participant VDB as Vector DB
+
+    CC->>MCP: search_code(query)
+    MCP->>SS: search(query)
+    SS->>HSE: hybridSearch(query)
+
+    par Full-Text Search
+        HSE->>BM25: search(query)
+        BM25-->>HSE: results_ft
+    and Vector Search
+        HSE->>VS: embed(query)
+        VS->>VDB: query(vector, topK)
+        VDB-->>VS: similar_vectors
+        VS-->>HSE: results_vec
+    end
+
+    HSE->>HSE: mergeResults()
+    HSE->>HSE: rankResults()
+    HSE-->>SS: ranked_results
+    SS-->>MCP: SearchResults
+    MCP-->>CC: Formatted Results
+```
+
+### シーケンス3: インクリメンタル更新
+
+```mermaid
+sequenceDiagram
+    participant FS as File System
+    participant FW as File Watcher
+    participant IS as Indexing Service
+    participant AP as AST Parser
+    participant VS as Vector Store
+    participant VDB as Vector DB
+
+    FS->>FW: file changed event
+    FW->>FW: debounce(500ms)
+    FW->>IS: onFileChange(filePath)
+
+    alt Source Code File
+        IS->>AP: parseCode(file)
+        AP-->>IS: updated definitions
+    else Document File
+        IS->>DP: parseMarkdown(file)
+        DP-->>IS: updated structure
+    end
+
+    IS->>VS: embed(updated content)
+    VS->>VDB: upsert(id, vector, metadata)
+    VDB-->>VS: success
+    VS-->>IS: updated
+    IS->>IS: updateLocalIndex()
+```
+
+## MCPツール定義
+
+### ツール1: index_project
+
+**目的**: プロジェクト全体をインデックス化
+
+**パラメータ**:
+```json
+{
+  "rootPath": {
+    "type": "string",
+    "description": "プロジェクトのルートパス",
+    "required": true
+  },
+  "languages": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "対象言語（省略時は自動検出）",
+    "required": false
+  },
+  "excludePatterns": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "除外パターン",
+    "required": false,
+    "default": ["node_modules", ".git", "dist", "build"]
+  },
+  "includeDocuments": {
+    "type": "boolean",
+    "description": "ドキュメントファイルを含めるか",
+    "required": false,
+    "default": true
+  }
+}
+```
+
+**レスポンス**:
+```json
+{
+  "status": "success",
+  "projectId": "abc123",
+  "stats": {
+    "totalFiles": 1523,
+    "sourceFiles": 1234,
+    "documentFiles": 289,
+    "indexedSymbols": 5678,
+    "processingTime": "2m 34s",
+    "errors": []
+  }
+}
+```
+
+### ツール2: search_code
+
+**目的**: セマンティックコード検索
+
+**パラメータ**:
+```json
+{
+  "query": {
+    "type": "string",
+    "description": "検索クエリ（自然言語またはキーワード）",
+    "required": true
+  },
+  "projectId": {
+    "type": "string",
+    "description": "検索対象プロジェクトID",
+    "required": false
+  },
+  "fileTypes": {
+    "type": "array",
+    "items": { "type": "string" },
+    "description": "検索対象ファイルタイプ",
+    "required": false,
+    "enum": ["code", "document", "all"],
+    "default": "all"
+  },
+  "topK": {
+    "type": "number",
+    "description": "取得する結果数",
+    "required": false,
+    "default": 20,
+    "minimum": 1,
+    "maximum": 100
+  }
+}
+```
+
+**レスポンス**:
+```json
+{
+  "results": [
+    {
+      "filePath": "src/services/search.ts",
+      "lineStart": 42,
+      "lineEnd": 58,
+      "snippet": "async function searchCode(query: string) {...}",
+      "type": "function_definition",
+      "language": "typescript",
+      "score": 0.92,
+      "metadata": {
+        "functionName": "searchCode",
+        "parameters": ["query"],
+        "docstring": "Executes semantic code search"
+      }
+    }
+  ],
+  "totalResults": 15,
+  "queryTime": "234ms"
+}
+```
+
+### ツール3: get_symbol
+
+**目的**: シンボル（関数、クラス等）の定義と使用箇所を取得
+
+**パラメータ**:
+```json
+{
+  "symbolName": {
+    "type": "string",
+    "description": "シンボル名",
+    "required": true
+  },
+  "symbolType": {
+    "type": "string",
+    "description": "シンボルタイプ",
+    "required": false,
+    "enum": ["function", "class", "variable", "interface", "type", "all"],
+    "default": "all"
+  }
+}
+```
+
+**レスポンス**:
+```json
+{
+  "definitions": [
+    {
+      "filePath": "src/utils.ts",
+      "line": 10,
+      "snippet": "function parseConfig(path: string): Config",
+      "scope": "module"
+    }
+  ],
+  "references": [
+    {
+      "filePath": "src/main.ts",
+      "line": 25,
+      "context": "const config = parseConfig('./config.json')"
+    }
+  ]
+}
+```
+
+### ツール4: find_related_docs
+
+**目的**: コードに関連するドキュメントを検索
+
+**パラメータ**:
+```json
+{
+  "filePath": {
+    "type": "string",
+    "description": "ソースコードファイルパス",
+    "required": true
+  },
+  "symbolName": {
+    "type": "string",
+    "description": "特定のシンボル名（省略可）",
+    "required": false
+  }
+}
+```
+
+**レスポンス**:
+```json
+{
+  "relatedDocs": [
+    {
+      "docPath": "docs/api/search.md",
+      "section": "## Search API",
+      "relevance": 0.88,
+      "excerpts": [
+        "The search function accepts a query string and returns..."
+      ]
+    }
+  ]
+}
+```
+
+### ツール5: get_index_status
+
+**目的**: インデックス状況の取得
+
+**パラメータ**:
+```json
+{
+  "projectId": {
+    "type": "string",
+    "description": "プロジェクトID（省略時は全プロジェクト）",
+    "required": false
+  }
+}
+```
+
+**レスポンス**:
+```json
+{
+  "projects": [
+    {
+      "projectId": "abc123",
+      "rootPath": "/path/to/project",
+      "status": "indexed",
+      "lastIndexed": "2025-11-02T10:30:00Z",
+      "stats": {
+        "totalFiles": 1523,
+        "totalSymbols": 5678
+      }
+    }
+  ]
+}
+```
+
+### ツール6: clear_index
+
+**目的**: インデックスのクリア
+
+**パラメータ**:
+```json
+{
+  "projectId": {
+    "type": "string",
+    "description": "クリア対象プロジェクトID",
+    "required": true
+  }
+}
+```
+
+## データベーススキーマ
+
+### Vector DB コレクション: code_vectors
+
+| フィールド | 型 | 説明 |
+|-----------|------|------|
+| id | string | 一意識別子（ファイルパス:行番号） |
+| vector | float[] | 埋め込みベクトル（次元数: モデルに依存） |
+| project_id | string | プロジェクトID |
+| file_path | string | ファイルパス |
+| language | string | プログラミング言語 |
+| type | string | エントリタイプ（function, class, document等） |
+| name | string | シンボル名 |
+| line_start | int | 開始行番号 |
+| line_end | int | 終了行番号 |
+| snippet | string | コードスニペット（最大500文字） |
+| docstring | string | docstring/コメント |
+| scope | string | スコープ情報 |
+| metadata | json | 追加メタデータ |
+| created_at | timestamp | 作成日時 |
+| updated_at | timestamp | 更新日時 |
+
+### Local Index（SQLite）: inverted_index
+
+```sql
+CREATE TABLE inverted_index (
+  term TEXT NOT NULL,
+  document_id TEXT NOT NULL,
+  frequency INTEGER NOT NULL,
+  positions TEXT, -- JSON array
+  PRIMARY KEY (term, document_id)
+);
+
+CREATE INDEX idx_term ON inverted_index(term);
+CREATE INDEX idx_doc_id ON inverted_index(document_id);
+```
+
+## 技術的決定事項
+
+### 決定1: Tree-sitterの採用
+
+**検討した選択肢**:
+1. **Tree-sitter** - インクリメンタルパース、多言語対応、高速
+2. Babel/TypeScript Parser - JavaScript/TypeScript特化、既存エコシステム
+3. Language Server Protocol - 言語サーバー活用、高機能
+
+**決定**: Tree-sitter
+**根拠**:
+- 40以上の言語に対応済み、拡張性が高い
+- エラー耐性があり、部分的に壊れたコードも解析可能
+- インクリメンタルパースによる高速更新
+- Rustで実装され、パフォーマンスが優れている
+- Node.jsバインディングが公式提供
+
+### 決定2: ハイブリッド検索の採用
+
+**検討した選択肢**:
+1. **ハイブリッド検索（BM25 + Vector）** - 高精度、バランス型
+2. ベクトル検索のみ - セマンティック理解重視
+3. 全文検索のみ - 実装シンプル、軽量
+
+**決定**: ハイブリッド検索
+**根拠**:
+- キーワード完全一致とセマンティック検索の両方の利点を活用
+- Claude Contextの評価で高い精度を実証済み
+- ユーザーの検索意図に柔軟に対応可能
+- 重み付け調整により精度チューニング可能
+
+### 決定3: ベクターDBバックエンドのプラグイン化
+
+**検討した選択肢**:
+1. **プラグイン方式（複数DB対応）** - 柔軟性、ユーザー選択可能
+2. Milvus固定 - 高機能、スケーラブル
+3. ローカルDBのみ（Chroma等） - セットアップ不要、軽量
+
+**決定**: プラグイン方式
+**根拠**:
+- 大規模プロジェクトではクラウドDB（Milvus/Zilliz）が有利
+- 小規模プロジェクトではローカルDB（Chroma/Qdrant）で十分
+- 初期費用を抑えたいユーザーに配慮
+- 将来的な選択肢の拡大に対応
+
+### 決定4: Node.js実装
+
+**検討した選択肢**:
+1. **Node.js/TypeScript** - Claude Code連携容易、npm豊富
+2. Rust - 高性能、メモリ安全
+3. Python - ML/AIツール豊富、開発速度
+
+**決定**: Node.js/TypeScript
+**根拠**:
+- Claude CodeがElectronベースでNode.js環境
+- MCPのNode.js SDKが公式提供
+- Tree-sitterのNode.jsバインディング利用可
+- TypeScriptによる型安全性
+
+### 決定5: ローカルファースト設計
+
+**検討した選択肢**:
+1. **ローカル優先（デフォルトローカル、オプションでクラウド）** - プライバシー重視、柔軟性
+2. クラウド優先（デフォルトクラウド、オプションでローカル） - 高性能、セットアップ簡単
+3. クラウドのみ - 最高性能、実装シンプル
+
+**決定**: ローカルファースト設計
+**根拠**:
+- **プライバシー保護**: 企業コードや個人情報を外部に送信しない
+- **セキュリティ**: 認証情報やAPIキーの管理が不要（ローカルモード時）
+- **コスト削減**: OpenAI/VoyageAI等のAPI利用料が不要
+- **オフライン対応**: インターネット接続なしでも動作
+- **規制対応**: GDPR、企業ポリシー等の制約に対応可能
+- **ユーザー選択の尊重**: クラウドモードも選択可能で柔軟性を維持
+
+**実装アプローチ**:
+- デフォルトはローカル埋め込みモデル（Transformers.js）
+- デフォルトはローカルベクターDB（ChromaDB）
+- 設定で簡単にクラウドモードに切り替え可能
+- 初回セットアップ時にモード選択を提示
+
+## セキュリティ考慮事項
+
+### データの取り扱い
+- センシティブファイル（.env, credentials等）の自動除外
+- ベクターDBへのデータ送信前のプライバシーチェック
+- ローカル実行オプション（埋め込みモデルもローカル）の提供
+
+### 認証情報の保護
+- APIキーはOS標準のキーチェーンに保存
+- 設定ファイル内の平文保存を禁止
+- 環境変数からの読み取りサポート
+
+### 通信の暗号化
+- ベクターDBへの接続はTLS/SSL必須
+- 埋め込みAPI通信もHTTPS必須
+
+## パフォーマンス考慮事項
+
+### インデックス化の最適化
+- ファイル並列処理（ワーカースレッド活用）
+- バッチ埋め込み（複数テキストを一度にベクトル化）
+- 差分更新（変更ファイルのみ処理）
+
+### 検索の最適化
+- ローカルキャッシュ（頻出クエリ結果）
+- ベクトルDBのインデックス最適化（HNSW等）
+- 結果のページネーション
+
+### メモリ管理
+- ストリーミング処理（大規模ファイル対応）
+- 定期的なガベージコレクション
+- Vector Store接続プーリング
+
+## エラー処理
+
+### エラーカテゴリ
+1. **設定エラー**: 不正な設定、APIキー未設定
+2. **ファイルシステムエラー**: 読み取り権限なし、ファイル不存在
+3. **パースエラー**: 構文エラー、非対応言語
+4. **ネットワークエラー**: ベクターDB接続失敗、APIタイムアウト
+5. **データエラー**: インデックス破損、不整合
+
+### リカバリー戦略
+- パースエラー: 該当ファイルをスキップし、他のファイル処理続行
+- ネットワークエラー: ローカルキャッシュにフォールバック、リトライ
+- データエラー: 自動再構築提案、バックアップからの復元
+
+### ユーザー通知
+```typescript
+interface ErrorResponse {
+  error: {
+    code: string;
+    message: string;
+    details?: any;
+    suggestion?: string; // 対処方法の提案
+    recoverable: boolean;
+  }
+}
+```
+
+## 拡張性設計
+
+### プラグインインターフェース
+新しいパーサーやベクターDBの追加を容易にする
+
+```typescript
+interface ParserPlugin {
+  name: string;
+  extensions: string[];
+  parse(content: string): ParseResult;
+}
+
+interface VectorStorePlugin {
+  name: string;
+  connect(config: any): Promise<void>;
+  upsert(vectors: Vector[]): Promise<void>;
+  query(vector: number[], topK: number): Promise<QueryResult[]>;
+}
+```
+
+### 設定のスキーマ
+`.lsp-mcp.json`でカスタマイズ可能
+
+```json
+{
+  "version": "1.0",
+  "mode": "local",
+  "excludePatterns": ["node_modules", "dist", ".git", ".env"],
+  "languages": {
+    "typescript": {
+      "parser": "tree-sitter-typescript",
+      "enabled": true
+    },
+    "python": {
+      "parser": "tree-sitter-python",
+      "enabled": true
+    }
+  },
+  "vectorStore": {
+    "backend": "milvus",
+    "config": {
+      "address": "localhost:19530",
+      "standalone": true,
+      "dataPath": "./volumes"
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "local": true
+  },
+  "search": {
+    "hybridWeight": 0.3,
+    "topK": 20
+  },
+  "privacy": {
+    "blockExternalCalls": true,
+    "allowedDomains": []
+  }
+}
+```
+
+**ローカルモード設定例（デフォルト）**:
+```json
+{
+  "mode": "local",
+  "vectorStore": {
+    "backend": "milvus",
+    "config": {
+      "address": "localhost:19530",
+      "standalone": true,
+      "dataPath": "./volumes"
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2",
+    "local": true
+  },
+  "privacy": {
+    "blockExternalCalls": true
+  }
+}
+```
+
+**軽量ローカルモード設定例（Docker不要）**:
+```json
+{
+  "mode": "local",
+  "vectorStore": {
+    "backend": "chroma",
+    "config": {
+      "path": "./.lsp-mcp/chroma",
+      "persistDirectory": true
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2"
+  },
+  "privacy": {
+    "blockExternalCalls": true
+  }
+}
+```
+
+**クラウドモード設定例**:
+```json
+{
+  "mode": "cloud",
+  "vectorStore": {
+    "backend": "zilliz",
+    "config": {
+      "address": "your-instance.zilliz.com:19530",
+      "token": "${ZILLIZ_TOKEN}"
+    }
+  },
+  "embedding": {
+    "provider": "openai",
+    "model": "text-embedding-3-small",
+    "apiKey": "${OPENAI_API_KEY}"
+  },
+  "privacy": {
+    "blockExternalCalls": false
+  }
+}
+```
