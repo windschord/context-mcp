@@ -4,6 +4,7 @@ import {
   InternalError,
   NotFoundError,
   MethodNotFoundError,
+  ConfigValidationError,
   toMCPError,
 } from '../../src/utils/errors';
 
@@ -106,6 +107,23 @@ describe('Error Classes', () => {
     });
   });
 
+  describe('ConfigValidationError', () => {
+    it('should create a ConfigValidationError', () => {
+      const error = new ConfigValidationError('Invalid configuration');
+      expect(error).toBeInstanceOf(MCPError);
+      expect(error.code).toBe(-32002);
+      expect(error.message).toBe('Invalid configuration');
+    });
+
+    it('should support additional data', () => {
+      const error = new ConfigValidationError('Invalid configuration', {
+        field: 'mode',
+        value: 'invalid',
+      });
+      expect(error.data).toEqual({ field: 'mode', value: 'invalid' });
+    });
+  });
+
   describe('toMCPError', () => {
     it('should return MCPError as is', () => {
       const originalError = new InvalidParamsError('Test error');
@@ -186,6 +204,7 @@ describe('Error Classes', () => {
 
     it('should use custom error codes for application errors', () => {
       expect(new NotFoundError('test').code).toBe(-32001);
+      expect(new ConfigValidationError('test').code).toBe(-32002);
     });
   });
 });

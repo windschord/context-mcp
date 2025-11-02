@@ -84,6 +84,18 @@ export class NotFoundError extends MCPError {
 }
 
 /**
+ * Config Validation Error (カスタムエラー -32002)
+ * 設定ファイルのバリデーションエラー
+ */
+export class ConfigValidationError extends MCPError {
+  constructor(message: string, data?: unknown) {
+    super(-32002, message, data);
+    this.name = 'ConfigValidationError';
+    Object.setPrototypeOf(this, ConfigValidationError.prototype);
+  }
+}
+
+/**
  * 任意のエラーをMCPErrorに変換
  */
 export function toMCPError(error: unknown): MCPError {
