@@ -45,6 +45,20 @@ import {
   handleFindRelatedDocs,
   type FindRelatedDocsInput,
 } from '../tools/find-related-docs-tool.js';
+import {
+  TOOL_NAME as GET_INDEX_STATUS_TOOL_NAME,
+  TOOL_DESCRIPTION as GET_INDEX_STATUS_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getGetIndexStatusInputSchema,
+  handleGetIndexStatus,
+  type GetIndexStatusInput,
+} from '../tools/get-index-status-tool.js';
+import {
+  TOOL_NAME as CLEAR_INDEX_TOOL_NAME,
+  TOOL_DESCRIPTION as CLEAR_INDEX_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getClearIndexInputSchema,
+  handleClearIndex,
+  type ClearIndexInput,
+} from '../tools/clear-index-tool.js';
 import { DocCodeLinker } from '../parser/doc-code-linker.js';
 import { SymbolExtractor } from '../parser/symbol-extractor.js';
 import { MarkdownParser } from '../parser/markdown-parser.js';
@@ -180,6 +194,24 @@ export class MCPServer {
         });
       }
 
+      // get_index_statusツールを登録
+      if (this.indexingService) {
+        tools.push({
+          name: GET_INDEX_STATUS_TOOL_NAME,
+          description: GET_INDEX_STATUS_TOOL_DESCRIPTION,
+          inputSchema: getGetIndexStatusInputSchema(),
+        });
+      }
+
+      // clear_indexツールを登録
+      if (this.indexingService) {
+        tools.push({
+          name: CLEAR_INDEX_TOOL_NAME,
+          description: CLEAR_INDEX_TOOL_DESCRIPTION,
+          inputSchema: getClearIndexInputSchema(),
+        });
+      }
+
       return { tools };
     });
 
@@ -290,6 +322,52 @@ export class MCPServer {
             args as FindRelatedDocsInput,
             this.docCodeLinker,
             this.vectorStore
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // get_index_statusツール
+        if (toolName === GET_INDEX_STATUS_TOOL_NAME) {
+          if (!this.indexingService) {
+            throw new Error('Indexing service is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleGetIndexStatus(
+            args as GetIndexStatusInput,
+            this.indexingService
+          );
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // clear_indexツール
+        if (toolName === CLEAR_INDEX_TOOL_NAME) {
+          if (!this.indexingService) {
+            throw new Error('Indexing service is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleClearIndex(
+            args as ClearIndexInput,
+            this.indexingService
           );
 
           // MCPレスポンス形式で返す
