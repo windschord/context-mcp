@@ -38,3 +38,37 @@ export interface ParserError {
   column?: number;
   severity: 'error' | 'warning';
 }
+
+/**
+ * AST parse result with root node
+ */
+export interface ASTParseResult {
+  tree: any; // Tree-sitter Tree object
+  rootNode: any; // Tree-sitter Node object
+  hasError: boolean;
+  language: Language;
+}
+
+/**
+ * Node position information
+ */
+export interface NodePosition {
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+}
+
+/**
+ * Traversal callback function
+ * Returns true to continue traversal, false to stop
+ */
+export type TraversalCallback = (node: any) => boolean | void;
+
+/**
+ * Traversal options
+ */
+export interface TraversalOptions {
+  skipErrors?: boolean;
+  maxDepth?: number;
+}
