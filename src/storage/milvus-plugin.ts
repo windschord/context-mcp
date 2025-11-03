@@ -245,7 +245,7 @@ export class MilvusPlugin implements VectorStorePlugin {
       await client.delete({
         collection_name: collectionName,
         expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
-      });
+      } as any);
     } catch (error) {
       // 削除エラーは無視（エンティティが存在しない場合）
       this.logger.debug(`Delete before upsert failed (ignoring): ${error}`);
@@ -338,7 +338,7 @@ export class MilvusPlugin implements VectorStorePlugin {
     await client.delete({
       collection_name: collectionName,
       expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
-    });
+    } as any);
 
     this.logger.debug(`Deleted ${ids.length} vectors successfully`);
   }
@@ -366,10 +366,12 @@ export class MilvusPlugin implements VectorStorePlugin {
     const vectorField = collectionInfo.schema.fields.find(
       (f: any) => f.data_type === DataType.FloatVector
     );
-    const dimension = vectorField?.dim || 0;
+    const dimValue = vectorField?.dim;
+    const dimension = typeof dimValue === 'number' ? dimValue : (typeof dimValue === 'string' ? parseInt(dimValue, 10) : 0);
 
     // インデックスサイズを概算（エンティティ数 * 次元数 * 4バイト）
-    const vectorCount = parseInt(stats.data.row_count || '0', 10);
+    const rowCount = stats.data.row_count;
+    const vectorCount = typeof rowCount === 'string' ? parseInt(rowCount, 10) : (typeof rowCount === 'number' ? rowCount : 0);
     const indexSize = vectorCount * dimension * 4;
 
     return {

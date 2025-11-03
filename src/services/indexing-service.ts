@@ -334,8 +334,8 @@ export class IndexingService extends EventEmitter {
           language: language.toString(),
           type: symbol.type,
           name: symbol.name,
-          line_start: symbol.startLine,
-          line_end: symbol.endLine,
+          line_start: symbol.position.startLine,
+          line_end: symbol.position.endLine,
           scope: symbol.scope,
         });
       }

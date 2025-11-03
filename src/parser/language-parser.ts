@@ -1,10 +1,3 @@
-import Parser from 'tree-sitter';
-import TypeScript from 'tree-sitter-typescript';
-import Python from 'tree-sitter-python';
-import Go from 'tree-sitter-go';
-import Rust from 'tree-sitter-rust';
-import Java from 'tree-sitter-java';
-import Cpp from 'tree-sitter-cpp';
 import { Language, ParseResult, ExtensionMapping } from './types.js';
 import { ParserPool } from './parser-pool.js';
 
@@ -14,7 +7,6 @@ import { ParserPool } from './parser-pool.js';
 export class LanguageParser {
   private parserPool: ParserPool;
   private extensionMap: ExtensionMapping;
-  private initialized = false;
 
   constructor() {
     this.parserPool = new ParserPool({ maxPoolSize: 4 });
@@ -46,8 +38,7 @@ export class LanguageParser {
    */
   async initialize(): Promise<void> {
     // LanguageRegistryは既に初期化されているため、
-    // ここでは初期化フラグのみセット
-    this.initialized = true;
+    // ここでは何もしない
   }
 
   /**

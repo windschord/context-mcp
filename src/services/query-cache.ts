@@ -23,7 +23,7 @@ export interface CacheStats {
 
 export class QueryCache {
   private cache: LRUCache<string, number[]>;
-  private logger = new Logger('QueryCache');
+  private logger = new Logger({});
   private hits = 0;
   private misses = 0;
 

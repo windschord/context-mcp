@@ -18,7 +18,7 @@ export interface ParserPoolOptions {
 export class ParserPool {
   private pools: Map<Language, Parser[]> = new Map();
   private maxPoolSize: number;
-  private logger = new Logger('ParserPool');
+  private logger = new Logger({});
   private languageRegistry: LanguageRegistry;
 
   constructor(options: ParserPoolOptions = {}) {
@@ -57,13 +57,9 @@ export class ParserPool {
       this.pools.set(language, pool);
       this.logger.debug(`Released parser back to pool for language: ${language}`);
     } else {
-      // Pool is full, dispose the parser to prevent memory leak
-      try {
-        parser.delete();
-        this.logger.debug(`Disposed parser (pool full) for language: ${language}`);
-      } catch (error) {
-        this.logger.warn(`Failed to dispose parser for language: ${language}`, error);
-      }
+      // Pool is full, just discard the parser
+      // Note: Tree-sitter parsers in Node.js don't have an explicit dispose method
+      this.logger.debug(`Discarded parser (pool full) for language: ${language}`);
     }
   }
 
@@ -97,15 +93,8 @@ export class ParserPool {
    * Clear all parsers from the pool and dispose them.
    */
   clear(): void {
-    for (const [language, pool] of this.pools.entries()) {
-      for (const parser of pool) {
-        try {
-          parser.delete();
-        } catch (error) {
-          this.logger.warn(`Failed to dispose parser for language: ${language}`, error);
-        }
-      }
-    }
+    // Clear all pools
+    // Note: Tree-sitter parsers in Node.js don't have an explicit dispose method
     this.pools.clear();
     this.logger.info('Parser pool cleared');
   }

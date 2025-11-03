@@ -25,7 +25,7 @@ export interface CachedEmbeddingEngineOptions {
  */
 export class CachedEmbeddingEngine implements EmbeddingEngine {
   private cache: QueryCache;
-  private logger = new Logger('CachedEmbeddingEngine');
+  private logger = new Logger({});
 
   constructor(
     private engine: EmbeddingEngine,
@@ -33,6 +33,21 @@ export class CachedEmbeddingEngine implements EmbeddingEngine {
   ) {
     this.cache = new QueryCache(options.cacheOptions);
     this.logger.info('Cached embedding engine initialized');
+  }
+
+  /**
+   * エンジンの初期化
+   */
+  async initialize(): Promise<void> {
+    await this.engine.initialize();
+  }
+
+  /**
+   * リソースの解放
+   */
+  async dispose(): Promise<void> {
+    this.clearCache();
+    await this.engine.dispose();
   }
 
   /**

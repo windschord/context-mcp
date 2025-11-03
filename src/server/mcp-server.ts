@@ -62,6 +62,7 @@ import {
 import { DocCodeLinker } from '../parser/doc-code-linker.js';
 import { SymbolExtractor } from '../parser/symbol-extractor.js';
 import { MarkdownParser } from '../parser/markdown-parser.js';
+import { LanguageParser } from '../parser/language-parser.js';
 
 export class MCPServer {
   private server: Server;
@@ -92,7 +93,8 @@ export class MCPServer {
 
     // DocCodeLinkerを初期化（SymbolExtractorとMarkdownParserが必要）
     if (vectorStore) {
-      const symbolExtractor = new SymbolExtractor();
+      const languageParser = new LanguageParser();
+      const symbolExtractor = new SymbolExtractor(languageParser);
       const markdownParser = new MarkdownParser();
       this.docCodeLinker = new DocCodeLinker(symbolExtractor, markdownParser);
     }
