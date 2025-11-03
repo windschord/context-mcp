@@ -7,9 +7,9 @@
  */
 
 import Parser from 'tree-sitter';
-import { Language } from './types';
-import { LanguageRegistry } from './language-registry';
-import { Logger } from '../utils/logger';
+import { Language } from './types.js';
+import { LanguageRegistry } from './language-registry.js';
+import { Logger } from '../utils/logger.js';
 
 export interface ParserPoolOptions {
   maxPoolSize?: number;
