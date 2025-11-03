@@ -58,12 +58,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/lsp-mcp.git"
+    "url": "https://github.com/windschord/lsp-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/lsp-mcp/issues"
+    "url": "https://github.com/windschord/lsp-mcp/issues"
   },
-  "homepage": "https://github.com/your-org/lsp-mcp#readme",
+  "homepage": "https://github.com/windschord/lsp-mcp#readme",
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@types/better-sqlite3": "^7.6.13",

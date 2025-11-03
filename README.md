@@ -74,22 +74,22 @@ GitHubリポジトリから直接実行できます:
 
 ```bash
 # GitHubリポジトリから直接実行
-npx github:yourusername/lsp-mcp --help
-npx github:yourusername/lsp-mcp --version
-npx github:yourusername/lsp-mcp
+npx github:windschord/lsp-mcp --help
+npx github:windschord/lsp-mcp --version
+npx github:windschord/lsp-mcp
 
 # または完全なURL形式
-npx git+https://github.com/yourusername/lsp-mcp.git
+npx git+https://github.com/windschord/lsp-mcp.git
 
 # 特定のブランチ・タグから実行
-npx github:yourusername/lsp-mcp#main
-npx github:yourusername/lsp-mcp#v0.1.0
+npx github:windschord/lsp-mcp#main
+npx github:windschord/lsp-mcp#v0.1.0
 ```
 
 ### ローカルインストール（開発時）
 
 ```bash
-git clone https://github.com/yourusername/lsp-mcp.git
+git clone https://github.com/windschord/lsp-mcp.git
 cd lsp-mcp
 npm install
 npm run build
@@ -145,13 +145,13 @@ lsp-mcp index . --languages typescript,python
 
 ```bash
 # GitHubリポジトリから直接使用（推奨）
-claude add lsp-mcp npx github:yourusername/lsp-mcp
+claude add lsp-mcp npx github:windschord/lsp-mcp
 
 # ローカル開発時
 claude add lsp-mcp node /path/to/lsp_mcp/bin/lsp-mcp.js
 
 # 環境変数を指定する場合
-claude add lsp-mcp npx github:yourusername/lsp-mcp --env LSP_MCP_MODE=local --env LOG_LEVEL=INFO
+claude add lsp-mcp npx github:windschord/lsp-mcp --env LSP_MCP_MODE=local --env LOG_LEVEL=INFO
 ```
 
 設定後、Claude Codeを再起動してください。
@@ -167,7 +167,7 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
   "mcpServers": {
     "lsp-mcp": {
       "command": "npx",
-      "args": ["github:yourusername/lsp-mcp"],
+      "args": ["github:windschord/lsp-mcp"],
       "env": {
         "LOG_LEVEL": "INFO"
       }
@@ -430,8 +430,8 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 ## サポート
 
-- [Issue Tracker](https://github.com/yourusername/lsp-mcp/issues)
-- [ディスカッション](https://github.com/yourusername/lsp-mcp/discussions)
+- [Issue Tracker](https://github.com/windschord/lsp-mcp/issues)
+- [ディスカッション](https://github.com/windschord/lsp-mcp/discussions)
 - [ドキュメント](docs/)
 
 ## リンク
