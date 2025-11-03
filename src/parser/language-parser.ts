@@ -6,15 +6,18 @@ import Rust from 'tree-sitter-rust';
 import Java from 'tree-sitter-java';
 import Cpp from 'tree-sitter-cpp';
 import { Language, ParseResult, ExtensionMapping } from './types.js';
+import { ParserPool } from './parser-pool.js';
 
 /**
  * LanguageParser: Tree-sitterを使用してソースコードをパースするクラス
  */
 export class LanguageParser {
-  private parsers: Map<Language, Parser> = new Map();
+  private parserPool: ParserPool;
   private extensionMap: ExtensionMapping;
+  private initialized = false;
 
   constructor() {
+    this.parserPool = new ParserPool({ maxPoolSize: 4 });
     this.extensionMap = {
       '.ts': Language.TypeScript,
       '.tsx': Language.TypeScript,
@@ -38,46 +41,13 @@ export class LanguageParser {
 
   /**
    * パーサーの初期化
+   * Note: ParserPoolを使用する場合、事前の初期化は不要です。
+   * パーサーはオンデマンドで作成されます。
    */
   async initialize(): Promise<void> {
-    // TypeScript/JavaScript parser
-    const tsParser = new Parser();
-    tsParser.setLanguage(TypeScript.typescript as any);
-    this.parsers.set(Language.TypeScript, tsParser);
-
-    const jsParser = new Parser();
-    jsParser.setLanguage(TypeScript.typescript as any); // TypeScript parser handles JS too
-    this.parsers.set(Language.JavaScript, jsParser);
-
-    // Python parser
-    const pythonParser = new Parser();
-    pythonParser.setLanguage(Python as any);
-    this.parsers.set(Language.Python, pythonParser);
-
-    // Go parser
-    const goParser = new Parser();
-    goParser.setLanguage(Go as any);
-    this.parsers.set(Language.Go, goParser);
-
-    // Rust parser
-    const rustParser = new Parser();
-    rustParser.setLanguage(Rust as any);
-    this.parsers.set(Language.Rust, rustParser);
-
-    // Java parser
-    const javaParser = new Parser();
-    javaParser.setLanguage(Java as any);
-    this.parsers.set(Language.Java, javaParser);
-
-    // C parser
-    const cParser = new Parser();
-    cParser.setLanguage(Cpp as any);
-    this.parsers.set(Language.C, cParser);
-
-    // C++ parser
-    const cppParser = new Parser();
-    cppParser.setLanguage(Cpp as any);
-    this.parsers.set(Language.CPP, cppParser);
+    // LanguageRegistryは既に初期化されているため、
+    // ここでは初期化フラグのみセット
+    this.initialized = true;
   }
 
   /**
@@ -100,7 +70,9 @@ export class LanguageParser {
    * 指定した言語のパーサーが存在するか確認
    */
   hasParser(language: Language): boolean {
-    return this.parsers.has(language);
+    // ParserPoolはすべてのLanguageに対応しているため、
+    // Unknownでなければtrueを返す
+    return language !== Language.Unknown;
   }
 
   /**
@@ -111,18 +83,31 @@ export class LanguageParser {
       throw new Error('Code cannot be null or undefined');
     }
 
-    const parser = this.parsers.get(language);
-    if (!parser) {
-      throw new Error(`No parser available for language: ${language}`);
+    if (language === Language.Unknown) {
+      throw new Error('Cannot parse code with Unknown language');
     }
 
-    const tree = parser.parse(code);
-    const hasError = tree.rootNode.hasError;
+    // ParserPoolからパーサーを取得して使用
+    const parser = this.parserPool.acquire(language);
+    try {
+      const tree = parser.parse(code);
+      const hasError = tree.rootNode.hasError;
 
-    return {
-      tree,
-      hasError,
-      language,
-    };
+      return {
+        tree,
+        hasError,
+        language,
+      };
+    } finally {
+      // パーサーをプールに戻す
+      this.parserPool.release(language, parser);
+    }
+  }
+
+  /**
+   * ParserPoolのクリーンアップ
+   */
+  cleanup(): void {
+    this.parserPool.clear();
   }
 }
