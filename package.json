@@ -35,7 +35,8 @@
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build && npm test",
     "version": "node scripts/update-changelog.js && git add CHANGELOG.md",
-    "prepare": "husky install || true"
+    "prepare": "npm run build || true",
+    "postinstall": "husky install || true"
   },
   "keywords": [
     "mcp",

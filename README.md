@@ -73,14 +73,18 @@ LSP-MCPは以下の6つのMCPツールを提供します:
 インストール不要で直接実行できます:
 
 ```bash
-# ヘルプを表示
+# npmレジストリから実行（パブリッシュ後）
 npx lsp-mcp --help
-
-# バージョンを確認
 npx lsp-mcp --version
-
-# MCPサーバーとして起動（Claude Code統合用）
 npx lsp-mcp
+
+# GitHubリポジトリから直接実行
+npx github:yourusername/lsp-mcp
+npx git+https://github.com/yourusername/lsp-mcp.git
+
+# 特定のブランチ・タグから実行
+npx github:yourusername/lsp-mcp#main
+npx github:yourusername/lsp-mcp#v0.1.0
 ```
 
 ### グローバルインストール
@@ -147,10 +151,13 @@ lsp-mcp index . --languages typescript,python
 #### 方法A: `claude add`コマンドを使用（最も簡単、推奨）
 
 ```bash
-# npx経由で使用する場合
+# npmレジストリから使用する場合（パブリッシュ後）
 claude add lsp-mcp npx -y lsp-mcp
 
-# または、ローカル開発時
+# GitHubリポジトリから直接使用する場合
+claude add lsp-mcp npx github:yourusername/lsp-mcp
+
+# ローカル開発時
 claude add lsp-mcp node /path/to/lsp_mcp/bin/lsp-mcp.js
 
 # 環境変数を指定する場合
@@ -163,7 +170,7 @@ claude add lsp-mcp npx -y lsp-mcp --env LSP_MCP_MODE=local --env LOG_LEVEL=INFO
 
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
-##### npx経由で使用（推奨）
+##### npmレジストリから使用（推奨）
 
 ```json
 {
@@ -179,7 +186,23 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 }
 ```
 
-#### グローバルインストール済みの場合
+##### GitHubリポジトリから直接使用
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:yourusername/lsp-mcp"],
+      "env": {
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+##### グローバルインストール済みの場合
 
 ```json
 {
