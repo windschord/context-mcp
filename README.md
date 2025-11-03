@@ -144,9 +144,26 @@ lsp-mcp index . --languages typescript,python
 
 ### 1. MCP設定ファイルに追加
 
-Claude Codeの設定ファイル（`~/.config/claude/mcp_settings.json`）に以下を追加:
+#### 方法A: `claude add`コマンドを使用（最も簡単、推奨）
 
-#### npx経由で使用（推奨）
+```bash
+# npx経由で使用する場合
+claude add lsp-mcp npx -y lsp-mcp
+
+# または、ローカル開発時
+claude add lsp-mcp node /path/to/lsp_mcp/bin/lsp-mcp.js
+
+# 環境変数を指定する場合
+claude add lsp-mcp npx -y lsp-mcp --env LSP_MCP_MODE=local --env LOG_LEVEL=INFO
+```
+
+設定後、Claude Codeを再起動してください。
+
+#### 方法B: 設定ファイルを直接編集
+
+Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
+
+##### npx経由で使用（推奨）
 
 ```json
 {
@@ -178,11 +195,21 @@ Claude Codeの設定ファイル（`~/.config/claude/mcp_settings.json`）に以
 }
 ```
 
-### 2. Claude Codeを再起動
+### 2. 設定の確認
+
+```bash
+# 追加されたサーバーを確認
+claude list
+
+# 設定ファイルを直接確認（macOS）
+cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+### 3. Claude Codeを再起動
 
 設定を反映させるため、Claude Codeを再起動します。
 
-### 3. 使用例
+### 4. 使用例
 
 Claude Codeで以下のように指示します:
 
