@@ -6,6 +6,11 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 interface GeneratorConfig {
   outputDir: string;
@@ -602,7 +607,8 @@ This project is used for:
 }
 
 // Execute if run directly
-if (require.main === module) {
+const isMainModule = import.meta.url === `file://${process.argv[1]}`;
+if (isMainModule) {
   generateProject()
     .then(() => {
       console.log('\n🎉 Done!');
