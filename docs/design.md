@@ -25,7 +25,7 @@ graph TD
     G --> N[Vector DB Client]
     F --> O[Inverted Index]
 
-    N --> P[(Milvus/Qdrant/Chroma)]
+    N --> P[(Milvus/Zilliz Cloud)]
     O --> Q[(Local Index)]
 
     style A fill:#e1f5ff
@@ -205,12 +205,9 @@ where α = 0.3 (デフォルト、設定可能)
 ```typescript
 // ローカルバックエンド（デフォルト）
 - MilvusBackend: Milvus standalone (Docker Compose、localhost:19530)
-- ChromaBackend: ChromaDB (Docker不要、軽量)
-- DuckDBBackend: DuckDB (SQLベース、高速)
 
 // クラウドバックエンド（オプション）
 - ZillizBackend: Zilliz Cloud (Milvusマネージドサービス)
-- QdrantBackend: Qdrant Cloud
 ```
 
 ### コンポーネント8: File Watcher
@@ -639,16 +636,17 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 ### 決定3: ベクターDBバックエンドのプラグイン化
 
 **検討した選択肢**:
-1. **プラグイン方式（複数DB対応）** - 柔軟性、ユーザー選択可能
-2. Milvus固定 - 高機能、スケーラブル
-3. ローカルDBのみ（Chroma等） - セットアップ不要、軽量
+1. Milvus（standalone/クラウド両対応） - 高機能、スケーラブル、統一された体験
+2. 複数DB対応（プラグイン方式） - 柔軟性高いが、メンテナンスコスト大
+3. ローカルDBのみ（ChromaやDuckDB等） - セットアップ容易だが機能制限
 
-**決定**: プラグイン方式
+**決定**: Milvusのみサポート（standalone + Zilliz Cloud）
 **根拠**:
-- 大規模プロジェクトではクラウドDB（Milvus/Zilliz）が有利
-- 小規模プロジェクトではローカルDB（Chroma/Qdrant）で十分
-- 初期費用を抑えたいユーザーに配慮
-- 将来的な選択肢の拡大に対応
+- コードベースの簡潔性とメンテナンス性を優先
+- Milvus standaloneでローカル実行可能（Docker Compose）
+- Zilliz Cloudでクラウド実行可能（シームレスな移行パス）
+- 高性能で安定しており、豊富なドキュメント
+- プラグインインターフェースは残し、将来の拡張性を確保
 
 ### 決定4: Node.js実装
 
@@ -682,9 +680,10 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 
 **実装アプローチ**:
 - デフォルトはローカル埋め込みモデル（Transformers.js）
-- デフォルトはローカルベクターDB（ChromaDB）
-- 設定で簡単にクラウドモードに切り替え可能
+- デフォルトはローカルベクターDB（Milvus standalone）
+- 設定で簡単にクラウドモードに切り替え可能（Zilliz Cloud）
 - 初回セットアップ時にモード選択を提示
+- Docker Composeで簡単にMilvus standaloneを起動
 
 ## セキュリティ考慮事項
 
@@ -831,15 +830,15 @@ interface VectorStorePlugin {
 }
 ```
 
-**軽量ローカルモード設定例（Docker不要）**:
+**ローカルモード設定例**:
 ```json
 {
   "mode": "local",
   "vectorStore": {
-    "backend": "chroma",
+    "backend": "milvus",
     "config": {
-      "path": "./.lsp-mcp/chroma",
-      "persistDirectory": true
+      "address": "localhost:19530",
+      "standalone": true
     }
   },
   "embedding": {
