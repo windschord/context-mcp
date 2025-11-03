@@ -42,11 +42,32 @@
 - **ベクターDB**: Milvus standalone（Docker Compose）
 - **埋め込み**: Transformers.js（ローカル）
 - **必要環境**: Docker & Docker Compose
+- **セットアップ**: 静的なdocker-compose.ymlから手動起動
 
 ### クラウドモード
 - **ベクターDB**: Zilliz Cloud
 - **埋め込み**: OpenAI API / VoyageAI API
 - **必要環境**: インターネット接続
+
+## Milvus起動方法の設計変更
+
+### 変更前（動的アプローチ）
+- Docker Composeファイルを動的にダウンロード
+- LSP-MCPがMilvusコンテナの起動・停止を制御
+- `docker-manager.ts`で自動管理
+
+### 変更後（静的アプローチ）- 推奨
+- `docker-compose.yml`をリポジトリに静的に含める
+- ユーザーが手動で`docker-compose up -d`を実行
+- LSP-MCPは既に起動しているMilvusに接続するだけ
+- `docker-manager.ts`は削除
+
+### 変更の理由
+1. **シンプルさ**: コードが簡潔になり、メンテナンスが容易
+2. **明示性**: ユーザーが明示的にMilvusを管理できる
+3. **トラブルシューティング**: 問題が発生した際の切り分けが容易
+4. **Docker標準**: 一般的なDocker Composeの使い方に準拠
+5. **コードベース削減**: docker-manager.ts（約200行）を削除可能
 
 ## 修正対象ドキュメント
 
@@ -95,11 +116,16 @@
 ### 削除するファイル
 - src/storage/chroma-plugin.ts
 - tests/storage/chroma-plugin.test.ts
+- src/storage/docker-manager.ts
 
 ### 修正するファイル
 - src/storage/index.ts（エクスポートからChromaPluginを削除）
+- src/storage/milvus-plugin.ts（docker-managerの使用を削除、接続のみに簡素化）
 - src/config/types.ts（vectorStore.backendからchromaを削除）
 - package.json（chromadb依存関係を削除）
+
+### 追加するファイル
+- docker-compose.yml（Milvus standalone用、リポジトリルートに配置）
 
 ## ユーザーへの影響
 
