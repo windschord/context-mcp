@@ -111,7 +111,6 @@ export class ConfigManager {
     // vectorStore.backend のバリデーション
     const validBackends: VectorStoreBackend[] = [
       'milvus',
-      'chroma',
       'zilliz',
       'qdrant',
     ];

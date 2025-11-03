@@ -1,22 +1,142 @@
 import { HybridSearchEngine } from '../../src/services/hybrid-search-engine';
 import { BM25Engine } from '../../src/storage/bm25-engine';
-import { ChromaPlugin } from '../../src/storage/chroma-plugin';
-import type { VectorStorePlugin } from '../../src/storage/types';
+import type { VectorStorePlugin, Vector, QueryResult, CollectionStats } from '../../src/storage/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+
+/**
+ * テスト用モックベクターストアプラグイン
+ */
+class MockVectorStorePlugin implements VectorStorePlugin {
+  readonly name = 'mock';
+  private collections: Map<string, { dimension: number; vectors: Vector[] }> = new Map();
+
+  async connect(): Promise<void> {
+    // モックなので何もしない
+  }
+
+  async disconnect(): Promise<void> {
+    this.collections.clear();
+  }
+
+  async createCollection(name: string, dimension: number): Promise<void> {
+    if (this.collections.has(name)) {
+      throw new Error(`Collection ${name} already exists`);
+    }
+    this.collections.set(name, { dimension, vectors: [] });
+  }
+
+  async deleteCollection(name: string): Promise<void> {
+    this.collections.delete(name);
+  }
+
+  async upsert(collectionName: string, vectors: Vector[]): Promise<void> {
+    const collection = this.collections.get(collectionName);
+    if (!collection) {
+      throw new Error(`Collection ${collectionName} does not exist`);
+    }
+
+    // 既存のベクトルを削除してから追加（upsert動作）
+    vectors.forEach(v => {
+      const index = collection.vectors.findIndex(existing => existing.id === v.id);
+      if (index >= 0) {
+        collection.vectors[index] = v;
+      } else {
+        collection.vectors.push(v);
+      }
+    });
+  }
+
+  async query(
+    collectionName: string,
+    vector: number[],
+    topK: number,
+    filter?: Record<string, unknown>
+  ): Promise<QueryResult[]> {
+    const collection = this.collections.get(collectionName);
+    if (!collection) {
+      throw new Error(`Collection ${collectionName} does not exist`);
+    }
+
+    // コサイン類似度を計算
+    const results = collection.vectors.map(v => {
+      // フィルタチェック
+      if (filter) {
+        for (const [key, value] of Object.entries(filter)) {
+          if (v.metadata?.[key] !== value) {
+            return null;
+          }
+        }
+      }
+
+      const similarity = this.cosineSimilarity(vector, v.vector);
+      return {
+        id: v.id,
+        score: similarity,
+        metadata: v.metadata,
+      };
+    }).filter((r): r is QueryResult => r !== null);
+
+    // スコアでソートしてtopKを返す
+    return results.sort((a, b) => b.score - a.score).slice(0, topK);
+  }
+
+  async delete(collectionName: string, ids: string[]): Promise<void> {
+    const collection = this.collections.get(collectionName);
+    if (!collection) {
+      throw new Error(`Collection ${collectionName} does not exist`);
+    }
+
+    collection.vectors = collection.vectors.filter(v => !ids.includes(v.id));
+  }
+
+  async getStats(collectionName: string): Promise<CollectionStats> {
+    const collection = this.collections.get(collectionName);
+    if (!collection) {
+      throw new Error(`Collection ${collectionName} does not exist`);
+    }
+
+    return {
+      vectorCount: collection.vectors.length,
+      dimension: collection.dimension,
+      indexSize: collection.vectors.length * collection.dimension * 4,
+    };
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (a.length !== b.length) {
+      throw new Error('Vectors must have the same dimension');
+    }
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+
+    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+    if (denominator === 0) {
+      return 0;
+    }
+
+    return dotProduct / denominator;
+  }
+}
 
 describe('HybridSearchEngine', () => {
   let hybridEngine: HybridSearchEngine;
   let bm25Engine: BM25Engine;
   let vectorStore: VectorStorePlugin;
   let testDbPath: string;
-  let testChromaPath: string;
 
   beforeEach(async () => {
     // テスト用の一時ファイルパスを作成
     const timestamp = Date.now();
     testDbPath = path.join(process.cwd(), './tmp', `test-hybrid-bm25-${timestamp}.db`);
-    testChromaPath = path.join(process.cwd(), './tmp', `test-hybrid-chroma-${timestamp}`);
 
     await fs.mkdir(path.dirname(testDbPath), { recursive: true });
 
@@ -24,11 +144,11 @@ describe('HybridSearchEngine', () => {
     bm25Engine = new BM25Engine(testDbPath);
     await bm25Engine.initialize();
 
-    // ベクターストア（Chroma）を初期化
-    vectorStore = new ChromaPlugin();
+    // ベクターストア（モック）を初期化
+    vectorStore = new MockVectorStorePlugin();
     await vectorStore.connect({
-      backend: 'chroma',
-      config: { path: testChromaPath },
+      backend: 'mock',
+      config: {},
     });
 
     // ハイブリッド検索エンジンを初期化（デフォルトα=0.3）
@@ -42,7 +162,6 @@ describe('HybridSearchEngine', () => {
     // テストファイルを削除
     try {
       await fs.unlink(testDbPath);
-      await fs.rm(testChromaPath, { recursive: true, force: true });
     } catch (error) {
       // ファイルが存在しない場合は無視
     }

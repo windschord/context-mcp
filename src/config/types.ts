@@ -11,7 +11,7 @@ export type Mode = 'local' | 'cloud';
 /**
  * ベクターDBバックエンド
  */
-export type VectorStoreBackend = 'milvus' | 'chroma' | 'zilliz' | 'qdrant';
+export type VectorStoreBackend = 'milvus' | 'zilliz' | 'qdrant';
 
 /**
  * 埋め込みプロバイダー

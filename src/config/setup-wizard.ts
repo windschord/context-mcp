@@ -108,14 +108,6 @@ export class SetupWizard {
           },
         };
 
-      case 'chroma':
-        return {
-          backend: 'chroma' as const,
-          config: {
-            path: './.lsp-mcp/chroma',
-          },
-        };
-
       case 'zilliz':
         return {
           backend: 'zilliz' as const,
@@ -198,7 +190,7 @@ export class SetupWizard {
       throw new Error(`無効なモードです: ${options.mode}`);
     }
 
-    const validBackends: VectorStoreBackend[] = ['milvus', 'chroma', 'zilliz', 'qdrant'];
+    const validBackends: VectorStoreBackend[] = ['milvus', 'zilliz', 'qdrant'];
     if (!validBackends.includes(options.vectorBackend)) {
       throw new Error(`無効なベクターDBバックエンドです: ${options.vectorBackend}`);
     }
@@ -264,10 +256,10 @@ export class SetupWizard {
   async usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): Promise<LspMcpConfig> {
     switch (preset) {
       case 'quickstart':
-        // Docker不要の最速セットアップ
+        // ローカルセットアップ（Milvus standaloneを使用）
         return this.generateConfig({
           mode: 'local',
-          vectorBackend: 'chroma',
+          vectorBackend: 'milvus',
           embeddingProvider: 'transformers',
         });
 

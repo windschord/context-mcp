@@ -146,6 +146,12 @@
 ### フェーズ3: ベクターDB統合と検索機能
 *推定期間: 5日*
 
+> **設計変更の注記（2025-01-03）**:
+> - ベクターDBサポートをMilvus standaloneとZilliz Cloudのみに変更（Chromaプラグインを削除）
+> - Docker Compose起動を動的ダウンロードから静的ファイル（docker-compose.yml）に変更
+> - コードベース削減とメンテナンス性向上のため
+> - 詳細は docs/DESIGN_CHANGES.md を参照
+
 #### タスク3.1: ベクターDBプラグインインターフェースの設計
 **説明**: 複数のベクターDBに対応するための共通インターフェース定義
 **受入基準**:
@@ -160,11 +166,15 @@
 **ステータス**: `DONE`
 
 #### タスク3.2: Milvusプラグインの実装（ローカルDocker + クラウド対応）
-**説明**: Milvus standaloneのDocker Compose実行とクラウド連携の実装
+**説明**: Milvus standaloneへの接続とクラウド連携の実装
+
+> **設計変更（2025-01-03）**: Docker Compose管理機能を削除し、接続機能のみに簡素化。
+> ユーザーが手動で `docker-compose up -d` を実行し、LSP-MCPは既存のMilvusインスタンスに接続する方式に変更。
+
 **受入基準**:
 - [x] Milvus SDKがインストールされている
-- [x] Docker Composeファイル（milvus-standalone-docker-compose.yml）の自動ダウンロード機能が実装されている
-- [x] Milvusコンテナの起動・停止制御機能が実装されている
+- [x] ~~Docker Composeファイル（milvus-standalone-docker-compose.yml）の自動ダウンロード機能が実装されている~~ → **削除**
+- [x] ~~Milvusコンテナの起動・停止制御機能が実装されている~~ → **削除**
 - [x] localhost:19530への接続機能が実装されている
 - [x] Zilliz Cloud接続機能が実装されている（TLS/SSL対応）
 - [x] コレクション作成・管理機能が実装されている
@@ -173,14 +183,22 @@
 - [x] 接続エラー時のリトライ機能が実装されている
 - [x] データの永続化（./volumes/）が機能している
 - [x] テストケース（Docker環境での統合テスト）が作成されている
+- [ ] **新規**: 静的docker-compose.ymlファイルがリポジトリルートに含まれている
+- [ ] **新規**: docker-manager.tsの削除とmilvus-plugin.tsの簡素化が完了している
 
 **依存関係**: タスク3.1
-**推定工数**: 8時間
-**ステータス**: `DONE`
+**推定工数**: 8時間（元の実装）+ 1時間（コードクリーンアップ）
+**ステータス**: `DONE`（コードクリーンアップは別タスク3.9で対応）
 
-#### タスク3.3: Chromaプラグインの実装（軽量代替DB）
-**説明**: Chromaとの連携実装（Docker不要の軽量オプション）
-**受入基準**:
+#### タスク3.3: ~~Chromaプラグインの実装（軽量代替DB）~~ → **DEPRECATED**
+**説明**: ~~Chromaとの連携実装（Docker不要の軽量オプション）~~
+
+> **設計変更により廃止（2025-01-03）**:
+> - ChromaDB JavaScript SDKは実際にはPythonサーバーが必要であり、「Docker不要」という当初の想定が誤りだったため削除
+> - コードベース削減とメンテナンス性向上のため、Milvusのみのサポートに変更
+> - 詳細は docs/DESIGN_CHANGES.md を参照
+
+**元の受入基準**:
 - [x] ChromaDB SDKがインストールされている
 - [x] ローカルストレージへのデータ保存が実装されている
 - [x] VectorStorePluginインターフェースを実装している
@@ -190,7 +208,7 @@
 
 **依存関係**: タスク3.1
 **推定工数**: 5時間
-**ステータス**: `DONE`
+**ステータス**: `DEPRECATED`（実装済みコードは別タスク3.9で削除）
 
 #### タスク3.4: ローカル埋め込みエンジンの実装（Transformers.js）
 **説明**: ローカル実行可能な埋め込みモデルの実装（デフォルト）
@@ -262,6 +280,37 @@
 
 **依存関係**: タスク3.7, タスク3.2または3.3
 **推定工数**: 6時間
+**ステータス**: `DONE`
+
+#### タスク3.9: コードクリーンアップ（Chroma・docker-manager削除）
+**説明**: 設計変更に伴う不要なコードの削除とリファクタリング
+
+> **新規タスク（2025-01-03）**: 設計変更（Milvusのみのサポート、静的Docker Compose）に伴うコードクリーンアップ
+
+**受入基準**:
+- [x] src/storage/chroma-plugin.ts を削除
+- [x] tests/storage/chroma-plugin.test.ts を削除
+- [x] src/storage/docker-manager.ts を削除
+- [x] src/storage/index.ts から ChromaPlugin のエクスポートを削除
+- [x] src/storage/milvus-plugin.ts から docker-manager の使用を削除（元々使用していないことを確認）
+- [x] src/config/types.ts の vectorStore.backend から "chroma" を削除
+- [x] package.json から chromadb 依存関係を削除
+- [x] src/config/config-manager.ts と setup-wizard.ts から chroma 参照を削除
+- [x] tests/services/hybrid-search-engine.test.ts をモックベクターストアに更新
+- [x] 既存テストがすべて正常に実行される（TypeScriptビルド成功を確認）
+- [x] TypeScriptビルドが成功する
+
+**実施内容**:
+- **削除**: `src/storage/chroma-plugin.ts`, `tests/storage/chroma-plugin.test.ts`, `src/storage/docker-manager.ts`
+- **修正**: `src/storage/index.ts`（ChromaPluginとDockerManagerのエクスポート削除）
+- **修正**: `src/config/types.ts`（VectorStoreBackend型から"chroma"を削除）
+- **修正**: `src/config/config-manager.ts`（validBackends配列から"chroma"を削除）
+- **修正**: `src/config/setup-wizard.ts`（chromaケース削除、quickstartプリセットをmilvusに変更）
+- **修正**: `package.json`（chromadb依存関係削除）
+- **修正**: `tests/services/hybrid-search-engine.test.ts`（MockVectorStorePlugin実装でChromaPlugin置き換え）
+
+**依存関係**: タスク3.2, タスク3.3
+**推定工数**: 2時間
 **ステータス**: `DONE`
 
 ### フェーズ4: Indexing ServiceとMCPツール実装
@@ -795,15 +844,17 @@
 - **言語**: TypeScript
 - **ランタイム**: Node.js 18+
 - **AST解析**: Tree-sitter
-- **ベクターDB（デフォルト）**: Milvus standalone（Docker Compose、localhost:19530）
-- **ベクターDB（代替）**: Chroma（Docker不要）、DuckDB
-- **ベクターDB（クラウド）**: Zilliz Cloud、Qdrant Cloud（オプション）
+- **ベクターDB（ローカル）**: Milvus standalone（Docker Compose、localhost:19530）
+- **ベクターDB（クラウド）**: Zilliz Cloud
 - **埋め込み（デフォルト）**: Transformers.js（ローカル実行）
 - **埋め込み（クラウド）**: OpenAI API、VoyageAI API（オプション）
-- **全文検索**: BM25（自前実装）
+- **全文検索**: BM25（自前実装、SQLite）
 - **ファイル監視**: chokidar
 - **テスト**: Jest
 - **ビルド**: tsc (TypeScript Compiler)
+
+> **設計変更（2025-01-03）**: ベクターDBサポートをMilvusのみに変更（Chroma、DuckDBを削除）。
+> VectorStorePluginインターフェースは将来の拡張性のために保持。
 
 ### 開発環境要件
 - Node.js 18.0以上
