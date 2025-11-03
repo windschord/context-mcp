@@ -535,4 +535,134 @@ describe('ASTEngine', () => {
       expect(nodes.length).toBeLessThan(100);
     });
   });
+
+  describe('Edge cases and additional functionality', () => {
+    test('should handle empty code', () => {
+      const result = astEngine.parseToAST('', Language.TypeScript);
+      expect(result).toBeDefined();
+      expect(result.rootNode).toBeDefined();
+    });
+
+    test('should handle whitespace-only code', () => {
+      const result = astEngine.parseToAST('   \n  \t  \n   ', Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.rootNode).toBeDefined();
+    });
+
+    test('should handle single line code', () => {
+      const result = astEngine.parseToAST('const x = 1;', Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.hasError).toBe(false);
+    });
+
+    test('should handle Unknown language gracefully', () => {
+      const result = astEngine.parseToAST('some code', Language.Unknown);
+      expect(result).toBeDefined();
+    });
+
+    test('should find nodes by type', () => {
+      const code = 'function a() {} function b() {} function c() {}';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const functions = astEngine.findNodesByTypes(result.rootNode, ['function_declaration']);
+      expect(functions.length).toBe(3);
+    });
+
+    test('should find nodes by multiple types', () => {
+      const code = 'function foo() {} const bar = () => {};';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const nodes = astEngine.findNodesByTypes(result.rootNode, ['function_declaration', 'arrow_function']);
+      expect(nodes.length).toBeGreaterThan(0);
+    });
+
+    test('should get node text for simple nodes', () => {
+      const code = 'const x = 1;';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const text = astEngine.getNodeText(result.rootNode, code);
+      expect(text).toBe(code);
+    });
+
+    test('should get node text for nested nodes', () => {
+      const code = 'function foo() { return 42; }';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const functions = astEngine.findNodesByTypes(result.rootNode, ['function_declaration']);
+      const text = astEngine.getNodeText(functions[0], code);
+      expect(text).toContain('foo');
+      expect(text).toContain('42');
+    });
+
+    test('should get position for root node', () => {
+      const code = 'const x = 1;\nconst y = 2;';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const position = astEngine.getNodePosition(result.rootNode);
+      expect(position.startLine).toBe(0);
+      expect(position.endLine).toBeGreaterThan(0);
+    });
+
+    test('should handle nodes with no children', () => {
+      const code = 'const x = 1;';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      let leafNodes = 0;
+      astEngine.traverseAST(result.rootNode, (node) => {
+        if (!node.children || node.children.length === 0) {
+          leafNodes++;
+        }
+      });
+      expect(leafNodes).toBeGreaterThan(0);
+    });
+
+    test('should traverse with maxDepth 0 (only root)', () => {
+      const code = 'function foo() { const x = 1; }';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      const nodes: any[] = [];
+      astEngine.traverseAST(result.rootNode, (node) => {
+        nodes.push(node);
+      }, { maxDepth: 0 });
+      expect(nodes.length).toBe(1);
+      expect(nodes[0]).toBe(result.rootNode);
+    });
+
+    test('should handle very long code', () => {
+      const longCode = Array(1000).fill('const x = 1;').join('\n');
+      const result = astEngine.parseToAST(longCode, Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.hasError).toBe(false);
+    });
+
+    test('should handle code with special characters', () => {
+      const code = 'const str = "こんにちは"; // 日本語コメント';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.hasError).toBe(false);
+    });
+
+    test('should handle code with emojis', () => {
+      const code = 'const emoji = "😀🎉"; // Comment with emoji 🚀';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      expect(result).toBeDefined();
+    });
+
+    test('should find nested class declarations', () => {
+      const code = 'class Outer { class Inner {} }';
+      const result = astEngine.parseToAST(code, Language.TypeScript);
+      const classes = astEngine.findNodesByTypes(result.rootNode, ['class_declaration']);
+      expect(classes.length).toBeGreaterThanOrEqual(1);
+    });
+
+    test('should handle incomplete syntax gracefully', () => {
+      const code = 'function foo(';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.hasError).toBe(true);
+    });
+
+    test('should handle mixed valid and invalid code', () => {
+      const code = 'const valid = 1;\nfunction broken(\nconst alsoValid = 2;';
+      const result = astEngine.parseToAST(code, Language.JavaScript);
+      expect(result).toBeDefined();
+      expect(result.hasError).toBe(true);
+      // Should still find the valid constants
+      const validNodes = astEngine.findNodesByTypes(result.rootNode, ['lexical_declaration']);
+      expect(validNodes.length).toBeGreaterThan(0);
+    });
+  });
 });
