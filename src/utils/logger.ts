@@ -4,6 +4,9 @@
  * stdoutはMCP通信用に予約されているため、ログはstderrに出力
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -16,6 +19,14 @@ interface LogData {
   message: string;
   timestamp: string;
   data?: unknown;
+}
+
+interface LoggerOptions {
+  level?: LogLevel;
+  logToFile?: boolean;
+  logDir?: string;
+  maxFileSize?: number; // bytes
+  maxFiles?: number;
 }
 
 /**
@@ -36,9 +47,23 @@ const SENSITIVE_KEYS = [
  */
 export class Logger {
   private level: LogLevel;
+  private logToFile: boolean;
+  private logDir: string;
+  private maxFileSize: number;
+  private maxFiles: number;
+  private currentLogFile: string | null = null;
+  private currentFileSize: number = 0;
 
-  constructor(level: LogLevel = LogLevel.INFO) {
-    this.level = level;
+  constructor(options: LoggerOptions = {}) {
+    this.level = options.level ?? LogLevel.INFO;
+    this.logToFile = options.logToFile ?? false;
+    this.logDir = options.logDir ?? path.join(process.cwd(), '.lsp-mcp', 'logs');
+    this.maxFileSize = options.maxFileSize ?? 10 * 1024 * 1024; // 10MB
+    this.maxFiles = options.maxFiles ?? 5;
+
+    if (this.logToFile) {
+      this.initializeLogFile();
+    }
   }
 
   /**
@@ -85,6 +110,71 @@ export class Logger {
   }
 
   /**
+   * ログファイルを初期化
+   */
+  private initializeLogFile(): void {
+    try {
+      // ログディレクトリを作成
+      if (!fs.existsSync(this.logDir)) {
+        fs.mkdirSync(this.logDir, { recursive: true });
+      }
+
+      // 現在のログファイル名を生成
+      const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+      this.currentLogFile = path.join(this.logDir, `lsp-mcp-${timestamp}.log`);
+      this.currentFileSize = 0;
+
+      // 古いログファイルをクリーンアップ
+      this.cleanupOldLogFiles();
+    } catch (error) {
+      // ログファイル初期化エラーは無視（stderrにのみ出力）
+      process.stderr.write(
+        JSON.stringify({
+          level: 'ERROR',
+          message: 'Failed to initialize log file',
+          timestamp: new Date().toISOString(),
+          data: error,
+        }) + '\n',
+      );
+    }
+  }
+
+  /**
+   * 古いログファイルをクリーンアップ
+   */
+  private cleanupOldLogFiles(): void {
+    try {
+      const files = fs.readdirSync(this.logDir);
+      const logFiles = files
+        .filter((f) => f.startsWith('lsp-mcp-') && f.endsWith('.log'))
+        .map((f) => ({
+          name: f,
+          path: path.join(this.logDir, f),
+          mtime: fs.statSync(path.join(this.logDir, f)).mtime.getTime(),
+        }))
+        .sort((a, b) => b.mtime - a.mtime); // 新しい順にソート
+
+      // maxFilesを超えるファイルを削除
+      if (logFiles.length > this.maxFiles) {
+        logFiles.slice(this.maxFiles).forEach((file) => {
+          fs.unlinkSync(file.path);
+        });
+      }
+    } catch (error) {
+      // クリーンアップエラーは無視
+    }
+  }
+
+  /**
+   * ログローテーションを実行
+   */
+  private rotateLogFile(): void {
+    this.currentLogFile = null;
+    this.currentFileSize = 0;
+    this.initializeLogFile();
+  }
+
+  /**
    * ログを出力
    */
   private log(level: string, message: string, data?: unknown): void {
@@ -99,8 +189,25 @@ export class Logger {
       logData.data = this.sanitizeData(data);
     }
 
+    const logLine = JSON.stringify(logData) + '\n';
+
     // JSON形式でstderrに出力
-    process.stderr.write(JSON.stringify(logData) + '\n');
+    process.stderr.write(logLine);
+
+    // ファイルにも出力（有効な場合）
+    if (this.logToFile && this.currentLogFile) {
+      try {
+        fs.appendFileSync(this.currentLogFile, logLine);
+        this.currentFileSize += Buffer.byteLength(logLine);
+
+        // ファイルサイズが上限を超えたらローテーション
+        if (this.currentFileSize >= this.maxFileSize) {
+          this.rotateLogFile();
+        }
+      } catch (error) {
+        // ファイル書き込みエラーは無視（stderrには出力済み）
+      }
+    }
   }
 
   /**
@@ -150,4 +257,7 @@ export class Logger {
 /**
  * グローバルロガーインスタンス
  */
-export const logger = new Logger();
+export const logger = new Logger({
+  level: LogLevel.INFO,
+  logToFile: false,
+});

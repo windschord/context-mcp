@@ -40,7 +40,8 @@ export class ConfigManager {
         if (error instanceof SyntaxError) {
           throw new ConfigValidationError(
             `設定ファイルのJSON形式が不正です: ${this.configPath}`,
-            { cause: error }
+            { cause: error },
+            'JSONの構文エラーを修正してください。末尾のカンマ、引用符の不一致、括弧の不一致などを確認してください。'
           );
         }
         throw error;
@@ -74,22 +75,36 @@ export class ConfigManager {
   validateConfig(config: LspMcpConfig): void {
     // 必須フィールドのチェック
     if (!config.mode) {
-      throw new ConfigValidationError('mode フィールドは必須です');
+      throw new ConfigValidationError(
+        'mode フィールドは必須です',
+        undefined,
+        '設定ファイルに "mode": "local" または "mode": "cloud" を追加してください。'
+      );
     }
 
     if (!config.vectorStore) {
-      throw new ConfigValidationError('vectorStore フィールドは必須です');
+      throw new ConfigValidationError(
+        'vectorStore フィールドは必須です',
+        undefined,
+        '設定ファイルに "vectorStore": {"backend": "milvus", "config": {...}} を追加してください。'
+      );
     }
 
     if (!config.embedding) {
-      throw new ConfigValidationError('embedding フィールドは必須です');
+      throw new ConfigValidationError(
+        'embedding フィールドは必須です',
+        undefined,
+        '設定ファイルに "embedding": {"provider": "transformers", "model": "Xenova/all-MiniLM-L6-v2", "local": true} を追加してください。'
+      );
     }
 
     // mode のバリデーション
     const validModes: Mode[] = ['local', 'cloud'];
     if (!validModes.includes(config.mode)) {
       throw new ConfigValidationError(
-        `無効なモードです: ${config.mode}。有効な値: ${validModes.join(', ')}`
+        `無効なモードです: ${config.mode}。有効な値: ${validModes.join(', ')}`,
+        undefined,
+        `"mode"を"${validModes[0]}"または"${validModes[1]}"に設定してください。ローカル実行の場合は"local"、クラウド連携する場合は"cloud"を選択します。`
       );
     }
 
@@ -102,7 +117,9 @@ export class ConfigManager {
     ];
     if (!validBackends.includes(config.vectorStore.backend)) {
       throw new ConfigValidationError(
-        `無効なベクターDBバックエンドです: ${config.vectorStore.backend}。有効な値: ${validBackends.join(', ')}`
+        `無効なベクターDBバックエンドです: ${config.vectorStore.backend}。有効な値: ${validBackends.join(', ')}`,
+        undefined,
+        'ローカル実行の場合は"milvus"（Docker必要）または"chroma"（軽量）、クラウド連携の場合は"zilliz"または"qdrant"を選択してください。'
       );
     }
 
@@ -114,7 +131,9 @@ export class ConfigManager {
     ];
     if (!validProviders.includes(config.embedding.provider)) {
       throw new ConfigValidationError(
-        `無効な埋め込みプロバイダーです: ${config.embedding.provider}。有効な値: ${validProviders.join(', ')}`
+        `無効な埋め込みプロバイダーです: ${config.embedding.provider}。有効な値: ${validProviders.join(', ')}`,
+        undefined,
+        'ローカル実行の場合は"transformers"、クラウドAPIを使用する場合は"openai"または"voyageai"を選択してください。'
       );
     }
 

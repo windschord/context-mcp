@@ -25,6 +25,29 @@ describe('Error Classes', () => {
       expect(error.data).toEqual({ field: 'name' });
     });
 
+    it('should create an MCPError with suggestion', () => {
+      const error = new MCPError(
+        -32600,
+        'Invalid Request',
+        undefined,
+        'Please check the request format'
+      );
+      expect(error.code).toBe(-32600);
+      expect(error.message).toBe('Invalid Request');
+      expect(error.suggestion).toBe('Please check the request format');
+    });
+
+    it('should create an MCPError with data and suggestion', () => {
+      const error = new MCPError(
+        -32600,
+        'Invalid Request',
+        { field: 'name' },
+        'Provide a valid name field'
+      );
+      expect(error.data).toEqual({ field: 'name' });
+      expect(error.suggestion).toBe('Provide a valid name field');
+    });
+
     it('should serialize to JSON correctly', () => {
       const error = new MCPError(-32600, 'Invalid Request');
       const json = error.toJSON();
@@ -39,6 +62,34 @@ describe('Error Classes', () => {
 
       expect(json).toHaveProperty('data');
       expect(json.data).toEqual({ field: 'name' });
+    });
+
+    it('should include suggestion in JSON when present', () => {
+      const error = new MCPError(
+        -32600,
+        'Invalid Request',
+        undefined,
+        'Check the request format'
+      );
+      const json = error.toJSON();
+
+      expect(json).toHaveProperty('suggestion');
+      expect(json.suggestion).toBe('Check the request format');
+    });
+
+    it('should include both data and suggestion in JSON when present', () => {
+      const error = new MCPError(
+        -32600,
+        'Invalid Request',
+        { field: 'name' },
+        'Provide a valid name'
+      );
+      const json = error.toJSON();
+
+      expect(json).toHaveProperty('data');
+      expect(json).toHaveProperty('suggestion');
+      expect(json.data).toEqual({ field: 'name' });
+      expect(json.suggestion).toBe('Provide a valid name');
     });
   });
 
@@ -55,6 +106,17 @@ describe('Error Classes', () => {
         param: 'rootPath',
       });
       expect(error.data).toEqual({ param: 'rootPath' });
+    });
+
+    it('should support suggestion', () => {
+      const error = new InvalidParamsError(
+        'Missing required parameter',
+        { param: 'rootPath' },
+        'Provide a rootPath parameter in the request'
+      );
+      expect(error.suggestion).toBe(
+        'Provide a rootPath parameter in the request'
+      );
     });
   });
 

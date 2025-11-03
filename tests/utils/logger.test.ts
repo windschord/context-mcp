@@ -19,14 +19,23 @@ describe('Logger', () => {
     });
 
     it('should create a logger with custom log level', () => {
-      logger = new Logger(LogLevel.DEBUG);
+      logger = new Logger({ level: LogLevel.DEBUG });
+      expect(logger).toBeInstanceOf(Logger);
+    });
+
+    it('should create a logger with file logging enabled', () => {
+      logger = new Logger({
+        level: LogLevel.INFO,
+        logToFile: true,
+        logDir: '/tmp/test-logs',
+      });
       expect(logger).toBeInstanceOf(Logger);
     });
   });
 
   describe('debug', () => {
     it('should log debug messages when level is DEBUG', () => {
-      logger = new Logger(LogLevel.DEBUG);
+      logger = new Logger({ level: LogLevel.DEBUG });
       logger.debug('Debug message');
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -36,14 +45,14 @@ describe('Logger', () => {
     });
 
     it('should not log debug messages when level is INFO', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.debug('Debug message');
 
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
     it('should log debug messages with data object', () => {
-      logger = new Logger(LogLevel.DEBUG);
+      logger = new Logger({ level: LogLevel.DEBUG });
       logger.debug('Debug message', { key: 'value' });
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -55,7 +64,7 @@ describe('Logger', () => {
 
   describe('info', () => {
     it('should log info messages when level is INFO', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Info message');
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -65,14 +74,14 @@ describe('Logger', () => {
     });
 
     it('should not log info messages when level is WARN', () => {
-      logger = new Logger(LogLevel.WARN);
+      logger = new Logger({ level: LogLevel.WARN });
       logger.info('Info message');
 
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
     it('should log info messages with data object', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Info message', { count: 42 });
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -84,7 +93,7 @@ describe('Logger', () => {
 
   describe('warn', () => {
     it('should log warning messages when level is WARN', () => {
-      logger = new Logger(LogLevel.WARN);
+      logger = new Logger({ level: LogLevel.WARN });
       logger.warn('Warning message');
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -94,14 +103,14 @@ describe('Logger', () => {
     });
 
     it('should not log warning messages when level is ERROR', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       logger.warn('Warning message');
 
       expect(stderrSpy).not.toHaveBeenCalled();
     });
 
     it('should log warning messages with data object', () => {
-      logger = new Logger(LogLevel.WARN);
+      logger = new Logger({ level: LogLevel.WARN });
       logger.warn('Warning message', { status: 'degraded' });
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -113,7 +122,7 @@ describe('Logger', () => {
 
   describe('error', () => {
     it('should always log error messages', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       logger.error('Error message');
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -123,7 +132,7 @@ describe('Logger', () => {
     });
 
     it('should log error messages with Error object', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       const error = new Error('Test error');
       logger.error('Error occurred', error);
 
@@ -134,7 +143,7 @@ describe('Logger', () => {
     });
 
     it('should log error messages with stack trace', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       const error = new Error('Test error');
       logger.error('Error occurred', error);
 
@@ -144,7 +153,7 @@ describe('Logger', () => {
     });
 
     it('should log error messages with data object', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       logger.error('Error message', { code: 'ERR_UNKNOWN' });
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -156,7 +165,7 @@ describe('Logger', () => {
 
   describe('setLevel', () => {
     it('should change log level dynamically', () => {
-      logger = new Logger(LogLevel.ERROR);
+      logger = new Logger({ level: LogLevel.ERROR });
       logger.info('This should not log');
       expect(stderrSpy).not.toHaveBeenCalled();
 
@@ -168,7 +177,7 @@ describe('Logger', () => {
 
   describe('timestamp formatting', () => {
     it('should include ISO timestamp in log output', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Test message');
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -180,7 +189,7 @@ describe('Logger', () => {
 
   describe('JSON formatting', () => {
     it('should output logs in JSON format', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Test message', { data: 'value' });
 
       expect(stderrSpy).toHaveBeenCalled();
@@ -198,7 +207,7 @@ describe('Logger', () => {
 
   describe('data sanitization', () => {
     it('should not log sensitive data (API keys)', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Config loaded', {
         apiKey: 'sk-1234567890',
         token: 'secret-token',
@@ -214,7 +223,7 @@ describe('Logger', () => {
     });
 
     it('should not log sensitive data (passwords)', () => {
-      logger = new Logger(LogLevel.INFO);
+      logger = new Logger({ level: LogLevel.INFO });
       logger.info('Auth attempt', {
         username: 'user',
         password: 'mypassword',

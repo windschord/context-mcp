@@ -9,26 +9,32 @@
 export class MCPError extends Error {
   public code: number;
   public data?: unknown;
+  public suggestion?: string;
 
-  constructor(code: number, message: string, data?: unknown) {
+  constructor(code: number, message: string, data?: unknown, suggestion?: string) {
     super(message);
     this.name = 'MCPError';
     this.code = code;
     this.data = data;
+    this.suggestion = suggestion;
     Object.setPrototypeOf(this, MCPError.prototype);
   }
 
   /**
    * JSON-RPC 2.0エラーオブジェクト形式に変換
    */
-  toJSON(): { code: number; message: string; data?: unknown } {
-    const result: { code: number; message: string; data?: unknown } = {
+  toJSON(): { code: number; message: string; data?: unknown; suggestion?: string } {
+    const result: { code: number; message: string; data?: unknown; suggestion?: string } = {
       code: this.code,
       message: this.message,
     };
 
     if (this.data !== undefined) {
       result.data = this.data;
+    }
+
+    if (this.suggestion !== undefined) {
+      result.suggestion = this.suggestion;
     }
 
     return result;
@@ -40,8 +46,8 @@ export class MCPError extends Error {
  * パラメータが無効な場合のエラー
  */
 export class InvalidParamsError extends MCPError {
-  constructor(message: string, data?: unknown) {
-    super(-32602, message, data);
+  constructor(message: string, data?: unknown, suggestion?: string) {
+    super(-32602, message, data, suggestion);
     this.name = 'InvalidParamsError';
     Object.setPrototypeOf(this, InvalidParamsError.prototype);
   }
@@ -52,8 +58,8 @@ export class InvalidParamsError extends MCPError {
  * 内部エラー
  */
 export class InternalError extends MCPError {
-  constructor(message: string, data?: unknown) {
-    super(-32603, message, data);
+  constructor(message: string, data?: unknown, suggestion?: string) {
+    super(-32603, message, data, suggestion);
     this.name = 'InternalError';
     Object.setPrototypeOf(this, InternalError.prototype);
   }
@@ -76,8 +82,8 @@ export class MethodNotFoundError extends MCPError {
  * リソースが見つからない場合のエラー
  */
 export class NotFoundError extends MCPError {
-  constructor(message: string, data?: unknown) {
-    super(-32001, message, data);
+  constructor(message: string, data?: unknown, suggestion?: string) {
+    super(-32001, message, data, suggestion);
     this.name = 'NotFoundError';
     Object.setPrototypeOf(this, NotFoundError.prototype);
   }
@@ -88,8 +94,8 @@ export class NotFoundError extends MCPError {
  * 設定ファイルのバリデーションエラー
  */
 export class ConfigValidationError extends MCPError {
-  constructor(message: string, data?: unknown) {
-    super(-32002, message, data);
+  constructor(message: string, data?: unknown, suggestion?: string) {
+    super(-32002, message, data, suggestion);
     this.name = 'ConfigValidationError';
     Object.setPrototypeOf(this, ConfigValidationError.prototype);
   }
