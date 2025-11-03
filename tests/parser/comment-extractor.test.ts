@@ -33,6 +33,27 @@ describe('CommentExtractor', () => {
     return readFileSync(fixturePath, 'utf-8');
   };
 
+  // Test helper functions
+  const testMarkerDetection = (
+    comments: CommentInfo[],
+    markers: CommentMarker[]
+  ) => {
+    markers.forEach((marker) => {
+      const markerComments = comments.filter((c) => c.marker === marker);
+      expect(markerComments.length).toBeGreaterThan(0);
+    });
+  };
+
+  const testCommentTypes = (
+    comments: CommentInfo[],
+    types: CommentType[]
+  ) => {
+    types.forEach((type) => {
+      const typeComments = comments.filter((c) => c.type === type);
+      expect(typeComments.length).toBeGreaterThan(0);
+    });
+  };
+
   describe('TypeScript/JavaScript', () => {
     let code: string;
     let comments: CommentInfo[];
@@ -183,15 +204,11 @@ describe('CommentExtractor', () => {
     });
 
     test('should detect all special markers', () => {
-      const todoComments = comments.filter((c) => c.marker === CommentMarker.TODO);
-      const fixmeComments = comments.filter(
-        (c) => c.marker === CommentMarker.FIXME
-      );
-      const noteComments = comments.filter((c) => c.marker === CommentMarker.NOTE);
-
-      expect(todoComments.length).toBeGreaterThan(0);
-      expect(fixmeComments.length).toBeGreaterThan(0);
-      expect(noteComments.length).toBeGreaterThan(0);
+      testMarkerDetection(comments, [
+        CommentMarker.TODO,
+        CommentMarker.FIXME,
+        CommentMarker.NOTE,
+      ]);
     });
   });
 

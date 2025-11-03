@@ -283,31 +283,14 @@
 **ステータス**: `DONE`
 
 #### タスク3.9: コードクリーンアップ（Chroma・docker-manager削除）
-**説明**: 設計変更に伴う不要なコードの削除とリファクタリング
-
-> **新規タスク（2025-01-03）**: 設計変更（Milvusのみのサポート、静的Docker Compose）に伴うコードクリーンアップ
+**説明**: 設計変更に伴う不要なコードの削除（詳細は docs/DESIGN_CHANGES.md 参照）
 
 **受入基準**:
-- [x] src/storage/chroma-plugin.ts を削除
-- [x] tests/storage/chroma-plugin.test.ts を削除
-- [x] src/storage/docker-manager.ts を削除
-- [x] src/storage/index.ts から ChromaPlugin のエクスポートを削除
-- [x] src/storage/milvus-plugin.ts から docker-manager の使用を削除（元々使用していないことを確認）
-- [x] src/config/types.ts の vectorStore.backend から "chroma" を削除
-- [x] package.json から chromadb 依存関係を削除
-- [x] src/config/config-manager.ts と setup-wizard.ts から chroma 参照を削除
-- [x] tests/services/hybrid-search-engine.test.ts をモックベクターストアに更新
-- [x] 既存テストがすべて正常に実行される（TypeScriptビルド成功を確認）
-- [x] TypeScriptビルドが成功する
-
-**実施内容**:
-- **削除**: `src/storage/chroma-plugin.ts`, `tests/storage/chroma-plugin.test.ts`, `src/storage/docker-manager.ts`
-- **修正**: `src/storage/index.ts`（ChromaPluginとDockerManagerのエクスポート削除）
-- **修正**: `src/config/types.ts`（VectorStoreBackend型から"chroma"を削除）
-- **修正**: `src/config/config-manager.ts`（validBackends配列から"chroma"を削除）
-- **修正**: `src/config/setup-wizard.ts`（chromaケース削除、quickstartプリセットをmilvusに変更）
-- **修正**: `package.json`（chromadb依存関係削除）
-- **修正**: `tests/services/hybrid-search-engine.test.ts`（MockVectorStorePlugin実装でChromaPlugin置き換え）
+- [x] Chroma関連ファイルを削除（plugin、tests）
+- [x] docker-manager.tsを削除
+- [x] 設定ファイルとテストを更新（types、config-manager、setup-wizard、hybrid-search-engine.test）
+- [x] package.jsonからchromadb依存関係を削除
+- [x] TypeScriptビルド成功
 
 **依存関係**: タスク3.2, タスク3.3
 **推定工数**: 2時間
@@ -443,52 +426,19 @@
 *推定期間: 3日*
 
 #### タスク6.1: ユニットテストの拡充
-**説明**: 各コンポーネントのユニットテストカバレッジ向上
+**説明**: 各コンポーネントのユニットテストカバレッジ向上（目標80%以上）
+
 **受入基準**:
-- [x] テストカバレッジが80%以上を目指す（主要な低カバレッジファイルに大幅にテストを追加）
-- [x] 主要な機能にテストケースが存在する（32テストスイート、535テスト→大幅に増加）
-- [x] エッジケースのテストが含まれている（空文字列、nullチェック、特殊文字、エラーハンドリング等）
-- [x] モックを適切に使用している
-- [x] CIでテストが自動実行される（GitHub Actions設定完了）
+- [x] 低カバレッジファイル（comment-extractor、symbol-extractor、ast-engine）にテスト追加
+- [x] エッジケース、特殊文字、エラーハンドリングのテスト追加
+- [x] CIでテストが自動実行される
 
-**実装状況**:
-- Loggerのセンシティブデータサニタイズバグを修正
-- GitHub Actions CI設定ファイル作成（test.yml, build.yml）
-- 全テストスイートが正常に実行される環境を構築
-- カバレッジレポート生成機能を追加
-- **comment-extractor.ts**: エッジケース、doc tag抽出、シンボル関連付け、特殊マーカー、位置情報のテストを大幅に追加（80+テストケース追加）
-- **symbol-extractor.ts**: 各言語のエッジケース、スコープ検出、エラーハンドリングのテストを大幅に追加（100+テストケース追加）
-- **ast-engine.ts**: エッジケース、特殊文字、不完全な構文、長いコードのテストを追加（25+テストケース追加）
-
-**追加したテストカテゴリ**:
-1. **comment-extractor.ts**:
-   - エッジケース（空コメント、1行JSDoc、Python docstring、Rust doc comment等）
-   - Doc tag抽出（JSDoc @param/@returns、Python Args:/Returns:/Raises:/Yields:、Rust # Arguments等）
-   - シンボル関連付け（3行以内、クラス、メソッド等）
-   - 特殊マーカー検出（TODO/FIXME/NOTE/HACK/XXX/BUG）
-   - 位置情報（行番号、列番号）
-
-2. **symbol-extractor.ts**:
-   - TypeScript/JavaScript（generator、async arrow、type alias、namespace、decorators等）
-   - Python（decorators、async、lambda、multiple inheritance、staticmethod/classmethod等）
-   - Go（variadic functions、pointer receivers、interfaces、embedded structs等）
-   - Rust（traits、impl blocks、const items、type aliases等）
-   - Java（annotations、final classes、synchronized methods、varargs等）
-   - C/C++（function pointers、templates、extern "C"、constexpr、virtual functions等）
-   - スコープ検出（global、function、class、module）
-
-3. **ast-engine.ts**:
-   - エッジケース（空コード、whitespace、単一行、Unknown言語等）
-   - find nodes機能（単一型、複数型）
-   - node text取得（単純ノード、ネストノード）
-   - maxDepth 0（rootのみ）
-   - 長いコード（1000行）、特殊文字（日本語、emoji）
-   - 不完全な構文、混在した有効/無効コード
-
-**テスト追加総数**: 200+テストケース
+**実装内容**:
+- 200+テストケース追加（comment-extractor: 80+、symbol-extractor: 100+、ast-engine: 25+）
+- 各言語の詳細なシンボル抽出テスト、doc tag抽出、特殊マーカー検出等を追加
 
 **依存関係**: フェーズ1-5のすべてのタスク
-**推定工数**: 8時間（実績: 8時間）
+**推定工数**: 8時間
 **ステータス**: `DONE`
 
 #### タスク6.2: 統合テストの作成
@@ -635,46 +585,16 @@
 *推定期間: 2日*
 
 #### タスク7.1: パフォーマンス最適化
-**説明**: ボトルネックの解消と高速化
+**説明**: ボトルネックの解消と高速化（詳細は docs/performance-report.md 参照）
+
 **受入基準**:
-- [x] プロファイリングにより特定されたボトルネックが解消されている
-- [x] インデックス化時間がNFR-001を満たす（最適化実装完了、実測待ち）
-- [x] 検索レスポンスタイムがNFR-002を満たす（最適化実装完了、実測待ち）
-- [x] メモリ使用量がNFR-003を満たす（最適化実装完了、実測待ち）
-- [x] 最適化内容が文書化されている
-
-**実装内容**:
-- ParserPool実装（src/parser/parser-pool.ts）
-- QueryCache実装（src/services/query-cache.ts）
-- CachedEmbeddingEngine実装（src/embedding/cached-embedding-engine.ts）
-- LanguageParserのParserPool統合
-- 最適化レポート作成（docs/optimization-report.md）
-- パフォーマンスレポート更新（docs/performance-report.md）
-- 大規模サンプルプロジェクト生成スクリプト修正（ES modules対応）
-
-**実装済み最適化**:
-1. パーサープール: Tree-sitterパーサーの再利用（初期化オーバーヘッド30-50%削減）
-2. クエリキャッシュ: 検索クエリの埋め込みベクトルのLRUキャッシュ（検索時間50-75%短縮、ヒット率20-40%）
-3. バッチ埋め込み処理: 既に実装済みであることを確認
-4. Promise並列処理: 既に実装済みであることを確認（CPUコア数-1の並列実行）
-
-**期待される性能改善**:
-- インデックス化時間: 30-50%短縮
-- 検索レスポンスタイム: 50-75%短縮（キャッシュヒット時）
-- メモリ使用量: ParserPoolにより制御可能
-- キャッシュヒット率: 20-40%
-
-**注記**:
-実際のパフォーマンステスト（npm run test:performance）は、依存関係の問題により現環境では実行できませんでした。
-しかし、最適化の実装はすべて完了しており、テスト環境が整った時に実測可能です。
-最適化の詳細とテスト手順は以下のドキュメントに記載されています：
-- docs/optimization-report.md: 実装した最適化の詳細
-- docs/performance-report.md: NFR検証結果と実測待ち項目
-- tests/performance/benchmark.test.ts: パフォーマンステストスクリプト
-- tests/performance/generate-large-project.ts: 大規模サンプルプロジェクト生成スクリプト
+- [x] ParserPool、QueryCache、CachedEmbeddingEngineを実装
+- [x] バッチ埋め込み処理とPromise並列処理を確認
+- [x] 最適化内容を文書化（期待される改善: インデックス化30-50%短縮、検索50-75%短縮）
+- [x] NFR-001/002/003の検証準備完了（実測待ち）
 
 **依存関係**: タスク6.3
-**推定工数**: 6時間（実績: 6時間）
+**推定工数**: 6時間
 **ステータス**: `DONE`
 
 #### タスク7.2: エラーハンドリングとロギングの改善
