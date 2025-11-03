@@ -68,7 +68,22 @@ LSP-MCPは以下の6つのMCPツールを提供します:
 - npm 9.0以上
 - Docker & Docker Compose（Milvus使用時、推奨）
 
-### グローバルインストール（推奨）
+### npx経由で使用（最も簡単、推奨）
+
+インストール不要で直接実行できます:
+
+```bash
+# ヘルプを表示
+npx lsp-mcp --help
+
+# バージョンを確認
+npx lsp-mcp --version
+
+# MCPサーバーとして起動（Claude Code統合用）
+npx lsp-mcp
+```
+
+### グローバルインストール
 
 ```bash
 npm install -g lsp-mcp
@@ -129,15 +144,35 @@ lsp-mcp index . --languages typescript,python
 
 ### 1. MCP設定ファイルに追加
 
-Claude Codeの設定ファイル（`~/.config/claude-code/mcp.json`）に以下を追加:
+Claude Codeの設定ファイル（`~/.config/claude/mcp_settings.json`）に以下を追加:
+
+#### npx経由で使用（推奨）
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["-y", "lsp-mcp"],
+      "env": {
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### グローバルインストール済みの場合
 
 ```json
 {
   "mcpServers": {
     "lsp-mcp": {
       "command": "lsp-mcp",
-      "args": ["serve"],
-      "env": {}
+      "args": [],
+      "env": {
+        "LOG_LEVEL": "INFO"
+      }
     }
   }
 }

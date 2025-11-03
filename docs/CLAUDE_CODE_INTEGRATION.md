@@ -52,53 +52,56 @@ Claude CodeのMCP設定ファイルにLSP-MCPを登録します。
 
 以下の内容を`mcp_settings.json`に追加します。
 
-#### ローカルモード（Transformers.js + Milvus standalone）
+#### ローカルモード（Transformers.js + Milvus standalone）- npx使用（推奨）
 
 ```json
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "node",
-      "args": ["/absolute/path/to/lsp-mcp/dist/index.js"],
-      "env": {
-        "LSP_MCP_MODE": "local"
-      }
-    }
-  }
-}
-```
-
-#### 軽量ローカルモード（Transformers.js + Chroma、Docker不要）
-
-```json
-{
-  "mcpServers": {
-    "lsp-mcp": {
-      "command": "node",
-      "args": ["/absolute/path/to/lsp-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "lsp-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_STORE": "chroma"
+        "LOG_LEVEL": "INFO"
       }
     }
   }
 }
 ```
 
-#### クラウドモード（OpenAI + Zilliz Cloud）
+#### 軽量ローカルモード（Transformers.js + Chroma、Docker不要）- npx使用（推奨）
 
 ```json
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "node",
-      "args": ["/absolute/path/to/lsp-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LSP_MCP_VECTOR_BACKEND": "chroma",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### クラウドモード（OpenAI + Zilliz Cloud）- npx使用（推奨）
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["-y", "lsp-mcp"],
       "env": {
         "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_STORE": "zilliz",
+        "LSP_MCP_VECTOR_BACKEND": "zilliz",
         "OPENAI_API_KEY": "your-openai-api-key",
         "ZILLIZ_ENDPOINT": "your-instance.zilliz.com:19530",
-        "ZILLIZ_TOKEN": "your-zilliz-token"
+        "ZILLIZ_TOKEN": "your-zilliz-token",
+        "LOG_LEVEL": "INFO"
       }
     }
   }

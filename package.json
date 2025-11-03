@@ -6,8 +6,15 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
-    "lsp-mcp": "dist/index.js"
+    "lsp-mcp": "./bin/lsp-mcp.js"
   },
+  "files": [
+    "dist",
+    "bin",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"

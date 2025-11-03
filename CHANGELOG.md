@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- npx経由での実行サポート（`npx lsp-mcp`で直接実行可能）
+- CLI用のヘルプメッセージ（`--help`, `--version`オプション）
+- `bin/lsp-mcp.js`エントリーポイント
+
+### Changed
+- README.mdとCLAUDE_CODE_INTEGRATION.mdにnpx使用例を追加（推奨方法として）
+- package.jsonに`files`フィールドを追加（配布ファイルを明示化）
+- Claude Code設定例を`npx lsp-mcp`使用に更新
+
 ## [0.1.0] - 2025-01-03
 
 ### Added
