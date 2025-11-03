@@ -26,7 +26,8 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build",
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "version": "node scripts/update-changelog.js && git add CHANGELOG.md",
     "prepare": "husky install || true"
   },
   "keywords": [
@@ -43,16 +44,18 @@
     "arduino",
     "platformio"
   ],
-  "author": "Your Name",
+  "author": {
+    "name": "LSP-MCP Contributors"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/lsp-mcp.git"
+    "url": "https://github.com/your-org/lsp-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/lsp-mcp/issues"
+    "url": "https://github.com/your-org/lsp-mcp/issues"
   },
-  "homepage": "https://github.com/yourusername/lsp-mcp#readme",
+  "homepage": "https://github.com/your-org/lsp-mcp#readme",
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@types/better-sqlite3": "^7.6.13",
