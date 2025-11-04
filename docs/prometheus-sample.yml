@@ -1,0 +1,44 @@
+# Prometheus Configuration for LSP-MCP
+# Scrapes metrics from OpenTelemetry Collector
+
+global:
+  scrape_interval: 15s      # How frequently to scrape targets
+  evaluation_interval: 15s  # How frequently to evaluate rules
+  external_labels:
+    cluster: 'lsp-mcp'
+    environment: 'development'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - 'alertmanager:9093'
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "prometheus-alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # LSP-MCP metrics from OTLP Collector
+  - job_name: 'lsp-mcp'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['otel-collector:8889']
+        labels:
+          service: 'lsp-mcp'
+
+  # OpenTelemetry Collector self-metrics
+  - job_name: 'otel-collector'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['otel-collector:8888']
+        labels:
+          service: 'otel-collector'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['localhost:9090']
