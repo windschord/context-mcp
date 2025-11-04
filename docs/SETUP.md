@@ -189,7 +189,7 @@ docker compose version
 cd /path/to/your/project
 
 # Docker Composeファイルをダウンロード
-curl -O https://github.com/milvus-io/milvus/releases/download/v2.4.0/milvus-standalone-docker-compose.yml
+curl -O https://github.com/milvus-io/milvus/releases/download/v2.4.0/docker-compose.yml
 ```
 
 または、LSP-MCPが自動ダウンロードします:
@@ -202,7 +202,7 @@ lsp-mcp milvus download
 
 ```bash
 # Milvus standaloneを起動
-docker compose -f milvus-standalone-docker-compose.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # 起動確認（3つのコンテナが起動）
 docker ps
@@ -212,7 +212,7 @@ docker ps
 # xxxxx          quay.io/coreos/etcd:latest Up X minutes
 
 # ログ確認
-docker compose -f milvus-standalone-docker-compose.yml logs -f milvus
+docker compose -f docker-compose.yml logs -f milvus
 # "Milvus Proxy started successfully" が表示されればOK
 ```
 
@@ -277,13 +277,13 @@ tar czf milvus-backup-$(date +%Y%m%d).tar.gz volumes/
 
 ```bash
 # 停止
-docker compose -f milvus-standalone-docker-compose.yml down
+docker compose -f docker-compose.yml down
 
 # 再起動
-docker compose -f milvus-standalone-docker-compose.yml restart
+docker compose -f docker-compose.yml restart
 
 # 完全削除（データも削除）
-docker compose -f milvus-standalone-docker-compose.yml down -v
+docker compose -f docker-compose.yml down -v
 rm -rf volumes/
 ```
 

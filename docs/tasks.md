@@ -173,7 +173,7 @@
 
 **受入基準**:
 - [x] Milvus SDKがインストールされている
-- [x] ~~Docker Composeファイル（milvus-standalone-docker-compose.yml）の自動ダウンロード機能が実装されている~~ → **削除**
+- [x] ~~Docker Composeファイル（docker-compose.yml）の自動ダウンロード機能が実装されている~~ → **削除**
 - [x] ~~Milvusコンテナの起動・停止制御機能が実装されている~~ → **削除**
 - [x] localhost:19530への接続機能が実装されている
 - [x] Zilliz Cloud接続機能が実装されている（TLS/SSL対応）

@@ -195,7 +195,7 @@ LSP-MCPとClaude Codeの統合が正常に完了したかを確認するため�
 
 - [ ] **Milvus standaloneが起動している**
   ```bash
-  docker-compose -f milvus-standalone-docker-compose.yml up -d
+  docker-compose up -d
   docker ps | grep milvus  # milvusコンテナが表示される
   ```
 
@@ -539,7 +539,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 1. Milvus standaloneを起動:
    ```bash
    cd /path/to/lsp-mcp
-   docker-compose -f milvus-standalone-docker-compose.yml up -d
+   docker-compose up -d
    ```
 
 2. Chromaを使用する（Docker不要）:
@@ -620,7 +620,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 2. Milvusを再起動:
    ```bash
-   docker-compose -f milvus-standalone-docker-compose.yml restart
+   docker-compose restart
    ```
 
 3. ポートの競合を確認:

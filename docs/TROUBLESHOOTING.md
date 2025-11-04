@@ -107,7 +107,7 @@ lsof -i :19530
 kill -9 <PID>
 
 # または、Milvusのポートを変更
-# milvus-standalone-docker-compose.yml を編集
+# docker-compose.yml を編集
 # ports:
 #   - "19531:19530"  # 19530 -> 19531に変更
 
@@ -128,7 +128,7 @@ xxxxx          Exited (1) 2 seconds ago
 
 ```bash
 # ログを確認
-docker compose -f milvus-standalone-docker-compose.yml logs milvus
+docker compose -f docker-compose.yml logs milvus
 
 # メモリ不足の場合
 # Docker Desktopの設定でメモリを4GB以上に増やす
@@ -156,7 +156,7 @@ docker ps | grep milvus
 nc -zv localhost 19530
 
 # 3. Milvusの起動を待つ（初回起動は時間がかかる）
-docker compose -f milvus-standalone-docker-compose.yml logs -f milvus
+docker compose -f docker-compose.yml logs -f milvus
 # "Milvus Proxy started successfully" が表示されるまで待つ
 
 # 4. ファイアウォールの確認

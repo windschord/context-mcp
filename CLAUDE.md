@@ -42,10 +42,10 @@ npm install
 npm run build
 
 # Milvus standalone起動（Docker Compose）
-docker-compose -f milvus-standalone-docker-compose.yml up -d
+docker-compose up -d
 
 # Milvus停止
-docker-compose -f milvus-standalone-docker-compose.yml down
+docker-compose down
 ```
 
 ### テスト実行

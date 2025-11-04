@@ -115,7 +115,7 @@ lsp-mcp init --mode cloud
 
 ```bash
 # Milvus standalone起動
-docker-compose -f milvus-standalone-docker-compose.yml up -d
+docker-compose up -d
 
 # 起動確認
 docker ps
