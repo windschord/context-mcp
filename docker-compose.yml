@@ -8,8 +8,6 @@
 #
 # Data is persisted in ./volumes/ directory
 
-version: '3.5'
-
 services:
   etcd:
     container_name: milvus-etcd
