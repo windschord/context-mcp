@@ -117,6 +117,20 @@ docker ps
 
 ### 2. Claude CodeにMCP設定を追加
 
+#### 方法1: claude mcp addコマンドで追加（推奨）
+
+```bash
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=local \
+  --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
+  --env LOG_LEVEL=INFO \
+  -- npx github:windschord/lsp-mcp
+```
+
+設定後、Claude Codeを再起動してください。
+
+#### 方法2: JSONファイルを直接編集
+
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
 ```json
@@ -196,10 +210,22 @@ cd /path/to/your/project
 
 ### MCP設定の詳細
 
+以下、各モードでの設定例を示します。コマンドと設定ファイル編集の両方の方法を記載しています。
+
 #### 設定例1: ローカルモード（環境変数のみ、推奨）
 
-Docker Composeで起動したMilvus standaloneを使用する最もシンプルな設定:
+Docker Composeで起動したMilvus standaloneを使用する最もシンプルな設定です。
 
+**claude mcp addコマンド**:
+```bash
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=local \
+  --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
+  --env LOG_LEVEL=INFO \
+  -- npx github:windschord/lsp-mcp
+```
+
+**JSONファイル編集**:
 ```json
 {
   "mcpServers": {
@@ -218,6 +244,20 @@ Docker Composeで起動したMilvus standaloneを使用する最もシンプル�
 
 #### 設定例2: クラウドモード（Zilliz Cloud使用）
 
+**claude mcp addコマンド**:
+```bash
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=cloud \
+  --env LSP_MCP_VECTOR_BACKEND=zilliz \
+  --env LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530 \
+  --env LSP_MCP_VECTOR_TOKEN=your-zilliz-token \
+  --env LSP_MCP_EMBEDDING_PROVIDER=openai \
+  --env LSP_MCP_EMBEDDING_API_KEY=your-openai-api-key \
+  --env LOG_LEVEL=INFO \
+  -- npx github:windschord/lsp-mcp
+```
+
+**JSONファイル編集**:
 ```json
 {
   "mcpServers": {
@@ -240,8 +280,17 @@ Docker Composeで起動したMilvus standaloneを使用する最もシンプル�
 
 #### 設定例3: ローカル開発時
 
-リポジトリをクローンして開発している場合:
+リポジトリをクローンして開発している場合の設定です。
 
+**claude mcp addコマンド**:
+```bash
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=local \
+  --env LOG_LEVEL=DEBUG \
+  -- node /path/to/lsp_mcp/bin/lsp-mcp.js
+```
+
+**JSONファイル編集**:
 ```json
 {
   "mcpServers": {
@@ -274,8 +323,11 @@ Docker Composeで起動したMilvus standaloneを使用する最もシンプル�
 ### 設定の確認
 
 ```bash
-# 追加されたサーバーを確認（claude CLIを使用している場合）
-claude list
+# 追加されたMCPサーバーを確認
+claude mcp list
+
+# 特定のサーバーの詳細を確認
+claude mcp show lsp-mcp
 
 # 設定ファイルを直接確認（macOS）
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
