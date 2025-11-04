@@ -18,10 +18,10 @@ LSP-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた
 1. **MCP Server Layer**: Claude Codeとの通信（MCP Protocol準拠）
 2. **Service Layer**: Indexing Service（インデックス化）、Search Service（検索）
 3. **Parser Layer**: AST Parser（Tree-sitter）、Document Parser（Markdown）
-4. **Storage Layer**: Vector Store（Milvus/Chroma）、Local Index（SQLite BM25）
+4. **Storage Layer**: Vector Store（Milvus）、Local Index（SQLite BM25）
 
 ### プライバシーファースト設計
-- **デフォルト**: ローカル埋め込みモデル（Transformers.js）+ ローカルベクターDB（Milvus standalone/Chroma）
+- **デフォルト**: ローカル埋め込みモデル（Transformers.js）+ ローカルベクターDB（Milvus standalone）
 - **オプション**: クラウドモード（OpenAI API + Zilliz Cloud等）
 - 設定ファイル`.lsp-mcp.json`の`mode`フィールドで切り替え可能
 
@@ -140,7 +140,7 @@ npm run dev
 
 ## データベーススキーマ
 
-### Vector DB（Milvus/Chroma）: code_vectors
+### Vector DB（Milvus）: code_vectors
 主要フィールド:
 - `id`: 一意識別子（ファイルパス:行番号）
 - `vector`: 埋め込みベクトル
@@ -185,19 +185,6 @@ CREATE TABLE inverted_index (
 }
 ```
 
-### 軽量ローカルモード（Docker不要）
-```json
-{
-  "mode": "local",
-  "vectorStore": {
-    "backend": "chroma",
-    "config": {
-      "path": "./.lsp-mcp/chroma"
-    }
-  }
-}
-```
-
 ### クラウドモード
 ```json
 {
@@ -233,7 +220,7 @@ CREATE TABLE inverted_index (
 - **言語**: TypeScript（strict mode）
 - **ランタイム**: Node.js 18+
 - **AST解析**: Tree-sitter
-- **ベクターDB（デフォルト）**: Milvus standalone（Docker）またはChroma（Docker不要）
+- **ベクターDB（デフォルト）**: Milvus standalone（Docker）
 - **ベクターDB（クラウド）**: Zilliz Cloud、Qdrant Cloud
 - **埋め込み（デフォルト）**: Transformers.js（ローカル）
 - **埋め込み（クラウド）**: OpenAI API、VoyageAI API

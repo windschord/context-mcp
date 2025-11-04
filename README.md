@@ -102,9 +102,6 @@ npm run build
 プロジェクトルートで設定ファイルを作成します:
 
 ```bash
-# 軽量モード（Docker不要、Chroma使用）
-lsp-mcp init --mode local-lite
-
 # 標準モード（Milvus standalone使用、Docker必要）
 lsp-mcp init --mode local
 
@@ -250,24 +247,6 @@ Claude Codeで以下のように指示します:
 }
 ```
 
-#### 軽量モード（Chroma、Docker不要）
-
-```json
-{
-  "mode": "local",
-  "vectorStore": {
-    "backend": "chroma",
-    "config": {
-      "path": "./.lsp-mcp/chroma"
-    }
-  },
-  "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2"
-  }
-}
-```
-
 #### クラウドモード（OpenAI + Zilliz）
 
 ```json
@@ -287,6 +266,55 @@ Claude Codeで以下のように指示します:
   }
 }
 ```
+
+## プロジェクト状態
+
+### 開発フェーズ完了状況
+
+LSP-MCPは**フェーズ1〜7のすべてのタスクが完了**しており、本番利用可能な状態です。
+
+- **フェーズ1**: プロジェクトセットアップとMCPサーバー基盤 (完了)
+- **フェーズ2**: AST解析とドキュメント解析 (完了)
+- **フェーズ3**: ベクターDB統合と検索機能 (完了)
+- **フェーズ4**: Indexing ServiceとMCPツール実装 (完了)
+- **フェーズ5**: インクリメンタル更新とファイル監視 (完了)
+- **フェーズ6**: テストとドキュメント化 (完了)
+- **フェーズ7**: 最適化とリリース準備 (完了)
+
+### 実装済み機能
+
+**MCPツール (6つ)**:
+- `index_project`: プロジェクト全体のインデックス化
+- `search_code`: セマンティックコード検索
+- `get_symbol`: シンボル定義・参照検索
+- `find_related_docs`: コード関連ドキュメント検索
+- `get_index_status`: インデックス状態確認
+- `clear_index`: インデックスクリア
+
+**対応言語 (7言語)**:
+- TypeScript/JavaScript、Python、Go、Rust、Java、C/C++/Arduino
+
+**ベクターDB**:
+- Milvus standalone（Docker Compose）
+- Zilliz Cloud（クラウド）
+
+**埋め込みエンジン**:
+- Transformers.js（ローカル、デフォルト）
+- OpenAI API（クラウド）
+- VoyageAI API（クラウド）
+
+**パフォーマンス最適化**:
+- ParserPool: Tree-sitterパーサーの再利用
+- QueryCache: LRUキャッシュ（1000件、TTL 1時間）
+- バッチ埋め込み処理
+- Promise並列処理
+
+### 詳細情報
+
+詳しくは以下のドキュメントを参照してください：
+- [タスク管理](docs/tasks.md) - 実装タスクの詳細と完了状況
+- [設計書](docs/design.md) - システムアーキテクチャと設計方針
+- [パフォーマンスレポート](docs/performance-report.md) - 最適化内容とNFR検証
 
 ## 開発
 
