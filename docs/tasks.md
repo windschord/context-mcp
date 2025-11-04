@@ -72,6 +72,19 @@
 - タスク8.5: docs/ENVIRONMENT_VARIABLES.md作成 | 環境変数の完全なリファレンスドキュメント、設定優先順位、ユースケース別設定例 (依存: 8.3 | 工数: 2h | ステータス: TODO)
 - タスク8.6: docs/SETUP.mdへの環境変数セクション追加 | ゼロコンフィグモードセクション追加、環境変数ベースセットアップ手順、従来方式との比較表 (依存: 8.5 | 工数: 1.5h | ステータス: TODO)
 
+### フェーズ9: OpenTelemetry監視機能実装 (推定期間: 3日)
+
+- タスク9.1: OpenTelemetry依存関係のインストール | @opentelemetry/sdk-node、@opentelemetry/api、@opentelemetry/exporter-trace-otlp-grpc、@opentelemetry/exporter-metrics-otlp-grpc、@opentelemetry/exporter-logs-otlp-httpのインストール (依存: なし | 工数: 0.5h | ステータス: TODO)
+- タスク9.2: TelemetryManagerクラスの実装 | OpenTelemetry SDK初期化、環境変数・設定ファイルからの設定読み込み、条件付き有効化（デフォルトオフ） (依存: 9.1 | 工数: 4h | ステータス: TODO)
+- タスク9.3: トレースインストルメンテーションの実装 | MCPツール呼び出しトレース（tool.name, tool.params, tool.duration）、ベクターDB操作トレース（operation.type, operation.duration）、AST解析トレース、埋め込み生成トレース (依存: 9.2 | 工数: 6h | ステータス: TODO)
+- タスク9.4: メトリクス収集の実装 | Counter（requests.total, requests.errors, vectordb.operations）、Histogram（requests.duration, search.results）、Gauge（index.files, index.symbols, memory.usage）の実装 (依存: 9.2 | 工数: 5h | ステータス: TODO)
+- タスク9.5: ログエクスポーターの実装 | エラーログ（error level）、警告ログ（warn level）、情報ログ（info level）、デバッグログ（debug level）のOTLP経由エクスポート (依存: 9.2 | 工数: 3h | ステータス: TODO)
+- タスク9.6: 分散トレーシングのコンテキスト伝播実装 | ベクターDB、埋め込みAPI等の外部サービス呼び出し時のトレースコンテキスト伝播、W3C Trace Context準拠 (依存: 9.3 | 工数: 3h | ステータス: TODO)
+- タスク9.7: パフォーマンス最適化 | 非同期エクスポート、バッチ処理、サンプリング（デフォルト10%）、条件付き計測（テレメトリ無効時のオーバーヘッドゼロ化） (依存: 9.3, 9.4, 9.5 | 工数: 4h | ステータス: TODO)
+- タスク9.8: ヘルスチェックエンドポイントの実装 | /healthエンドポイント提供、サービス稼働状態返却、依存サービス（ベクターDB、埋め込みエンジン）の死活監視 (依存: 9.2 | 工数: 2h | ステータス: TODO)
+- タスク9.9: テレメトリ機能のテスト | ユニットテスト（トレース/メトリクス/ログ収集）、統合テスト（Jaeger/Prometheus連携）、パフォーマンステスト（オーバーヘッド5%以内検証） (依存: 9.3, 9.4, 9.5, 9.6, 9.7, 9.8 | 工数: 5h | ステータス: TODO)
+- タスク9.10: テレメトリドキュメントの作成 | docs/OBSERVABILITY.md作成（監視設定ガイド、環境変数リファレンス、Jaeger/Grafana/Prometheus連携手順、メトリクス一覧、トラブルシューティング） (依存: 9.9 | 工数: 3h | ステータス: TODO)
+
 ## タスクステータスの凡例
 - `TODO` - 未着手
 - `IN_PROGRESS` - 作業中
@@ -91,6 +104,7 @@
 | M6: 品質保証完成 | フェーズ6完了 | 開始+23日 |
 | M7: リリース準備完了 | フェーズ7完了 | 開始+25日 |
 | M8: ゼロコンフィグ対応完了 | フェーズ8完了 | 開始+27日 |
+| M9: 監視機能完成 | フェーズ9完了 | 開始+30日 |
 
 ## リスクと軽減策
 

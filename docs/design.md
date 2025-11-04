@@ -274,6 +274,82 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 - 環境変数で必要最小限の設定（モード、ベクターDBアドレス等）を指定可能
 - Docker Compose起動 + MCP設定（環境変数）のみで即座に使用開始
 
+### コンポーネント10: OpenTelemetry Instrumentation
+**目的**: MCPサーバーの可観測性（Observability）提供
+**責務**:
+- OpenTelemetry SDKの初期化と設定
+- トレース、メトリクス、ログの3つの観測シグナルの収集
+- OTLPエクスポーター経由での外部バックエンドへの送信
+- 分散トレーシングのコンテキスト伝播
+- 監視オーバーヘッドの最小化
+
+**インターフェース**:
+- `initialize(config)`: OpenTelemetry SDK初期化
+- `createSpan(name, attributes)`: トレーススパン作成
+- `recordMetric(name, value, labels)`: メトリクス記録
+- `logError(error, context)`: エラーログ出力
+- `shutdown()`: グレースフルシャットダウン
+
+**収集する観測シグナル**:
+
+1. **トレース（Trace）**:
+   - MCPツール呼び出し（tool.name, tool.params, tool.duration）
+   - ベクターDB操作（operation.type, operation.duration, operation.status）
+   - AST解析（language, file.path, parse.duration）
+   - 埋め込み生成（provider, model, batch.size, embed.duration）
+   - ハイブリッド検索（query, search.type, search.duration）
+
+2. **メトリクス（Metrics）**:
+   - `lsp_mcp.requests.total`: リクエスト総数（Counter）
+   - `lsp_mcp.requests.duration`: リクエスト処理時間（Histogram）
+   - `lsp_mcp.requests.errors`: エラー発生回数（Counter）
+   - `lsp_mcp.index.files`: インデックス済みファイル数（Gauge）
+   - `lsp_mcp.index.symbols`: インデックス済みシンボル数（Gauge）
+   - `lsp_mcp.search.results`: 検索結果数（Histogram）
+   - `lsp_mcp.memory.usage`: メモリ使用量（Gauge）
+   - `lsp_mcp.vectordb.operations`: ベクターDB操作回数（Counter）
+
+3. **ログ（Logs）**:
+   - エラーログ（error level）: スタックトレース、エラーコンテキスト
+   - 警告ログ（warn level）: パース失敗、リトライ発生等
+   - 情報ログ（info level）: 起動完了、設定適用、インデックス完了等
+   - デバッグログ（debug level）: 詳細な処理フロー
+
+**サポートエクスポーター**:
+```typescript
+// OTLPエクスポーター（gRPC/HTTP）
+- TraceExporter: @opentelemetry/exporter-trace-otlp-grpc
+- MetricsExporter: @opentelemetry/exporter-metrics-otlp-grpc
+- LogsExporter: @opentelemetry/exporter-logs-otlp-http
+
+// バックエンド例
+- Jaeger（トレース可視化）
+- Grafana Tempo（トレース）
+- Prometheus（メトリクス）
+- Grafana Loki（ログ）
+```
+
+**環境変数サポート**:
+```typescript
+// OpenTelemetry標準環境変数
+OTEL_EXPORTER_OTLP_ENDPOINT: string       // OTLPエンドポイント
+OTEL_EXPORTER_OTLP_PROTOCOL: 'grpc' | 'http/protobuf'
+OTEL_SERVICE_NAME: string                 // サービス名（デフォルト: 'lsp-mcp'）
+OTEL_TRACES_EXPORTER: 'otlp' | 'console' | 'none'
+OTEL_METRICS_EXPORTER: 'otlp' | 'console' | 'none'
+OTEL_LOGS_EXPORTER: 'otlp' | 'console' | 'none'
+
+// カスタム環境変数
+LSP_MCP_TELEMETRY_ENABLED: 'true' | 'false'  // テレメトリ有効化
+LSP_MCP_TELEMETRY_SAMPLE_RATE: number        // トレースサンプリングレート（0.0-1.0）
+```
+
+**パフォーマンス考慮事項**:
+- 非同期エクスポート: メイン処理をブロックしない
+- バッチ処理: 複数のスパン/メトリクスをまとめて送信
+- サンプリング: 高頻度操作のトレースはサンプリング（デフォルト10%）
+- 条件付き計測: テレメトリ無効時はオーバーヘッドゼロ
+
 ## データフロー
 
 ### シーケンス1: プロジェクトインデックス化
@@ -376,6 +452,47 @@ sequenceDiagram
     VDB-->>VS: success
     VS-->>IS: updated
     IS->>IS: updateLocalIndex()
+```
+
+### シーケンス4: テレメトリデータ収集とエクスポート
+
+```mermaid
+sequenceDiagram
+    participant MCP as MCP Server
+    participant OTEL as OpenTelemetry SDK
+    participant TEX as Trace Exporter
+    participant MEX as Metrics Exporter
+    participant LEX as Logs Exporter
+    participant BACK as Monitoring Backend
+
+    Note over MCP,OTEL: MCPツール呼び出し開始
+    MCP->>OTEL: startSpan("search_code")
+    OTEL->>OTEL: createSpan(attributes)
+
+    Note over MCP: 処理実行中
+    MCP->>OTEL: recordMetric("requests.total", +1)
+    MCP->>OTEL: recordMetric("search.duration", duration)
+
+    alt エラー発生
+        MCP->>OTEL: logError(error, context)
+        OTEL->>LEX: exportLog(error)
+    end
+
+    MCP->>OTEL: endSpan(status)
+
+    Note over OTEL: バッチ処理
+    OTEL->>TEX: exportBatch(spans[])
+    OTEL->>MEX: exportBatch(metrics[])
+
+    par 非同期エクスポート
+        TEX->>BACK: OTLP/gRPC (traces)
+        MEX->>BACK: OTLP/gRPC (metrics)
+        LEX->>BACK: OTLP/HTTP (logs)
+    end
+
+    BACK-->>TEX: ACK
+    BACK-->>MEX: ACK
+    BACK-->>LEX: ACK
 ```
 
 ## MCPツール定義
@@ -789,6 +906,35 @@ docker-compose up -d
 # 3. Claude Code再起動 → 即座に使用可能
 ```
 
+### 決定7: OpenTelemetryによる可観測性
+
+**検討した選択肢**:
+1. **OpenTelemetry** - ベンダー中立、業界標準、トレース/メトリクス/ログ統合
+2. カスタムロギング + Prometheus - 軽量、シンプル
+3. 監視機能なし - 最軽量、実装コスト最小
+
+**決定**: OpenTelemetry
+**根拠**:
+- **ベンダー中立性**: 特定の監視バックエンドに依存しない（Jaeger、Grafana、Prometheus等に対応）
+- **業界標準**: CNCF（Cloud Native Computing Foundation）プロジェクト、幅広い採用実績
+- **統合的な可観測性**: トレース、メトリクス、ログを統一的なAPIで収集
+- **分散トレーシング**: 外部サービス（ベクターDB、埋め込みAPI）との連携を可視化
+- **豊富なエコシステム**: 自動計測ライブラリ、エクスポーター、ツール群が充実
+- **パフォーマンス**: 非同期エクスポート、バッチ処理によりオーバーヘッド最小化
+
+**実装アプローチ**:
+- デフォルトで監視機能オフ（オプトイン方式）
+- 環境変数（OTEL_EXPORTER_OTLP_ENDPOINT等）での簡単な有効化
+- MCPツール呼び出し、ベクターDB操作、AST解析を自動計測
+- 条件付きコンパイルによりテレメトリ無効時のオーバーヘッドゼロ
+- サンプリング機能により高頻度操作の負荷軽減
+
+**監視可能な情報**:
+- **パフォーマンス**: リクエスト処理時間、ベクターDB応答時間、検索レイテンシー
+- **エラー追跡**: スタックトレース、エラー発生箇所、コンテキスト情報
+- **リソース使用量**: メモリ使用量、インデックス済みファイル数、CPU使用率
+- **ビジネスメトリクス**: 検索実行回数、インデックス化頻度、ツール呼び出し統計
+
 ## セキュリティ考慮事項
 
 ### データの取り扱い
@@ -907,6 +1053,20 @@ interface VectorStorePlugin {
   "privacy": {
     "blockExternalCalls": true,
     "allowedDomains": []
+  },
+  "telemetry": {
+    "enabled": false,
+    "otlp": {
+      "endpoint": "http://localhost:4317",
+      "protocol": "grpc"
+    },
+    "serviceName": "lsp-mcp",
+    "samplingRate": 0.1,
+    "exporters": {
+      "traces": "otlp",
+      "metrics": "otlp",
+      "logs": "otlp"
+    }
   }
 }
 ```
