@@ -30,6 +30,10 @@ class Metrics {
   private indexFilesValue = 0;
   private indexSymbolsValue = 0;
 
+  // メモリ使用量のキャッシュ（最適化用）
+  private memoryUsageCache: { value: number; timestamp: number } | null = null;
+  private readonly MEMORY_CACHE_TTL = 5000; // 5秒間キャッシュ
+
   constructor(telemetryManager: TelemetryManager) {
     this.meter = telemetryManager.getMeter('lsp-mcp-metrics');
 
@@ -86,9 +90,21 @@ class Metrics {
     });
 
     this.memoryUsage.addCallback((observableResult) => {
-      const used = process.memoryUsage();
-      const usageMB = used.heapUsed / 1024 / 1024;
-      observableResult.observe(usageMB);
+      // キャッシュを活用してprocess.memoryUsage()呼び出しを削減
+      const now = Date.now();
+      if (
+        this.memoryUsageCache &&
+        now - this.memoryUsageCache.timestamp < this.MEMORY_CACHE_TTL
+      ) {
+        // キャッシュが有効な場合はキャッシュ値を使用
+        observableResult.observe(this.memoryUsageCache.value);
+      } else {
+        // キャッシュが期限切れの場合は新しい値を取得
+        const used = process.memoryUsage();
+        const usageMB = used.heapUsed / 1024 / 1024;
+        this.memoryUsageCache = { value: usageMB, timestamp: now };
+        observableResult.observe(usageMB);
+      }
     });
   }
 

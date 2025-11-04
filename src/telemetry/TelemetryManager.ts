@@ -7,7 +7,12 @@ import {
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
-import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
+import {
+  ConsoleSpanExporter,
+  BatchSpanProcessor,
+  TraceIdRatioBasedSampler,
+  ParentBasedSampler,
+} from '@opentelemetry/sdk-trace-base';
 import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics';
 import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
@@ -192,8 +197,8 @@ export class TelemetryManager {
         [ATTR_SERVICE_VERSION]: packageJson.version || '0.1.0',
       });
 
-      // Trace Exporter
-      const traceExporter = this.createTraceExporter(
+      // Trace Exporter と SpanProcessor
+      const spanProcessor = this.createSpanProcessor(
         this.config.exporters?.traces || 'none'
       );
 
@@ -208,13 +213,18 @@ export class TelemetryManager {
         this.config.exporters?.logs || 'none'
       );
 
+      // サンプリング設定
+      const samplingRate = this.config.samplingRate ?? 0.1; // デフォルト10%
+      const sampler = new ParentBasedSampler({
+        root: new TraceIdRatioBasedSampler(samplingRate),
+      });
+
       // SDK初期化
       this.sdk = new NodeSDK({
         resource,
-        traceExporter,
+        spanProcessor,
         metricReader,
-        // サンプリング設定
-        // TODO: ParentBasedSamplerとTraceIdRatioBasedSamplerを組み合わせる
+        sampler,
       });
 
       await this.sdk.start();
@@ -230,25 +240,38 @@ export class TelemetryManager {
   }
 
   /**
-   * Trace Exporterを作成
+   * SpanProcessorを作成
+   * BatchSpanProcessorを使用して非同期バッチエクスポートを実現
    */
-  private createTraceExporter(type: ExporterType) {
+  private createSpanProcessor(type: ExporterType) {
+    let exporter;
     switch (type) {
       case 'otlp':
-        return new OTLPTraceExporter({
+        exporter = new OTLPTraceExporter({
           url: this.config.otlp?.endpoint,
         });
+        break;
       case 'console':
-        return new ConsoleSpanExporter();
+        exporter = new ConsoleSpanExporter();
+        break;
       case 'none':
       default:
         // NoopTracerProviderを使用するため、nullを返す
         return undefined;
     }
+
+    // BatchSpanProcessorでラップして非同期バッチ処理を有効化
+    return new BatchSpanProcessor(exporter, {
+      maxQueueSize: 2048,
+      maxExportBatchSize: 512,
+      scheduledDelayMillis: 5000, // 5秒ごとにエクスポート
+      exportTimeoutMillis: 30000, // 30秒タイムアウト
+    });
   }
 
   /**
    * Metric Readerを作成
+   * PeriodicExportingMetricReaderで1分ごとのバッチエクスポート
    */
   private createMetricReader(type: ExporterType) {
     switch (type) {
@@ -257,10 +280,12 @@ export class TelemetryManager {
           exporter: new OTLPMetricExporter({
             url: this.config.otlp?.endpoint,
           }),
+          exportIntervalMillis: 60000, // 1分ごとにエクスポート
         });
       case 'console':
         return new PeriodicExportingMetricReader({
           exporter: new ConsoleMetricExporter(),
+          exportIntervalMillis: 60000, // 1分ごとにエクスポート
         });
       case 'none':
       default:

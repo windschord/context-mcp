@@ -58,6 +58,36 @@ function getTracer(): Tracer {
 }
 
 /**
+ * パラメータを切り捨てる（1KB以上の場合）
+ */
+function truncateParams(params: Record<string, unknown>): string {
+  const jsonString = JSON.stringify(params);
+  const maxLength = 1024; // 1KB
+
+  if (jsonString.length > maxLength) {
+    return jsonString.substring(0, maxLength) + '...[truncated]';
+  }
+
+  return jsonString;
+}
+
+/**
+ * エラースタックトレースを切り捨てる（10行以内）
+ */
+function truncateStackTrace(error: Error): string {
+  if (!error.stack) {
+    return error.message;
+  }
+
+  const lines = error.stack.split('\n');
+  if (lines.length <= 10) {
+    return error.stack;
+  }
+
+  return lines.slice(0, 10).join('\n') + '\n...[truncated]';
+}
+
+/**
  * MCPツール呼び出しをトレース
  *
  * @param toolName ツール名（例: 'search_code', 'index_project'）
@@ -70,13 +100,18 @@ export async function traceToolCall<T>(
   params: Record<string, unknown>,
   fn: () => Promise<T>
 ): Promise<T> {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan(`mcp.tool.${toolName}`);
   const startTime = Date.now();
 
-  // スパン属性の設定
+  // スパン属性の設定（大きなパラメータは切り捨て）
   span.setAttribute('tool.name', toolName);
-  span.setAttribute('tool.params', JSON.stringify(params));
+  span.setAttribute('tool.params', truncateParams(params));
 
   try {
     // コンテキストを伝播して実行
@@ -95,8 +130,11 @@ export async function traceToolCall<T>(
     span.setAttribute('tool.duration', duration);
     span.setAttribute('tool.status', 'error');
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
@@ -122,6 +160,11 @@ export async function traceVectorDBOperation<T>(
   backend: string,
   fn: () => Promise<T>
 ): Promise<T> {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan(`vectordb.${operationType}`);
   const startTime = Date.now();
@@ -147,8 +190,11 @@ export async function traceVectorDBOperation<T>(
     span.setAttribute('operation.duration', duration);
     span.setAttribute('operation.status', 'error');
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
@@ -174,6 +220,11 @@ export async function traceASTParser<T>(
   filePath: string,
   fn: () => Promise<T>
 ): Promise<T> {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan('ast.parse');
   const startTime = Date.now();
@@ -199,8 +250,11 @@ export async function traceASTParser<T>(
     span.setAttribute('parse.duration', duration);
     span.setAttribute('parse.status', 'error');
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
@@ -228,6 +282,11 @@ export async function traceEmbedding<T>(
   textCount: number,
   fn: () => Promise<T>
 ): Promise<T> {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan('embedding.generate');
   const startTime = Date.now();
@@ -252,8 +311,11 @@ export async function traceEmbedding<T>(
     const duration = Date.now() - startTime;
     span.setAttribute('embedding.duration', duration);
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
@@ -279,13 +341,18 @@ export function traceToolCallSync<T>(
   params: Record<string, unknown>,
   fn: () => T
 ): T {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan(`mcp.tool.${toolName}`);
   const startTime = Date.now();
 
-  // スパン属性の設定
+  // スパン属性の設定（大きなパラメータは切り捨て）
   span.setAttribute('tool.name', toolName);
-  span.setAttribute('tool.params', JSON.stringify(params));
+  span.setAttribute('tool.params', truncateParams(params));
 
   try {
     // コンテキストを伝播して実行
@@ -304,8 +371,11 @@ export function traceToolCallSync<T>(
     span.setAttribute('tool.duration', duration);
     span.setAttribute('tool.status', 'error');
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
@@ -331,6 +401,11 @@ export function traceASTParserSync<T>(
   filePath: string,
   fn: () => T
 ): T {
+  // テレメトリ無効時の早期リターン
+  if (!telemetryManager || !telemetryManager.isEnabled()) {
+    return fn();
+  }
+
   const activeTracer = getTracer();
   const span = activeTracer.startSpan('ast.parse');
   const startTime = Date.now();
@@ -356,8 +431,11 @@ export function traceASTParserSync<T>(
     span.setAttribute('parse.duration', duration);
     span.setAttribute('parse.status', 'error');
 
-    // エラー情報を記録
-    span.recordException(error as Error);
+    // エラー情報を記録（スタックトレースは切り捨て）
+    if (error instanceof Error) {
+      span.setAttribute('error.stack', truncateStackTrace(error));
+      span.recordException(error);
+    }
     span.setStatus({
       code: SpanStatusCode.ERROR,
       message: error instanceof Error ? error.message : String(error),
