@@ -97,67 +97,27 @@ npm run build
 
 ## クイックスタート
 
-### 1. 初期設定
+設定ファイル不要で、Docker Compose起動とMCP設定のみで即座に使用開始できます。
 
-プロジェクトルートで設定ファイルを作成します:
-
-```bash
-# 標準モード（Milvus standalone使用、Docker必要）
-lsp-mcp init --mode local
-
-# クラウドモード（外部API使用）
-lsp-mcp init --mode cloud
-```
-
-設定ファイル`.lsp-mcp.json`が生成されます。
-
-### 2. Milvusのセットアップ（標準モード使用時）
+### 1. Milvus standaloneの起動
 
 ```bash
+# プロジェクトのルートディレクトリで実行
+cd /path/to/your/project
+
+# docker-compose.ymlをダウンロード（初回のみ）
+curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
+
 # Milvus standalone起動
 docker-compose up -d
 
-# 起動確認
+# 起動確認（milvus-standaloneが起動していることを確認）
 docker ps
 ```
 
-### 3. プロジェクトのインデックス化
-
-```bash
-# 現在のディレクトリをインデックス化
-lsp-mcp index .
-
-# 特定のディレクトリをインデックス化
-lsp-mcp index /path/to/project
-
-# 言語を指定してインデックス化
-lsp-mcp index . --languages typescript,python
-```
-
-## Claude Codeでの使用方法
-
-### 1. MCP設定ファイルに追加
-
-#### 方法A: `claude add`コマンドを使用（最も簡単、推奨）
-
-```bash
-# GitHubリポジトリから直接使用（推奨）
-claude add lsp-mcp npx github:windschord/lsp-mcp
-
-# ローカル開発時
-claude add lsp-mcp node /path/to/lsp_mcp/bin/lsp-mcp.js
-
-# 環境変数を指定する場合
-claude add lsp-mcp npx github:windschord/lsp-mcp --env LSP_MCP_MODE=local --env LOG_LEVEL=INFO
-```
-
-設定後、Claude Codeを再起動してください。
-
-#### 方法B: 設定ファイルを直接編集
+### 2. Claude CodeにMCP設定を追加
 
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
-
-##### GitHubリポジトリから直接使用（推奨）
 
 ```json
 {
@@ -166,6 +126,8 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
       "command": "npx",
       "args": ["github:windschord/lsp-mcp"],
       "env": {
+        "LSP_MCP_MODE": "local",
+        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -173,43 +135,17 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 }
 ```
 
-##### ローカル開発時
+設定後、Claude Codeを再起動してください。
 
-```json
-{
-  "mcpServers": {
-    "lsp-mcp": {
-      "command": "node",
-      "args": ["/path/to/lsp_mcp/bin/lsp-mcp.js"],
-      "env": {
-        "LOG_LEVEL": "INFO"
-      }
-    }
-  }
-}
-```
+### 3. 使用開始
 
-### 2. 設定の確認
-
-```bash
-# 追加されたサーバーを確認
-claude list
-
-# 設定ファイルを直接確認（macOS）
-cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
-```
-
-### 3. Claude Codeを再起動
-
-設定を反映させるため、Claude Codeを再起動します。
-
-### 4. 使用例
-
-Claude Codeで以下のように指示します:
+Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
 
 ```
 @lsp-mcp プロジェクトをインデックス化してください
 ```
+
+以降、セマンティック検索が利用可能になります:
 
 ```
 @lsp-mcp 「認証機能」に関連するコードを検索してください
@@ -218,6 +154,134 @@ Claude Codeで以下のように指示します:
 ```
 @lsp-mcp getUserById関数の定義と使用箇所を教えてください
 ```
+
+### （オプション）設定ファイルによるカスタマイズ
+
+環境変数だけでなく、プロジェクトごとに設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します:
+
+```bash
+# プロジェクトルートで設定ファイルを作成
+cd /path/to/your/project
+```
+
+`.lsp-mcp.json`の例:
+
+```json
+{
+  "mode": "local",
+  "vectorStore": {
+    "backend": "milvus",
+    "config": {
+      "address": "localhost:19530"
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2"
+  },
+  "indexing": {
+    "excludePatterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**"
+    ],
+    "languages": ["typescript", "python", "go"]
+  }
+}
+```
+
+設定ファイルと環境変数を併用する場合、**環境変数が優先**されます。
+
+## Claude Codeでの使用方法
+
+### MCP設定の詳細
+
+#### 設定例1: ローカルモード（環境変数のみ、推奨）
+
+Docker Composeで起動したMilvus standaloneを使用する最もシンプルな設定:
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### 設定例2: クラウドモード（Zilliz Cloud使用）
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "cloud",
+        "LSP_MCP_VECTOR_BACKEND": "zilliz",
+        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
+        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
+        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
+        "LSP_MCP_EMBEDDING_API_KEY": "your-openai-api-key",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### 設定例3: ローカル開発時
+
+リポジトリをクローンして開発している場合:
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "node",
+      "args": ["/path/to/lsp_mcp/bin/lsp-mcp.js"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LOG_LEVEL": "DEBUG"
+      }
+    }
+  }
+}
+```
+
+### 環境変数リファレンス
+
+| 環境変数 | 説明 | デフォルト値 | 例 |
+|---------|------|------------|-----|
+| `LSP_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
+| `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
+| `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
+| `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
+| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
+| `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
+| `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
+
+詳細は[環境変数リファレンス](docs/ENVIRONMENT_VARIABLES.md)を参照してください。
+
+### 設定の確認
+
+```bash
+# 追加されたサーバーを確認（claude CLIを使用している場合）
+claude list
+
+# 設定ファイルを直接確認（macOS）
+cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+設定後、**Claude Codeを再起動**してください。
 
 ## 設定
 
