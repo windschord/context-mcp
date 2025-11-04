@@ -86,6 +86,13 @@
   "dependencies": {
     "@babel/helper-validator-identifier": "^7.28.5",
     "@modelcontextprotocol/sdk": "^0.5.0",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.57.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.57.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.57.0",
+    "@opentelemetry/resources": "^1.29.0",
+    "@opentelemetry/sdk-node": "^0.57.0",
+    "@opentelemetry/semantic-conventions": "^1.29.0",
     "@types/chokidar": "^1.7.5",
     "@types/marked": "^5.0.2",
     "@xenova/transformers": "^2.17.2",
