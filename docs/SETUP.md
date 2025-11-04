@@ -6,10 +6,12 @@
 
 - [前提条件](#前提条件)
 - [インストール方法](#インストール方法)
+- [クイックスタート（ゼロコンフィグモード）](#クイックスタートゼロコンフィグモード)
 - [モード選択](#モード選択)
-- [軽量モード（Chroma）のセットアップ](#軽量モードchromaのセットアップ)
 - [標準モード（Milvus）のセットアップ](#標準モードmilvusのセットアップ)
 - [クラウドモードのセットアップ](#クラウドモードのセットアップ)
+- [環境変数による設定](#環境変数による設定)
+- [設定ファイルによるカスタマイズ](#設定ファイルによるカスタマイズ)
 - [Claude Code統合](#claude-code統合)
 - [初期インデックス化](#初期インデックス化)
 - [動作確認](#動作確認)
@@ -67,99 +69,102 @@ npm run build
 node dist/index.js --version
 ```
 
-### 方法3: npx経由で使用（インストール不要）
+### 方法3: npx経由で使用（インストール不要、推奨）
 
 ```bash
-# 一時的に使用する場合
-npx lsp-mcp --version
+# GitHubリポジトリから直接使用
+npx github:windschord/lsp-mcp --version
 ```
 
-## モード選択
+## クイックスタート（ゼロコンフィグモード）
 
-LSP-MCPは3つの動作モードをサポートしています:
+**最も簡単な方法**: 設定ファイル不要で、Docker Compose起動とMCP設定のみで即座に使用開始できます。
 
-| モード | 特徴 | 推奨用途 | 外部通信 |
-|--------|------|----------|----------|
-| **軽量モード** | Docker不要、Chroma使用 | 個人開発、Docker環境がない場合 | なし |
-| **標準モード** | Milvus standalone使用 | 中規模プロジェクト、高速検索が必要 | なし |
-| **クラウドモード** | 外部API使用 | 大規模プロジェクト、チーム利用 | あり |
-
-### モード選択のフローチャート
-
-```
-Docker環境がありますか？
-├─ No → 軽量モード（Chroma）
-└─ Yes
-    ├─ プライバシー重視ですか？
-    │   ├─ Yes → 標準モード（Milvus）
-    │   └─ No → どちらでも可
-    └─ プロジェクト規模は？
-        ├─ 小〜中規模 → 標準モード（Milvus）
-        └─ 大規模 → クラウドモード
-```
-
-## 軽量モード（Chroma）のセットアップ
-
-最も簡単なセットアップ方法です。Docker不要で、すぐに使い始められます。
-
-### ステップ1: 設定ファイルの作成
-
-プロジェクトルートディレクトリで実行:
+### ステップ1: Milvus standaloneの起動
 
 ```bash
+# プロジェクトのルートディレクトリで実行
 cd /path/to/your/project
 
-# 設定ファイルを対話的に作成
-lsp-mcp init --mode local-lite
+# docker-compose.ymlをダウンロード（初回のみ）
+curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
+
+# Milvus standalone起動
+docker-compose up -d
+
+# 起動確認（milvus-standaloneが起動していることを確認）
+docker ps
 ```
 
-以下の`.lsp-mcp.json`が生成されます:
+### ステップ2: Claude CodeにMCP設定を追加
+
+Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
 ```json
 {
-  "mode": "local",
-  "vectorStore": {
-    "backend": "chroma",
-    "config": {
-      "path": "./.lsp-mcp/chroma"
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "LOG_LEVEL": "INFO"
+      }
     }
-  },
-  "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2",
-    "local": true
-  },
-  "privacy": {
-    "blockExternalCalls": true
-  },
-  "indexing": {
-    "excludePatterns": [
-      "node_modules/**",
-      ".git/**",
-      "dist/**",
-      "build/**",
-      "*.min.js"
-    ]
   }
 }
 ```
 
-### ステップ2: 初回実行（モデルダウンロード）
+設定後、**Claude Codeを再起動**してください。
 
-初回実行時に埋め込みモデルが自動ダウンロードされます（約90MB）:
+### ステップ3: 使用開始
 
-```bash
-lsp-mcp index .
+Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
+
+```
+@lsp-mcp プロジェクトをインデックス化してください
 ```
 
-**初回実行時の注意**:
-- モデルダウンロードに数分かかります
-- ダウンロード先: `~/.cache/transformers/`
-- インターネット接続が必要（初回のみ）
+これで完了です。より詳細な設定やカスタマイズが必要な場合は、以下のセクションを参照してください。
 
-### ステップ3: 完了
+## モード選択
 
-これでセットアップ完了です。次回以降は外部通信なしで動作します。
+LSP-MCPは2つの動作モードをサポートしています:
+
+| モード | 特徴 | 推奨用途 | 外部通信 | セットアップ難易度 |
+|--------|------|----------|----------|-------------------|
+| **ローカルモード**（デフォルト） | Milvus standalone使用、Transformers.js埋め込み | ほとんどのユースケース、プライバシー重視 | なし | 簡単（Docker必要） |
+| **クラウドモード** | Zilliz Cloud、OpenAI API使用 | 大規模プロジェクト、チーム利用、最高性能 | あり | 中程度（アカウント・APIキー必要） |
+
+### モード選択のフローチャート
+
+```
+どのモードを選択しますか？
+
+プライバシー重視 or Docker環境あり？
+├─ Yes → ローカルモード（推奨）
+│         ・外部通信なし
+│         ・Docker Composeでセットアップ
+│         ・コスト: 無料
+│
+└─ No → クラウドモード
+          ・高速・高精度
+          ・APIキー必要
+          ・コスト: 従量課金（OpenAI、Zilliz Cloud）
+```
+
+### モード別の要件比較
+
+| 項目 | ローカルモード | クラウドモード |
+|-----|-------------|--------------|
+| Docker | 必要 | 不要 |
+| インターネット接続 | 不要（初回モデルDL時のみ） | 必要 |
+| APIキー | 不要 | 必要（OpenAI、Zilliz） |
+| コスト | 無料 | 従量課金 |
+| プライバシー | 完全ローカル | データ送信あり |
+| 検索速度 | 高速 | 最速 |
+| セットアップ時間 | 5分 | 10分（アカウント作成含む） |
 
 ## 標準モード（Milvus）のセットアップ
 
@@ -390,6 +395,163 @@ lsp-mcp estimate-cost /path/to/project
 # - Zilliz Cloud storage: ~$5/month (Starter plan)
 # Total: ~$0.50 initial + $5/month
 ```
+
+## 環境変数による設定
+
+LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
+
+### 設定の優先順位
+
+```
+優先度（高）
+  ↓
+1. 環境変数（LSP_MCP_MODE等）
+  ↓
+2. ユーザー設定ファイル（.lsp-mcp.json）
+  ↓
+3. デフォルト設定（src/config/types.ts）
+  ↓
+優先度（低）
+```
+
+環境変数と設定ファイルを併用した場合、**環境変数の値が優先**されます。
+
+### サポートされている環境変数
+
+| 環境変数 | 説明 | デフォルト値 | 例 |
+|---------|------|------------|-----|
+| `LSP_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
+| `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
+| `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
+| `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
+| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
+| `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
+| `LSP_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `Xenova/all-MiniLM-L6-v2` |
+| `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
+
+詳細は[環境変数リファレンス](ENVIRONMENT_VARIABLES.md)を参照してください。
+
+### 使用例
+
+#### 例1: ローカルモード（最もシンプル）
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### 例2: クラウドモード
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "cloud",
+        "LSP_MCP_VECTOR_BACKEND": "zilliz",
+        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
+        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
+        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
+        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### 例3: ハイブリッドモード（ローカルベクターDB + クラウド埋め込み）
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
+        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+## 設定ファイルによるカスタマイズ
+
+環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します。
+
+### 設定ファイルの作成
+
+プロジェクトルートに`.lsp-mcp.json`を作成:
+
+```json
+{
+  "mode": "local",
+  "vectorStore": {
+    "backend": "milvus",
+    "config": {
+      "address": "localhost:19530"
+    }
+  },
+  "embedding": {
+    "provider": "transformers",
+    "model": "Xenova/all-MiniLM-L6-v2"
+  },
+  "indexing": {
+    "languages": ["typescript", "python", "go", "rust"],
+    "excludePatterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "*.min.js",
+      ".env",
+      ".env.*",
+      "credentials.json",
+      "**/secret/**"
+    ],
+    "includeDocuments": true
+  },
+  "search": {
+    "bm25Weight": 0.3,
+    "vectorWeight": 0.7
+  },
+  "privacy": {
+    "blockExternalCalls": true
+  }
+}
+```
+
+### 環境変数と設定ファイルの併用
+
+環境変数と`.lsp-mcp.json`を併用する場合、以下のマージロジックが適用されます：
+
+1. デフォルト設定を読み込む
+2. `.lsp-mcp.json`が存在する場合、その内容で上書き
+3. 環境変数が設定されている場合、その値で上書き（最優先）
+
+### 設定方式の比較
+
+| 方式 | メリット | デメリット | 推奨ユースケース |
+|-----|---------|-----------|----------------|
+| **環境変数のみ** | 簡単、CI/CD対応、Git管理不要 | プロジェクト固有設定に不向き | 個人開発、シンプルな設定 |
+| **設定ファイルのみ** | プロジェクト固有設定、Git管理可能 | 環境ごとの変更に不向き | チーム開発、複雑な設定 |
+| **併用** | 柔軟性最大、環境ごとの上書き可能 | やや複雑 | 複数環境（dev/staging/prod） |
 
 ## Claude Code統合
 
