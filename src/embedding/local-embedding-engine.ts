@@ -16,6 +16,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { EmbeddingEngine, LocalEmbeddingOptions } from './types';
 import { logger } from '../utils/logger';
+import { traceEmbedding } from '../telemetry/instrumentation.js';
 
 /**
  * デフォルト設定
@@ -93,18 +94,20 @@ export class LocalEmbeddingEngine implements EmbeddingEngine {
   async embed(text: string): Promise<number[]> {
     this.ensureInitialized();
 
-    try {
-      const output = await this.model!(text, {
-        pooling: 'mean',
-        normalize: true,
-      });
+    return await traceEmbedding('transformers', this.modelName, 1, async () => {
+      try {
+        const output = await this.model!(text, {
+          pooling: 'mean',
+          normalize: true,
+        });
 
-      // Tensorからプレーン配列に変換
-      return Array.from(output.data as Float32Array);
-    } catch (error) {
-      logger.error('Failed to embed text', error);
-      throw new Error(`Failed to embed text: ${error}`);
-    }
+        // Tensorからプレーン配列に変換
+        return Array.from(output.data as Float32Array);
+      } catch (error) {
+        logger.error('Failed to embed text', error);
+        throw new Error(`Failed to embed text: ${error}`);
+      }
+    });
   }
 
   /**
@@ -114,29 +117,42 @@ export class LocalEmbeddingEngine implements EmbeddingEngine {
   async embedBatch(texts: string[]): Promise<number[][]> {
     this.ensureInitialized();
 
-    if (texts.length === 0) {
-      return [];
-    }
-
-    try {
-      const results: number[][] = [];
-
-      // バッチサイズごとに分割して処理
-      for (let i = 0; i < texts.length; i += this.batchSize) {
-        const batch = texts.slice(i, i + this.batchSize);
-        logger.debug(`Processing batch ${i / this.batchSize + 1}/${Math.ceil(texts.length / this.batchSize)}`);
-
-        // バッチ処理
-        const batchResults = await Promise.all(batch.map((text) => this.embed(text)));
-        results.push(...batchResults);
+    return await traceEmbedding('transformers', this.modelName, texts.length, async () => {
+      if (texts.length === 0) {
+        return [];
       }
 
-      logger.info(`Embedded ${texts.length} texts in ${Math.ceil(texts.length / this.batchSize)} batches`);
-      return results;
-    } catch (error) {
-      logger.error('Failed to embed batch', error);
-      throw new Error(`Failed to embed batch: ${error}`);
-    }
+      try {
+        const results: number[][] = [];
+
+        // バッチサイズごとに分割して処理
+        for (let i = 0; i < texts.length; i += this.batchSize) {
+          const batch = texts.slice(i, i + this.batchSize);
+          logger.debug(`Processing batch ${i / this.batchSize + 1}/${Math.ceil(texts.length / this.batchSize)}`);
+
+          // バッチ処理（トレースは外側で既に行われているため、内部ではトレースなし）
+          const batchResults = await Promise.all(batch.map(async (text) => {
+            try {
+              const output = await this.model!(text, {
+                pooling: 'mean',
+                normalize: true,
+              });
+              return Array.from(output.data as Float32Array);
+            } catch (error) {
+              logger.error('Failed to embed text in batch', error);
+              throw new Error(`Failed to embed text: ${error}`);
+            }
+          }));
+          results.push(...batchResults);
+        }
+
+        logger.info(`Embedded ${texts.length} texts in ${Math.ceil(texts.length / this.batchSize)} batches`);
+        return results;
+      } catch (error) {
+        logger.error('Failed to embed batch', error);
+        throw new Error(`Failed to embed batch: ${error}`);
+      }
+    });
   }
 
   /**

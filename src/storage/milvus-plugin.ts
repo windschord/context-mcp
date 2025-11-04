@@ -13,6 +13,8 @@ import type {
   CollectionStats,
 } from './types';
 import { Logger } from '../utils/logger';
+import { traceVectorDBOperation } from '../telemetry/instrumentation.js';
+import { withTraceContext } from '../telemetry/context-propagation.js';
 
 /**
  * リトライ設定
@@ -101,31 +103,35 @@ export class MilvusPlugin implements VectorStorePlugin {
    * Milvusに接続
    */
   async connect(config: VectorStoreConfig): Promise<void> {
-    this.logger.info('Connecting to Milvus...');
+    return await traceVectorDBOperation('connect' as any, 'milvus', async () => {
+      return await withTraceContext(async () => {
+        this.logger.info('Connecting to Milvus...');
 
-    const milvusConfig = config.config as Record<string, unknown>;
-    this.config = {
-      address: milvusConfig['address'] as string,
-      token: milvusConfig['token'] as string | undefined,
-      username: milvusConfig['username'] as string | undefined,
-      password: milvusConfig['password'] as string | undefined,
-      ssl: milvusConfig['ssl'] as boolean | undefined,
-      standalone: milvusConfig['standalone'] as boolean | undefined,
-    };
+        const milvusConfig = config.config as Record<string, unknown>;
+        this.config = {
+          address: milvusConfig['address'] as string,
+          token: milvusConfig['token'] as string | undefined,
+          username: milvusConfig['username'] as string | undefined,
+          password: milvusConfig['password'] as string | undefined,
+          ssl: milvusConfig['ssl'] as boolean | undefined,
+          standalone: milvusConfig['standalone'] as boolean | undefined,
+        };
 
-    await this.retryWithBackoff(async () => {
-      this.client = new MilvusClient({
-        address: this.config!.address,
-        token: this.config!.token,
-        username: this.config!.username,
-        password: this.config!.password,
-        ssl: this.config!.ssl || false,
+        await this.retryWithBackoff(async () => {
+          this.client = new MilvusClient({
+            address: this.config!.address,
+            token: this.config!.token,
+            username: this.config!.username,
+            password: this.config!.password,
+            ssl: this.config!.ssl || false,
+          });
+
+          // 接続テスト: バージョン情報を取得
+          const version = await this.client.getVersion();
+          this.logger.info(`Connected to Milvus version: ${version.version}`);
+        }, 'connect');
       });
-
-      // 接続テスト: バージョン情報を取得
-      const version = await this.client.getVersion();
-      this.logger.info(`Connected to Milvus version: ${version.version}`);
-    }, 'connect');
+    });
   }
 
   /**
@@ -223,41 +229,45 @@ export class MilvusPlugin implements VectorStorePlugin {
    * ベクトルを挿入または更新
    */
   async upsert(collectionName: string, vectors: Vector[]): Promise<void> {
-    const client = this.ensureClient();
-    this.logger.debug(`Upserting ${vectors.length} vectors to collection: ${collectionName}`);
+    return await traceVectorDBOperation('upsert', 'milvus', async () => {
+      return await withTraceContext(async () => {
+        const client = this.ensureClient();
+        this.logger.debug(`Upserting ${vectors.length} vectors to collection: ${collectionName}`);
 
-    // コレクションの存在確認
-    const hasCollection = await client.hasCollection({ collection_name: collectionName });
-    if (!hasCollection.value) {
-      throw new Error(`Collection ${collectionName} does not exist`);
-    }
+        // コレクションの存在確認
+        const hasCollection = await client.hasCollection({ collection_name: collectionName });
+        if (!hasCollection.value) {
+          throw new Error(`Collection ${collectionName} does not exist`);
+        }
 
-    // データを整形
-    const data = vectors.map((v) => ({
-      id: v.id,
-      vector: v.vector,
-      metadata: v.metadata || {},
-    }));
+        // データを整形
+        const data = vectors.map((v) => ({
+          id: v.id,
+          vector: v.vector,
+          metadata: v.metadata || {},
+        }));
 
-    // 既存のベクトルを削除（upsert動作のため）
-    const ids = vectors.map((v) => v.id);
-    try {
-      await client.delete({
-        collection_name: collectionName,
-        expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
-      } as any);
-    } catch (error) {
-      // 削除エラーは無視（エンティティが存在しない場合）
-      this.logger.debug(`Delete before upsert failed (ignoring): ${error}`);
-    }
+        // 既存のベクトルを削除（upsert動作のため）
+        const ids = vectors.map((v) => v.id);
+        try {
+          await client.delete({
+            collection_name: collectionName,
+            expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
+          } as any);
+        } catch (error) {
+          // 削除エラーは無視（エンティティが存在しない場合）
+          this.logger.debug(`Delete before upsert failed (ignoring): ${error}`);
+        }
 
-    // 新しいデータを挿入
-    await client.insert({
-      collection_name: collectionName,
-      data,
+        // 新しいデータを挿入
+        await client.insert({
+          collection_name: collectionName,
+          data,
+        });
+
+        this.logger.debug(`Upserted ${vectors.length} vectors successfully`);
+      });
     });
-
-    this.logger.debug(`Upserted ${vectors.length} vectors successfully`);
   }
 
   /**
@@ -269,78 +279,86 @@ export class MilvusPlugin implements VectorStorePlugin {
     topK: number,
     filter?: Record<string, unknown>
   ): Promise<QueryResult[]> {
-    const client = this.ensureClient();
-    this.logger.debug(
-      `Querying collection: ${collectionName} (topK: ${topK}, filter: ${JSON.stringify(filter)})`
-    );
+    return await traceVectorDBOperation('query', 'milvus', async () => {
+      return await withTraceContext(async () => {
+        const client = this.ensureClient();
+        this.logger.debug(
+          `Querying collection: ${collectionName} (topK: ${topK}, filter: ${JSON.stringify(filter)})`
+        );
 
-    // コレクションの存在確認
-    const hasCollection = await client.hasCollection({ collection_name: collectionName });
-    if (!hasCollection.value) {
-      throw new Error(`Collection ${collectionName} does not exist`);
-    }
-
-    // フィルタ式を構築
-    let expr: string | undefined;
-    if (filter) {
-      const conditions = Object.entries(filter).map(([key, value]) => {
-        if (typeof value === 'string') {
-          return `metadata["${key}"] == "${value}"`;
-        } else if (typeof value === 'number') {
-          return `metadata["${key}"] == ${value}`;
-        } else if (typeof value === 'boolean') {
-          return `metadata["${key}"] == ${value}`;
+        // コレクションの存在確認
+        const hasCollection = await client.hasCollection({ collection_name: collectionName });
+        if (!hasCollection.value) {
+          throw new Error(`Collection ${collectionName} does not exist`);
         }
-        return '';
+
+        // フィルタ式を構築
+        let expr: string | undefined;
+        if (filter) {
+          const conditions = Object.entries(filter).map(([key, value]) => {
+            if (typeof value === 'string') {
+              return `metadata["${key}"] == "${value}"`;
+            } else if (typeof value === 'number') {
+              return `metadata["${key}"] == ${value}`;
+            } else if (typeof value === 'boolean') {
+              return `metadata["${key}"] == ${value}`;
+            }
+            return '';
+          });
+          expr = conditions.filter((c) => c).join(' && ');
+        }
+
+        // 検索実行
+        const results = await client.search({
+          collection_name: collectionName,
+          data: [vector],
+          limit: topK,
+          output_fields: ['id', 'metadata'],
+          filter: expr,
+        });
+
+        // 結果を変換
+        if (!results.results || results.results.length === 0) {
+          return [];
+        }
+
+        return results.results.map((result: any) => ({
+          id: result.id as string,
+          score: 1 - (result.score as number), // L2距離を類似度に変換（0-1の範囲）
+          metadata: result.metadata as Record<string, unknown>,
+        }));
       });
-      expr = conditions.filter((c) => c).join(' && ');
-    }
-
-    // 検索実行
-    const results = await client.search({
-      collection_name: collectionName,
-      data: [vector],
-      limit: topK,
-      output_fields: ['id', 'metadata'],
-      filter: expr,
     });
-
-    // 結果を変換
-    if (!results.results || results.results.length === 0) {
-      return [];
-    }
-
-    return results.results.map((result: any) => ({
-      id: result.id as string,
-      score: 1 - (result.score as number), // L2距離を類似度に変換（0-1の範囲）
-      metadata: result.metadata as Record<string, unknown>,
-    }));
   }
 
   /**
    * ベクトルを削除
    */
   async delete(collectionName: string, ids: string[]): Promise<void> {
-    const client = this.ensureClient();
-    this.logger.debug(`Deleting ${ids.length} vectors from collection: ${collectionName}`);
+    return await traceVectorDBOperation('delete', 'milvus', async () => {
+      return await withTraceContext(async () => {
+        const client = this.ensureClient();
+        this.logger.debug(`Deleting ${ids.length} vectors from collection: ${collectionName}`);
 
-    // コレクションの存在確認
-    const hasCollection = await client.hasCollection({ collection_name: collectionName });
-    if (!hasCollection.value) {
-      throw new Error(`Collection ${collectionName} does not exist`);
-    }
+        // コレクションの存在確認
+        const hasCollection = await client.hasCollection({ collection_name: collectionName });
+        if (!hasCollection.value) {
+          throw new Error(`Collection ${collectionName} does not exist`);
+        }
 
-    if (ids.length === 0) {
-      return;
-    }
+        if (ids.length === 0) {
+          return;
+        }
 
-    // 削除実行
-    await client.delete({
-      collection_name: collectionName,
-      expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
-    } as any);
+        // 削除実行
+        await client.delete({
+          collection_name: collectionName,
+          expr: `id in [${ids.map((id) => `"${id}"`).join(', ')}]`,
+        } as any);
 
-    this.logger.debug(`Deleted ${ids.length} vectors successfully`);
+        this.logger.debug(`Deleted ${ids.length} vectors successfully`);
+      });
+    });
   }
 
   /**

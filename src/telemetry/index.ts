@@ -41,3 +41,11 @@ export {
   TraceEmbedding,
   Trace,
 } from './decorators.js';
+export {
+  propagateTraceContext,
+  extractTraceContext,
+  withTraceContext,
+  addTraceContextAttributes,
+  getCurrentTraceId,
+  getCurrentSpanId,
+} from './context-propagation.js';
