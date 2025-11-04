@@ -6,10 +6,18 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
+import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { ConsoleSpanExporter } from '@opentelemetry/sdk-trace-base';
 import { ConsoleMetricExporter } from '@opentelemetry/sdk-metrics';
+import { ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
 import { PeriodicExportingMetricReader } from '@opentelemetry/sdk-metrics';
+import {
+  LoggerProvider,
+  BatchLogRecordProcessor,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 import { trace, Tracer, metrics, Meter } from '@opentelemetry/api';
+import { logs } from '@opentelemetry/api-logs';
 import {
   TelemetryConfig,
   DEFAULT_TELEMETRY_CONFIG,
@@ -23,6 +31,7 @@ import { logger } from '../utils/logger.js';
  */
 export class TelemetryManager {
   private sdk?: NodeSDK;
+  private loggerProvider?: LoggerProvider;
   private config: TelemetryConfig;
   private initialized = false;
 
@@ -193,6 +202,12 @@ export class TelemetryManager {
         this.config.exporters?.metrics || 'none'
       );
 
+      // Logger Provider
+      this.loggerProvider = this.createLoggerProvider(
+        resource,
+        this.config.exporters?.logs || 'none'
+      );
+
       // SDK初期化
       this.sdk = new NodeSDK({
         resource,
@@ -254,6 +269,39 @@ export class TelemetryManager {
   }
 
   /**
+   * Logger Providerを作成
+   */
+  private createLoggerProvider(resource: Resource, type: ExporterType): LoggerProvider {
+    const loggerProvider = new LoggerProvider({ resource });
+
+    switch (type) {
+      case 'otlp': {
+        const exporter = new OTLPLogExporter({
+          url: this.config.otlp?.endpoint,
+        });
+        // バッチ処理でエクスポート
+        loggerProvider.addLogRecordProcessor(new BatchLogRecordProcessor(exporter));
+        break;
+      }
+      case 'console': {
+        const exporter = new ConsoleLogRecordExporter();
+        // シンプルな即時エクスポート
+        loggerProvider.addLogRecordProcessor(new SimpleLogRecordProcessor(exporter));
+        break;
+      }
+      case 'none':
+      default:
+        // プロセッサーなし（NoOp）
+        break;
+    }
+
+    // グローバルLoggerProviderとして設定
+    logs.setGlobalLoggerProvider(loggerProvider);
+
+    return loggerProvider;
+  }
+
+  /**
    * package.jsonからバージョン情報を取得
    */
   private getPackageVersion(): { version: string } {
@@ -308,12 +356,21 @@ export class TelemetryManager {
    * グレースフルシャットダウン
    */
   async shutdown(): Promise<void> {
-    if (!this.sdk) {
+    if (!this.sdk && !this.loggerProvider) {
       return;
     }
 
     try {
-      await this.sdk.shutdown();
+      // LoggerProviderのシャットダウン
+      if (this.loggerProvider) {
+        await this.loggerProvider.shutdown();
+      }
+
+      // SDKのシャットダウン
+      if (this.sdk) {
+        await this.sdk.shutdown();
+      }
+
       logger.info('OpenTelemetryテレメトリをシャットダウンしました');
     } catch (error) {
       logger.error(`テレメトリのシャットダウンに失敗しました: ${error}`);
