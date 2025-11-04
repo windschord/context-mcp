@@ -222,6 +222,58 @@ where α = 0.3 (デフォルト、設定可能)
 - `unwatch()`: 監視停止
 - `onFileChange(callback)`: 変更イベントハンドラー
 
+### コンポーネント9: Environment-based Configuration System
+**目的**: 環境変数のみで動作可能なゼロコンフィグ設定システム
+**責務**:
+- デフォルト設定の提供（ローカルモード、Milvus standalone、Transformers.js）
+- 環境変数からの設定読み込み
+- 設定ファイルとのマージ
+- 設定の優先順位適用（環境変数 > 設定ファイル > デフォルト）
+- 適用された設定のログ出力
+
+**インターフェース**:
+- `loadConfig()`: 設定読み込み（環境変数、ファイル、デフォルトをマージ）
+- `getConfig()`: 現在の設定取得
+- `validateConfig(config)`: 設定のバリデーション
+- `applyEnvironmentOverrides(config)`: 環境変数によるオーバーライド
+
+**サポート環境変数**:
+```typescript
+// モード設定
+LSP_MCP_MODE: 'local' | 'cloud'
+
+// ベクターDB設定
+LSP_MCP_VECTOR_BACKEND: 'milvus' | 'zilliz'
+LSP_MCP_VECTOR_ADDRESS: string  // 例: 'localhost:19530'
+LSP_MCP_VECTOR_TOKEN: string    // Zilliz Cloud認証用
+
+// 埋め込み設定
+LSP_MCP_EMBEDDING_PROVIDER: 'transformers' | 'openai' | 'voyageai'
+LSP_MCP_EMBEDDING_API_KEY: string  // クラウドプロバイダー用
+LSP_MCP_EMBEDDING_MODEL: string    // モデル名（省略可）
+
+// ログ設定
+LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+```
+
+**設定の優先順位**:
+```
+優先度（高）
+  ↓
+1. 環境変数（LSP_MCP_MODE等）
+  ↓
+2. ユーザー設定ファイル（.lsp-mcp.json）
+  ↓
+3. デフォルト設定（types.ts内のDEFAULT_CONFIG）
+  ↓
+優先度（低）
+```
+
+**ゼロコンフィグモード**:
+- 設定ファイルが存在しない場合、デフォルト設定で起動
+- 環境変数で必要最小限の設定（モード、ベクターDBアドレス等）を指定可能
+- Docker Compose起動 + MCP設定（環境変数）のみで即座に使用開始
+
 ## データフロー
 
 ### シーケンス1: プロジェクトインデックス化
@@ -684,6 +736,58 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 - 設定で簡単にクラウドモードに切り替え可能（Zilliz Cloud）
 - 初回セットアップ時にモード選択を提示
 - Docker Composeで簡単にMilvus standaloneを起動
+
+### 決定6: ゼロコンフィグ設計（環境変数ベース設定）
+
+**検討した選択肢**:
+1. **環境変数ベースのゼロコンフィグ** - 設定ファイル不要、即座に使用開始可能
+2. 設定ファイル必須 - 設定の一元管理、Git管理可能
+3. 対話式ウィザード必須 - ユーザーフレンドリー、ガイド付きセットアップ
+
+**決定**: 環境変数ベースのゼロコンフィグ（設定ファイルはオプション）
+**根拠**:
+- **即座に使用開始**: Docker Compose起動 + MCP設定のみで動作
+- **Claude Code統合の簡素化**: claude_desktop_config.jsonの環境変数セクションで完結
+- **CI/CD対応**: 環境変数による設定変更が容易
+- **柔軟性**: 設定ファイル（.lsp-mcp.json）も並行サポート、用途に応じて選択可能
+- **デフォルトの妥当性**: ローカルモード + Milvus localhost:19530 + Transformers.jsが多くのユースケースをカバー
+
+**設定の優先順位**:
+```
+1. 環境変数（最優先）
+   ↓ 上書き
+2. ユーザー設定ファイル（.lsp-mcp.json）
+   ↓ 補完
+3. デフォルト設定（DEFAULT_CONFIG）
+```
+
+**実装アプローチ**:
+- ConfigManagerの`applyEnvironmentOverrides()`で環境変数を適用（既存実装を活用）
+- 設定ファイルが存在しない場合もエラーにせず、デフォルト設定で起動
+- 起動時に適用された設定をINFOレベルでログ出力
+- ドキュメントでゼロコンフィグ手順を最上位に配置
+
+**ユーザー体験**:
+```bash
+# 1. Milvus起動
+docker-compose up -d
+
+# 2. Claude Code MCP設定（環境変数のみ）
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "npx",
+      "args": ["github:windschord/lsp-mcp"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+
+# 3. Claude Code再起動 → 即座に使用可能
+```
 
 ## セキュリティ考慮事項
 
