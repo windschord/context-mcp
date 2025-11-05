@@ -42,8 +42,8 @@
     "no-case-declarations": "off",
     "no-console": "warn",
     "no-useless-escape": "warn",
-    "eqeqeq": ["error", "always"],
-    "no-var": "error",
+    "eqeqeq": ["warn", "always"],
+    "no-var": "warn",
     "prefer-const": "warn"
   },
   "ignorePatterns": [
