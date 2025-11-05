@@ -176,12 +176,9 @@ describe('Context Propagation', () => {
 
     it('カスタムコンテキストで実行できる', async () => {
       const customContext = context.active();
-      const result = await withTraceContext(
-        async () => {
-          return 'success';
-        },
-        customContext
-      );
+      const result = await withTraceContext(async () => {
+        return 'success';
+      }, customContext);
 
       expect(result).toBe('success');
     });
@@ -371,12 +368,9 @@ describe('Context Propagation', () => {
         const extractedContext = extractTraceContext(headers);
 
         // 抽出されたコンテキストで実行
-        const result = await withTraceContext(
-          async () => {
-            return 'e2e-success';
-          },
-          extractedContext
-        );
+        const result = await withTraceContext(async () => {
+          return 'e2e-success';
+        }, extractedContext);
 
         expect(result).toBe('e2e-success');
       });

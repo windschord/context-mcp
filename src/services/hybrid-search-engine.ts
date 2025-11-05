@@ -80,7 +80,7 @@ export class HybridSearchEngine {
   constructor(
     private bm25Engine: BM25Engine,
     private vectorStore: VectorStorePlugin,
-    alpha: number = 0.3,
+    alpha: number = 0.3
   ) {
     if (alpha < 0 || alpha > 1) {
       throw new Error('Alpha parameter must be between 0 and 1');
@@ -104,20 +104,21 @@ export class HybridSearchEngine {
     query: string,
     queryVector: number[],
     topK: number,
-    filter?: SearchFilter,
+    filter?: SearchFilter
   ): Promise<HybridSearchResult[]> {
     this.logger.debug(`Hybrid search: query="${query}", topK=${topK}`);
 
     // 1. BM25検索を実行（クエリが空でない場合のみ）
-    const bm25Results: SearchResult[] = query.trim().length > 0
-      ? await this.bm25Engine.search(query, topK * 2) // 多めに取得してマージ
-      : [];
+    const bm25Results: SearchResult[] =
+      query.trim().length > 0
+        ? await this.bm25Engine.search(query, topK * 2) // 多めに取得してマージ
+        : [];
 
     // 2. ベクトル検索を実行
     const vectorResults: QueryResult[] = await this.vectorStore.query(
       collectionName,
       queryVector,
-      topK * 2, // 多めに取得してマージ
+      topK * 2 // 多めに取得してマージ
     );
 
     // 3. 結果をマージ
@@ -125,20 +126,20 @@ export class HybridSearchEngine {
 
     // 4. スコアを正規化
     const normalizedBM25 = this.normalizeScores(
-      Array.from(mergedMap.values()).map(doc => ({ id: doc.id, score: doc.bm25Score }))
+      Array.from(mergedMap.values()).map((doc) => ({ id: doc.id, score: doc.bm25Score }))
     );
     const normalizedVector = this.normalizeScores(
-      Array.from(mergedMap.values()).map(doc => ({ id: doc.id, score: doc.vectorScore }))
+      Array.from(mergedMap.values()).map((doc) => ({ id: doc.id, score: doc.vectorScore }))
     );
 
     // 正規化スコアをマップに反映
-    normalizedBM25.forEach(item => {
+    normalizedBM25.forEach((item) => {
       const doc = mergedMap.get(item.id);
       if (doc) {
         doc.bm25Score = item.score;
       }
     });
-    normalizedVector.forEach(item => {
+    normalizedVector.forEach((item) => {
       const doc = mergedMap.get(item.id);
       if (doc) {
         doc.vectorScore = item.score;
@@ -146,7 +147,7 @@ export class HybridSearchEngine {
     });
 
     // 5. ハイブリッドスコアを計算
-    const hybridResults: HybridSearchResult[] = Array.from(mergedMap.values()).map(doc => ({
+    const hybridResults: HybridSearchResult[] = Array.from(mergedMap.values()).map((doc) => ({
       id: doc.id,
       score: this.calculateHybridScore(doc.bm25Score, doc.vectorScore),
       metadata: doc.metadata,
@@ -165,7 +166,9 @@ export class HybridSearchEngine {
    * @param scores スコア配列
    * @returns 正規化されたスコア配列
    */
-  normalizeScores(scores: Array<{ id: string; score: number }>): Array<{ id: string; score: number }> {
+  normalizeScores(
+    scores: Array<{ id: string; score: number }>
+  ): Array<{ id: string; score: number }> {
     if (scores.length === 0) {
       return [];
     }
@@ -174,17 +177,17 @@ export class HybridSearchEngine {
       return [{ id: scores[0].id, score: 1.0 }];
     }
 
-    const scoreValues = scores.map(s => s.score);
+    const scoreValues = scores.map((s) => s.score);
     const minScore = Math.min(...scoreValues);
     const maxScore = Math.max(...scoreValues);
 
     // すべてのスコアが同じ場合は1.0にする
     if (maxScore === minScore) {
-      return scores.map(s => ({ id: s.id, score: 1.0 }));
+      return scores.map((s) => ({ id: s.id, score: 1.0 }));
     }
 
     // Min-Max正規化
-    return scores.map(s => ({
+    return scores.map((s) => ({
       id: s.id,
       score: (s.score - minScore) / (maxScore - minScore),
     }));
@@ -199,7 +202,7 @@ export class HybridSearchEngine {
    */
   mergeResults(
     bm25Results: SearchResult[],
-    vectorResults: QueryResult[],
+    vectorResults: QueryResult[]
   ): Map<string, MergedDocument> {
     const merged = new Map<string, MergedDocument>();
 
@@ -259,7 +262,7 @@ export class HybridSearchEngine {
 
     // ファイルタイプフィルタ
     if (filter.fileTypes && filter.fileTypes.length > 0) {
-      filtered = filtered.filter(result => {
+      filtered = filtered.filter((result) => {
         const fileType = result.metadata?.fileType as string | undefined;
         return fileType && filter.fileTypes!.includes(fileType);
       });
@@ -267,7 +270,7 @@ export class HybridSearchEngine {
 
     // 言語フィルタ
     if (filter.languages && filter.languages.length > 0) {
-      filtered = filtered.filter(result => {
+      filtered = filtered.filter((result) => {
         const language = result.metadata?.language as string | undefined;
         return language && filter.languages!.includes(language);
       });
@@ -275,7 +278,7 @@ export class HybridSearchEngine {
 
     // パスパターンフィルタ
     if (filter.pathPattern) {
-      filtered = filtered.filter(result => {
+      filtered = filtered.filter((result) => {
         return result.id.includes(filter.pathPattern!);
       });
     }

@@ -4,11 +4,7 @@
 
 import { EventEmitter } from 'events';
 import chokidar, { FSWatcher } from 'chokidar';
-import {
-  FileWatcherEvent,
-  FileWatcherOptions,
-  IFileWatcher,
-} from './types.js';
+import { FileWatcherEvent, FileWatcherOptions, IFileWatcher } from './types.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -210,10 +206,7 @@ export class FileWatcher extends EventEmitter implements IFileWatcher {
   /**
    * Register event listener
    */
-  override on(
-    event: FileWatcherEvent,
-    listener: (...args: any[]) => void
-  ): this {
+  override on(event: FileWatcherEvent, listener: (...args: any[]) => void): this {
     super.on(event, listener);
     return this;
   }
@@ -221,10 +214,7 @@ export class FileWatcher extends EventEmitter implements IFileWatcher {
   /**
    * Remove event listener
    */
-  override off(
-    event: FileWatcherEvent,
-    listener: (...args: any[]) => void
-  ): this {
+  override off(event: FileWatcherEvent, listener: (...args: any[]) => void): this {
     super.off(event, listener);
     return this;
   }
@@ -232,10 +222,7 @@ export class FileWatcher extends EventEmitter implements IFileWatcher {
   /**
    * Register one-time event listener
    */
-  override once(
-    event: FileWatcherEvent,
-    listener: (...args: any[]) => void
-  ): this {
+  override once(event: FileWatcherEvent, listener: (...args: any[]) => void): this {
     super.once(event, listener);
     return this;
   }

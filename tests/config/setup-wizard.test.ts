@@ -229,9 +229,7 @@ describe('SetupWizard', () => {
     });
 
     it('無効なプリセット名の場合にエラーを投げる', async () => {
-      await expect(wizard.usePreset('invalid' as any)).rejects.toThrow(
-        '無効なプリセット名です'
-      );
+      await expect(wizard.usePreset('invalid' as any)).rejects.toThrow('無効なプリセット名です');
     });
   });
 

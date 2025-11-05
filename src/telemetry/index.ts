@@ -34,13 +34,7 @@ export {
   traceToolCallSync,
   traceASTParserSync,
 } from './instrumentation.js';
-export {
-  TraceToolCall,
-  TraceVectorDB,
-  TraceAST,
-  TraceEmbedding,
-  Trace,
-} from './decorators.js';
+export { TraceToolCall, TraceVectorDB, TraceAST, TraceEmbedding, Trace } from './decorators.js';
 export {
   propagateTraceContext,
   extractTraceContext,

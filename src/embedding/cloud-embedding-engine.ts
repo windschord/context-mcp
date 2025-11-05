@@ -120,8 +120,7 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
       }
 
       // 次元数を設定
-      this.dimension =
-        CloudEmbeddingEngine.MODEL_DIMENSIONS[this.options.modelName] || 1536;
+      this.dimension = CloudEmbeddingEngine.MODEL_DIMENSIONS[this.options.modelName] || 1536;
 
       this.initialized = true;
     } catch (error) {
@@ -177,26 +176,31 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
   async embedBatch(texts: string[]): Promise<number[][]> {
     this.ensureInitialized();
 
-    return await traceEmbedding(this.options.provider, this.options.modelName, texts.length, async () => {
-      return await withTraceContext(async () => {
-        if (texts.length === 0) {
-          return [];
-        }
-
-        const allVectors: number[][] = [];
-
-        // バッチサイズに従って分割処理
-        for (let i = 0; i < texts.length; i += this.options.batchSize) {
-          const batch = texts.slice(i, i + this.options.batchSize);
-          const vectors = await this.embedBatchWithRetry(batch);
-          if (vectors) {
-            allVectors.push(...vectors);
+    return await traceEmbedding(
+      this.options.provider,
+      this.options.modelName,
+      texts.length,
+      async () => {
+        return await withTraceContext(async () => {
+          if (texts.length === 0) {
+            return [];
           }
-        }
 
-        return allVectors;
-      });
-    });
+          const allVectors: number[][] = [];
+
+          // バッチサイズに従って分割処理
+          for (let i = 0; i < texts.length; i += this.options.batchSize) {
+            const batch = texts.slice(i, i + this.options.batchSize);
+            const vectors = await this.embedBatchWithRetry(batch);
+            if (vectors) {
+              allVectors.push(...vectors);
+            }
+          }
+
+          return allVectors;
+        });
+      }
+    );
   }
 
   /**
@@ -222,8 +226,8 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
         const isRateLimitError =
           (error as any).status === 429 ||
           (error as any).code === 'rate_limit_exceeded' ||
-          (lastError.message.includes('rate limit') ||
-            lastError.message.includes('429'));
+          lastError.message.includes('rate limit') ||
+          lastError.message.includes('429');
 
         if (attempt < this.options.maxRetries - 1) {
           // 最後の試行でない場合のみリトライ
@@ -301,9 +305,7 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
    */
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new Error(
-        'CloudEmbeddingEngine is not initialized. Call initialize() first.'
-      );
+      throw new Error('CloudEmbeddingEngine is not initialized. Call initialize() first.');
     }
   }
 

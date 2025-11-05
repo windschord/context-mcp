@@ -154,10 +154,7 @@ describe('HealthChecker', () => {
         embed: jest.fn().mockResolvedValue(Array(384).fill(0.5)),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 
@@ -171,10 +168,7 @@ describe('HealthChecker', () => {
         embed: jest.fn().mockRejectedValue(new Error('API error')),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 
@@ -187,10 +181,7 @@ describe('HealthChecker', () => {
         embed: jest.fn().mockResolvedValue([]), // 空のベクトル
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 
@@ -208,10 +199,7 @@ describe('HealthChecker', () => {
         ),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 
@@ -308,10 +296,7 @@ describe('HealthChecker', () => {
         embed: jest.fn().mockResolvedValue(Array(384).fill(0.5)),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const health1 = await healthChecker.checkHealth();
       const health2 = await healthChecker.checkHealth();
@@ -328,10 +313,7 @@ describe('HealthChecker', () => {
         embed: jest.fn().mockResolvedValue(Array(384).fill(0.5)),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       // 最初のヘルスチェック
       const health1 = await healthChecker.checkHealth();
@@ -388,10 +370,7 @@ describe('HealthChecker', () => {
         }),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 
@@ -429,10 +408,7 @@ describe('HealthChecker', () => {
         }),
       };
 
-      const healthChecker = new HealthChecker(
-        '1.0.0',
-        mockEmbeddingEngine as EmbeddingEngine
-      );
+      const healthChecker = new HealthChecker('1.0.0', mockEmbeddingEngine as EmbeddingEngine);
 
       const status = await healthChecker.checkEmbeddingEngine();
 

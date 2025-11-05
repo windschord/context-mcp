@@ -10,10 +10,7 @@
  */
 
 import { MCPServer } from '../../src/server/mcp-server';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -164,9 +161,7 @@ const sum = calculate(100, 200);
       expect(Array.isArray(result.tools)).toBe(true);
 
       // get_symbolツールが含まれているか確認
-      const getSymbolTool = result.tools.find(
-        (tool: any) => tool.name === 'get_symbol'
-      );
+      const getSymbolTool = result.tools.find((tool: any) => tool.name === 'get_symbol');
 
       expect(getSymbolTool).toBeDefined();
       expect(getSymbolTool).toHaveProperty('description');
@@ -182,9 +177,7 @@ const sum = calculate(100, 200);
         ListToolsRequestSchema
       );
 
-      const getSymbolTool = result.tools.find(
-        (tool: any) => tool.name === 'get_symbol'
-      );
+      const getSymbolTool = result.tools.find((tool: any) => tool.name === 'get_symbol');
 
       // スキーマの検証
       expect(getSymbolTool.inputSchema).toHaveProperty('type', 'object');
@@ -214,9 +207,7 @@ const sum = calculate(100, 200);
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should reject invalid symbolName type', async () => {
@@ -234,9 +225,7 @@ const sum = calculate(100, 200);
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should accept valid parameters', async () => {
@@ -257,9 +246,7 @@ const sum = calculate(100, 200);
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should accept symbolName only', async () => {
@@ -277,9 +264,7 @@ const sum = calculate(100, 200);
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
   });
 
@@ -631,9 +616,7 @@ const sum = calculate(100, 200);
       };
 
       // 空文字列はバリデーションエラーになるべき
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should handle non-existent projectId', async () => {

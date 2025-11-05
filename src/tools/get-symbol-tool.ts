@@ -31,10 +31,7 @@ export const InputSchema = z.object({
     .optional()
     .describe('シンボルタイプ（例: "function", "class", "variable"）'),
   projectId: z.string().optional().describe('プロジェクトID（オプション）'),
-  scope: z
-    .string()
-    .optional()
-    .describe('スコープ（例: "global", "class", "function"）'),
+  scope: z.string().optional().describe('スコープ（例: "global", "class", "function"）'),
 });
 
 /**
@@ -187,9 +184,7 @@ async function searchSymbolDefinitions(
         lineEnd,
         snippet,
         docstring: metadata['docstring'] as string | undefined,
-        parameters: metadata['parameters'] as
-          | Array<{ name: string; type?: string }>
-          | undefined,
+        parameters: metadata['parameters'] as Array<{ name: string; type?: string }> | undefined,
         returnType: metadata['return_type'] as string | undefined,
       });
     }

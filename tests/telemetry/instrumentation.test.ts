@@ -51,14 +51,10 @@ describe('Instrumentation', () => {
     });
 
     it('非同期処理を正しく処理できる', async () => {
-      const result = await traceToolCall(
-        'async_tool',
-        { operation: 'test' },
-        async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
-          return 'async-result';
-        }
-      );
+      const result = await traceToolCall('async_tool', { operation: 'test' }, async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return 'async-result';
+      });
 
       expect(result).toBe('async-result');
     });
@@ -84,13 +80,9 @@ describe('Instrumentation', () => {
 
     it('大きなパラメータが切り捨てられる', async () => {
       const largeData = 'x'.repeat(2048);
-      const result = await traceToolCall(
-        'large_param_tool',
-        { data: largeData },
-        async () => {
-          return 'success';
-        }
-      );
+      const result = await traceToolCall('large_param_tool', { data: largeData }, async () => {
+        return 'success';
+      });
 
       expect(result).toBe('success');
       // 切り捨てが正しく動作していることは、エラーが発生しないことで確認
@@ -194,14 +186,9 @@ describe('Instrumentation', () => {
 
   describe('traceEmbedding', () => {
     it('埋め込み生成を正常にトレースできる', async () => {
-      const result = await traceEmbedding(
-        'transformers',
-        'all-MiniLM-L6-v2',
-        10,
-        async () => {
-          return Array(384).fill(0.5);
-        }
-      );
+      const result = await traceEmbedding('transformers', 'all-MiniLM-L6-v2', 10, async () => {
+        return Array(384).fill(0.5);
+      });
 
       expect(result).toHaveLength(384);
       expect(result[0]).toBe(0.5);
@@ -363,26 +350,18 @@ describe('Instrumentation', () => {
   describe('パラメータ切り捨て', () => {
     it('1KB以下のパラメータは切り捨てられない', async () => {
       const smallData = 'x'.repeat(512);
-      const result = await traceToolCall(
-        'small_param_tool',
-        { data: smallData },
-        async () => {
-          return 'success';
-        }
-      );
+      const result = await traceToolCall('small_param_tool', { data: smallData }, async () => {
+        return 'success';
+      });
 
       expect(result).toBe('success');
     });
 
     it('1KB以上のパラメータが切り捨てられる', async () => {
       const largeData = 'x'.repeat(2048);
-      const result = await traceToolCall(
-        'large_param_tool',
-        { data: largeData },
-        async () => {
-          return 'success';
-        }
-      );
+      const result = await traceToolCall('large_param_tool', { data: largeData }, async () => {
+        return 'success';
+      });
 
       expect(result).toBe('success');
     });

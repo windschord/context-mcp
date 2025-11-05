@@ -33,23 +33,15 @@ describe('DocCodeLinker', () => {
       const projectRoot = '/Users/test/project';
       const docPath = '/Users/test/project/docs/api.md';
 
-      const result = await linker.findFilePathReferences(
-        markdownContent,
-        docPath,
-        projectRoot
-      );
+      const result = await linker.findFilePathReferences(markdownContent, docPath, projectRoot);
 
       expect(result).toHaveLength(2);
       expect(result[0].path).toBe('src/utils/logger.ts');
-      expect(result[0].resolvedPath).toBe(
-        '/Users/test/project/src/utils/logger.ts'
-      );
+      expect(result[0].resolvedPath).toBe('/Users/test/project/src/utils/logger.ts');
       expect(result[0].line).toBeGreaterThanOrEqual(0);
 
       expect(result[1].path).toBe('./config/types.ts');
-      expect(result[1].resolvedPath).toBe(
-        '/Users/test/project/docs/config/types.ts'
-      );
+      expect(result[1].resolvedPath).toBe('/Users/test/project/docs/config/types.ts');
     });
 
     it('絶対ファイルパス参照を解決できる', async () => {
@@ -62,11 +54,7 @@ describe('DocCodeLinker', () => {
       const projectRoot = '/Users/test/project';
       const docPath = '/Users/test/project/README.md';
 
-      const result = await linker.findFilePathReferences(
-        markdownContent,
-        docPath,
-        projectRoot
-      );
+      const result = await linker.findFilePathReferences(markdownContent, docPath, projectRoot);
 
       expect(result).toHaveLength(1);
       expect(result[0].path).toBe('/src/index.ts');
@@ -105,10 +93,7 @@ export class AuthManager {
         },
       ];
 
-      const result = await linker.findSymbolReferences(
-        markdownContent,
-        codeFiles
-      );
+      const result = await linker.findSymbolReferences(markdownContent, codeFiles);
 
       expect(result).toHaveLength(2);
 
@@ -147,10 +132,7 @@ export function formatCurrency(amount: number): string {
         },
       ];
 
-      const result = await linker.findSymbolReferences(
-        markdownContent,
-        codeFiles
-      );
+      const result = await linker.findSymbolReferences(markdownContent, codeFiles);
 
       expect(result).toHaveLength(2);
       expect(result[0].symbolName).toBe('calculateTotal');
@@ -230,9 +212,7 @@ class ComplexCalculator {
       const result = await linker.findSimilarCode(markdownContent, codeFiles);
 
       // 類似度閾値（例: 0.5）未満のマッチは含まれない
-      expect(
-        result.every((match) => match.similarity >= 0.5)
-      ).toBe(true);
+      expect(result.every((match) => match.similarity >= 0.5)).toBe(true);
     });
   });
 

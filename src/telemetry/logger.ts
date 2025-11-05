@@ -3,12 +3,7 @@
  * OpenTelemetry Logs APIを使用したログエクスポート
  */
 
-import {
-  logs,
-  SeverityNumber,
-  Logger as OTelLogger,
-  LogAttributes,
-} from '@opentelemetry/api-logs';
+import { logs, SeverityNumber, Logger as OTelLogger, LogAttributes } from '@opentelemetry/api-logs';
 
 /**
  * ログレベルの定義

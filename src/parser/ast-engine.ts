@@ -44,11 +44,7 @@ export class ASTEngine {
    * @param callback 各ノードに対して実行されるコールバック
    * @param options 走査オプション
    */
-  traverseAST(
-    node: any,
-    callback: TraversalCallback,
-    options: TraversalOptions = {}
-  ): void {
+  traverseAST(node: any, callback: TraversalCallback, options: TraversalOptions = {}): void {
     const { skipErrors = false, maxDepth = Infinity } = options;
 
     const traverse = (currentNode: any, depth: number = 0): boolean => {
@@ -107,8 +103,7 @@ export class ASTEngine {
    * @returns ノードのテキスト内容
    */
   getNodeText(node: any, sourceCode: string): string {
-    const { startLine, startColumn, endLine, endColumn } =
-      this.getNodePosition(node);
+    const { startLine, startColumn, endLine, endColumn } = this.getNodePosition(node);
 
     const lines = sourceCode.split('\n');
 
@@ -153,11 +148,7 @@ export class ASTEngine {
    * @param options 走査オプション
    * @returns 該当するノードの配列
    */
-  findNodesByType(
-    rootNode: any,
-    nodeType: string,
-    options: TraversalOptions = {}
-  ): any[] {
+  findNodesByType(rootNode: any, nodeType: string, options: TraversalOptions = {}): any[] {
     const nodes: any[] = [];
 
     this.traverseAST(
@@ -181,11 +172,7 @@ export class ASTEngine {
    * @param options 走査オプション
    * @returns 該当するノードの配列
    */
-  findNodesByTypes(
-    rootNode: any,
-    nodeTypes: string[],
-    options: TraversalOptions = {}
-  ): any[] {
+  findNodesByTypes(rootNode: any, nodeTypes: string[], options: TraversalOptions = {}): any[] {
     const nodes: any[] = [];
     const typeSet = new Set(nodeTypes);
 
@@ -237,10 +224,7 @@ export class ASTEngine {
    * @returns エラーノードの配列
    */
   findErrorNodes(rootNode: any): any[] {
-    return this.findNodes(
-      rootNode,
-      (node) => node.type === 'ERROR' || node.hasError
-    );
+    return this.findNodes(rootNode, (node) => node.type === 'ERROR' || node.hasError);
   }
 
   /**
@@ -251,8 +235,7 @@ export class ASTEngine {
    * @returns 位置を含む場合true
    */
   containsPosition(node: any, line: number, column: number): boolean {
-    const { startLine, startColumn, endLine, endColumn } =
-      this.getNodePosition(node);
+    const { startLine, startColumn, endLine, endColumn } = this.getNodePosition(node);
 
     if (line < startLine || line > endLine) {
       return false;
@@ -282,8 +265,7 @@ export class ASTEngine {
 
     this.traverseAST(rootNode, (node) => {
       if (this.containsPosition(node, line, column)) {
-        const { startLine, startColumn, endLine, endColumn } =
-          this.getNodePosition(node);
+        const { startLine, startColumn, endLine, endColumn } = this.getNodePosition(node);
         const size = (endLine - startLine) * 1000 + (endColumn - startColumn);
 
         if (size < smallestSize) {

@@ -114,10 +114,7 @@ export class DocCodeLinker {
     // 各コードファイルからシンボルを抽出
     const fileSymbols: Map<string, SymbolInfo[]> = new Map();
     for (const file of codeFiles) {
-      const extractionResult = this.symbolExtractor.extractSymbols(
-        file.code,
-        file.language
-      );
+      const extractionResult = this.symbolExtractor.extractSymbols(file.code, file.language);
       fileSymbols.set(file.path, extractionResult.symbols);
     }
 
@@ -176,10 +173,7 @@ export class DocCodeLinker {
           const windowCode = fileLines.slice(i, i + windowSize).join('\n');
           const normalizedWindowCode = this.normalizeCode(windowCode);
 
-          const similarity = this.calculateSimilarity(
-            normalizedCodeBlock,
-            normalizedWindowCode
-          );
+          const similarity = this.calculateSimilarity(normalizedCodeBlock, normalizedWindowCode);
 
           if (similarity >= threshold) {
             result.push({
@@ -216,11 +210,7 @@ export class DocCodeLinker {
     const scoreMap: Map<string, { score: number; reasons: Set<string> }> = new Map();
 
     // 1. ファイルパス参照による関連度（スコア: 1.0）
-    const filePathRefs = await this.findFilePathReferences(
-      markdownContent,
-      docPath,
-      projectRoot
-    );
+    const filePathRefs = await this.findFilePathReferences(markdownContent, docPath, projectRoot);
 
     for (const ref of filePathRefs) {
       for (const file of codeFiles) {
@@ -317,9 +307,7 @@ export class DocCodeLinker {
     const len2 = str2.length;
 
     // 動的計画法のテーブル
-    const dp: number[][] = Array.from({ length: len1 + 1 }, () =>
-      Array(len2 + 1).fill(0)
-    );
+    const dp: number[][] = Array.from({ length: len1 + 1 }, () => Array(len2 + 1).fill(0));
 
     // 初期化
     for (let i = 0; i <= len1; i++) {

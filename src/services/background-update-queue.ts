@@ -173,10 +173,7 @@ export class BackgroundUpdateQueue {
           priority: nextItem.priority,
         });
 
-        await this.indexingService.updateFile(
-          nextItem.filePath,
-          nextItem.projectId
-        );
+        await this.indexingService.updateFile(nextItem.filePath, nextItem.projectId);
 
         this.processedCount++;
 

@@ -35,11 +35,7 @@ import {
  * @returns メソッドデコレーター
  */
 export function TraceToolCall(toolName: string) {
-  return function (
-    target: unknown,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -62,15 +58,8 @@ export function TraceToolCall(toolName: string) {
  * @param backend バックエンド名
  * @returns メソッドデコレーター
  */
-export function TraceVectorDB(
-  operationType: 'query' | 'upsert' | 'delete',
-  backend: string
-) {
-  return function (
-    target: unknown,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+export function TraceVectorDB(operationType: 'query' | 'upsert' | 'delete', backend: string) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -91,15 +80,8 @@ export function TraceVectorDB(
  * @param filePathArgIndex ファイルパス引数のインデックス（デフォルト: 0）
  * @returns メソッドデコレーター
  */
-export function TraceAST(
-  languageArgIndex: number = 1,
-  filePathArgIndex: number = 0
-) {
-  return function (
-    target: unknown,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+export function TraceAST(languageArgIndex: number = 1, filePathArgIndex: number = 0) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -129,11 +111,7 @@ export function TraceEmbedding(
   getModel: (instance: unknown) => string,
   getTextCount: (args: unknown[]) => number
 ) {
-  return function (
-    target: unknown,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {
@@ -162,11 +140,7 @@ export function Trace(
   spanName: string,
   getAttributes?: (instance: unknown, args: unknown[]) => Record<string, unknown>
 ) {
-  return function (
-    target: unknown,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: unknown[]) {

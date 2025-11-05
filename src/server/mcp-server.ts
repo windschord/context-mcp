@@ -140,26 +140,23 @@ export class MCPServer {
    * initialize ハンドラーをセットアップ
    */
   private setupInitializeHandler(): void {
-    this.server.setRequestHandler(
-      InitializeRequestSchema,
-      async (): Promise<InitializeResult> => {
-        logger.info('MCP Server initializing', {
+    this.server.setRequestHandler(InitializeRequestSchema, async (): Promise<InitializeResult> => {
+      logger.info('MCP Server initializing', {
+        name: this.name,
+        version: this.version,
+      });
+
+      return {
+        serverInfo: {
           name: this.name,
           version: this.version,
-        });
-
-        return {
-          serverInfo: {
-            name: this.name,
-            version: this.version,
-          },
-          capabilities: {
-            tools: {},
-          },
-          protocolVersion: '2024-11-05',
-        };
-      }
-    );
+        },
+        capabilities: {
+          tools: {},
+        },
+        protocolVersion: '2024-11-05',
+      };
+    });
   }
 
   /**
@@ -318,10 +315,7 @@ export class MCPServer {
           }
 
           // ツールハンドラーを実行
-          const result = await handleGetSymbol(
-            args as GetSymbolInput,
-            this.vectorStore
-          );
+          const result = await handleGetSymbol(args as GetSymbolInput, this.vectorStore);
 
           // MCPレスポンス形式で返す
           return {
@@ -388,10 +382,7 @@ export class MCPServer {
           }
 
           // ツールハンドラーを実行
-          const result = await handleClearIndex(
-            args as ClearIndexInput,
-            this.indexingService
-          );
+          const result = await handleClearIndex(args as ClearIndexInput, this.indexingService);
 
           // MCPレスポンス形式で返す
           return {
@@ -411,10 +402,7 @@ export class MCPServer {
           }
 
           // ツールハンドラーを実行
-          const result = await handleHealthCheck(
-            args as HealthCheckInput,
-            this.healthChecker
-          );
+          const result = await handleHealthCheck(args as HealthCheckInput, this.healthChecker);
 
           // MCPレスポンス形式で返す
           return {

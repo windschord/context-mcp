@@ -39,13 +39,21 @@ export class FileScanner extends EventEmitter {
 
   /** 対応している拡張子のリスト */
   private static readonly SUPPORTED_EXTENSIONS = [
-    '.ts', '.tsx', '.js', '.jsx', '.mjs', // TypeScript/JavaScript
-    '.py',                                  // Python
-    '.go',                                  // Go
-    '.rs',                                  // Rust
-    '.java',                                // Java
-    '.c', '.cpp', '.h', '.hpp', '.ino',    // C/C++/Arduino
-    '.md',                                  // Markdown
+    '.ts',
+    '.tsx',
+    '.js',
+    '.jsx',
+    '.mjs', // TypeScript/JavaScript
+    '.py', // Python
+    '.go', // Go
+    '.rs', // Rust
+    '.java', // Java
+    '.c',
+    '.cpp',
+    '.h',
+    '.hpp',
+    '.ino', // C/C++/Arduino
+    '.md', // Markdown
   ];
 
   /** デフォルトで除外するパターン */

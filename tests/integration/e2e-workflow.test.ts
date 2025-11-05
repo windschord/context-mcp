@@ -182,12 +182,7 @@ describe('E2E Workflow Integration Tests', () => {
       const query = 'calculator arithmetic operations';
       const queryVector = await embeddingEngine.embedBatch([query]);
 
-      const results = await hybridSearchEngine.search(
-        COLLECTION_NAME,
-        query,
-        queryVector[0],
-        10
-      );
+      const results = await hybridSearchEngine.search(COLLECTION_NAME, query, queryVector[0], 10);
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -199,13 +194,9 @@ describe('E2E Workflow Integration Tests', () => {
       const query = 'string processing';
       const queryVector = await embeddingEngine.embedBatch([query]);
 
-      const results = await hybridSearchEngine.search(
-        COLLECTION_NAME,
-        query,
-        queryVector[0],
-        10,
-        { fileTypes: ['python'] }
-      );
+      const results = await hybridSearchEngine.search(COLLECTION_NAME, query, queryVector[0], 10, {
+        fileTypes: ['python'],
+      });
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -214,12 +205,7 @@ describe('E2E Workflow Integration Tests', () => {
     it('空クエリでも検索ができる（ベクトル検索のみ）', async () => {
       const queryVector = await embeddingEngine.embedBatch(['test']);
 
-      const results = await hybridSearchEngine.search(
-        COLLECTION_NAME,
-        '',
-        queryVector[0],
-        10
-      );
+      const results = await hybridSearchEngine.search(COLLECTION_NAME, '', queryVector[0], 10);
 
       expect(results).toBeDefined();
       expect(Array.isArray(results)).toBe(true);
@@ -238,10 +224,10 @@ describe('E2E Workflow Integration Tests', () => {
       expect(symbols.length).toBeGreaterThan(0);
 
       // Calculator クラスと関数が抽出されているはず
-      const classSymbol = symbols.find(s => s.name === 'Calculator' && s.type === 'class');
+      const classSymbol = symbols.find((s) => s.name === 'Calculator' && s.type === 'class');
       expect(classSymbol).toBeDefined();
 
-      const factorialSymbol = symbols.find(s => s.name === 'factorial' && s.type === 'function');
+      const factorialSymbol = symbols.find((s) => s.name === 'factorial' && s.type === 'function');
       expect(factorialSymbol).toBeDefined();
     });
 
@@ -255,11 +241,13 @@ describe('E2E Workflow Integration Tests', () => {
       expect(symbols.length).toBeGreaterThan(0);
 
       // StringProcessor クラスが抽出されているはず
-      const classSymbol = symbols.find(s => s.name === 'StringProcessor' && s.type === 'class');
+      const classSymbol = symbols.find((s) => s.name === 'StringProcessor' && s.type === 'class');
       expect(classSymbol).toBeDefined();
 
       // reverse_string 関数が抽出されているはず
-      const functionSymbol = symbols.find(s => s.name === 'reverse_string' && s.type === 'function');
+      const functionSymbol = symbols.find(
+        (s) => s.name === 'reverse_string' && s.type === 'function'
+      );
       expect(functionSymbol).toBeDefined();
     });
 
@@ -273,11 +261,11 @@ describe('E2E Workflow Integration Tests', () => {
       expect(symbols.length).toBeGreaterThan(0);
 
       // User 構造体が抽出されているはず
-      const structSymbol = symbols.find(s => s.name === 'User');
+      const structSymbol = symbols.find((s) => s.name === 'User');
       expect(structSymbol).toBeDefined();
 
       // NewUser 関数が抽出されているはず
-      const functionSymbol = symbols.find(s => s.name === 'NewUser');
+      const functionSymbol = symbols.find((s) => s.name === 'NewUser');
       expect(functionSymbol).toBeDefined();
     });
   });
@@ -293,7 +281,9 @@ describe('E2E Workflow Integration Tests', () => {
       expect(comments.length).toBeGreaterThan(0);
 
       // JSDocコメントが抽出されているか確認
-      const hasJSDoc = comments.some(c => c.content && (c.content.includes('@param') || c.content.includes('@returns')));
+      const hasJSDoc = comments.some(
+        (c) => c.content && (c.content.includes('@param') || c.content.includes('@returns'))
+      );
       expect(hasJSDoc).toBe(true);
     });
 
@@ -307,7 +297,9 @@ describe('E2E Workflow Integration Tests', () => {
       expect(comments.length).toBeGreaterThan(0);
 
       // docstringが抽出されているか確認
-      const hasDocstring = comments.some(c => c.content && (c.content.includes('Args:') || c.content.includes('Returns:')));
+      const hasDocstring = comments.some(
+        (c) => c.content && (c.content.includes('Args:') || c.content.includes('Returns:'))
+      );
       expect(hasDocstring).toBe(true);
     });
   });
@@ -335,7 +327,7 @@ describe('E2E Workflow Integration Tests', () => {
       expect(doc.codeBlocks.length).toBeGreaterThan(0);
 
       // 言語タグ付きのコードブロックがあるか確認
-      const hasLangTag = doc.codeBlocks.some(cb => cb.language && cb.language.length > 0);
+      const hasLangTag = doc.codeBlocks.some((cb) => cb.language && cb.language.length > 0);
       expect(hasLangTag).toBe(true);
     });
 
@@ -346,8 +338,9 @@ describe('E2E Workflow Integration Tests', () => {
       const doc = await markdownParser.parse(content);
 
       // ファイルパス参照がある場合
-      const hasFilePath = doc.links.some(link =>
-        link.href.includes('.ts') || link.href.includes('.py') || link.href.includes('.go')
+      const hasFilePath = doc.links.some(
+        (link) =>
+          link.href.includes('.ts') || link.href.includes('.py') || link.href.includes('.go')
       );
 
       if (doc.links.length > 0) {
@@ -415,7 +408,7 @@ describe('E2E Workflow Integration Tests', () => {
       await fs.writeFile(newFilePath, 'export function newFunc() { return "new"; }');
 
       // イベント発火を待つ
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // クリーンアップ
       await fs.unlink(newFilePath);

@@ -396,11 +396,7 @@ export function traceToolCallSync<T>(
  * @param fn 実行する関数
  * @returns 関数の実行結果
  */
-export function traceASTParserSync<T>(
-  language: string,
-  filePath: string,
-  fn: () => T
-): T {
+export function traceASTParserSync<T>(language: string, filePath: string, fn: () => T): T {
   // テレメトリ無効時の早期リターン
   if (!telemetryManager || !telemetryManager.isEnabled()) {
     return fn();

@@ -119,8 +119,14 @@ describe('BM25Engine', () => {
       // テストデータをインデックス化
       await engine.indexDocument('doc1', 'TypeScript is a typed superset of JavaScript');
       await engine.indexDocument('doc2', 'JavaScript is a dynamic programming language');
-      await engine.indexDocument('doc3', 'Python is a dynamic programming language with simple syntax');
-      await engine.indexDocument('doc4', 'TypeScript provides static typing for JavaScript development');
+      await engine.indexDocument(
+        'doc3',
+        'Python is a dynamic programming language with simple syntax'
+      );
+      await engine.indexDocument(
+        'doc4',
+        'TypeScript provides static typing for JavaScript development'
+      );
     });
 
     test('単一キーワード検索が機能する', async () => {
@@ -162,8 +168,8 @@ describe('BM25Engine', () => {
       expect(results[0].score).toBeGreaterThan(0);
 
       // より関連性の高いドキュメントのスコアが高い
-      const typescript1 = results.find(r => r.documentId === 'doc1');
-      const typescript4 = results.find(r => r.documentId === 'doc4');
+      const typescript1 = results.find((r) => r.documentId === 'doc1');
+      const typescript4 = results.find((r) => r.documentId === 'doc4');
       expect(typescript1).toBeDefined();
       expect(typescript4).toBeDefined();
       expect(typescript1!.score).toBeGreaterThan(0);

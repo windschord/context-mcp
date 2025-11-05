@@ -7,10 +7,7 @@
  */
 
 import { MCPServer } from '../../src/server/mcp-server';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -91,9 +88,7 @@ console.log("Hello, world!");
       expect(Array.isArray(result.tools)).toBe(true);
 
       // get_index_statusツールが含まれているか確認
-      const getIndexStatusTool = result.tools.find(
-        (tool: any) => tool.name === 'get_index_status'
-      );
+      const getIndexStatusTool = result.tools.find((tool: any) => tool.name === 'get_index_status');
 
       expect(getIndexStatusTool).toBeDefined();
       expect(getIndexStatusTool).toHaveProperty('description');
@@ -109,9 +104,7 @@ console.log("Hello, world!");
         ListToolsRequestSchema
       );
 
-      const getIndexStatusTool = result.tools.find(
-        (tool: any) => tool.name === 'get_index_status'
-      );
+      const getIndexStatusTool = result.tools.find((tool: any) => tool.name === 'get_index_status');
 
       // スキーマの検証
       expect(getIndexStatusTool.inputSchema).toHaveProperty('type', 'object');
@@ -131,9 +124,7 @@ console.log("Hello, world!");
       );
 
       // clear_indexツールが含まれているか確認
-      const clearIndexTool = result.tools.find(
-        (tool: any) => tool.name === 'clear_index'
-      );
+      const clearIndexTool = result.tools.find((tool: any) => tool.name === 'clear_index');
 
       expect(clearIndexTool).toBeDefined();
       expect(clearIndexTool).toHaveProperty('description');
@@ -149,9 +140,7 @@ console.log("Hello, world!");
         ListToolsRequestSchema
       );
 
-      const clearIndexTool = result.tools.find(
-        (tool: any) => tool.name === 'clear_index'
-      );
+      const clearIndexTool = result.tools.find((tool: any) => tool.name === 'clear_index');
 
       // スキーマの検証
       expect(clearIndexTool.inputSchema).toHaveProperty('type', 'object');

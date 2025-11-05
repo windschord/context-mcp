@@ -1,9 +1,6 @@
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { Resource } from '@opentelemetry/resources';
-import {
-  ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
-} from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-grpc';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
@@ -23,11 +20,7 @@ import {
 } from '@opentelemetry/sdk-logs';
 import { trace, Tracer, metrics, Meter } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import {
-  TelemetryConfig,
-  DEFAULT_TELEMETRY_CONFIG,
-  ExporterType,
-} from './types.js';
+import { TelemetryConfig, DEFAULT_TELEMETRY_CONFIG, ExporterType } from './types.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -54,8 +47,7 @@ export class TelemetryManager {
 
     // 環境変数からの読み込み
     if (process.env['LSP_MCP_TELEMETRY_ENABLED'] !== undefined) {
-      config.enabled =
-        process.env['LSP_MCP_TELEMETRY_ENABLED']?.toLowerCase() === 'true';
+      config.enabled = process.env['LSP_MCP_TELEMETRY_ENABLED']?.toLowerCase() === 'true';
     }
 
     if (process.env['OTEL_SERVICE_NAME']) {
@@ -117,17 +109,11 @@ export class TelemetryManager {
             config.enabled = fileConfig.telemetry.enabled;
           }
 
-          if (
-            fileConfig.telemetry.serviceName &&
-            !process.env['OTEL_SERVICE_NAME']
-          ) {
+          if (fileConfig.telemetry.serviceName && !process.env['OTEL_SERVICE_NAME']) {
             config.serviceName = fileConfig.telemetry.serviceName;
           }
 
-          if (
-            fileConfig.telemetry.otlp &&
-            !process.env['OTEL_EXPORTER_OTLP_ENDPOINT']
-          ) {
+          if (fileConfig.telemetry.otlp && !process.env['OTEL_EXPORTER_OTLP_ENDPOINT']) {
             config.otlp = {
               ...config.otlp!,
               ...fileConfig.telemetry.otlp,
@@ -161,9 +147,7 @@ export class TelemetryManager {
       }
     } catch (error) {
       // 設定ファイルの読み込みエラーは無視（デフォルト設定を使用）
-      logger.warn(
-        `テレメトリ設定ファイルの読み込みに失敗しました: ${error}`
-      );
+      logger.warn(`テレメトリ設定ファイルの読み込みに失敗しました: ${error}`);
     }
 
     return config;
@@ -198,14 +182,10 @@ export class TelemetryManager {
       });
 
       // Trace Exporter と SpanProcessor
-      const spanProcessor = this.createSpanProcessor(
-        this.config.exporters?.traces || 'none'
-      );
+      const spanProcessor = this.createSpanProcessor(this.config.exporters?.traces || 'none');
 
       // Metric Exporter
-      const metricReader = this.createMetricReader(
-        this.config.exporters?.metrics || 'none'
-      );
+      const metricReader = this.createMetricReader(this.config.exporters?.metrics || 'none');
 
       // Logger Provider
       this.loggerProvider = this.createLoggerProvider(

@@ -83,9 +83,7 @@ describe('VectorStorePluginRegistry', () => {
       const plugin2 = new DummyPluginA();
 
       registry.register(plugin1);
-      expect(() => registry.register(plugin2)).toThrow(
-        'Plugin dummy-a is already registered'
-      );
+      expect(() => registry.register(plugin2)).toThrow('Plugin dummy-a is already registered');
     });
   });
 
@@ -102,9 +100,7 @@ describe('VectorStorePluginRegistry', () => {
     });
 
     it('should throw error when getting non-existent plugin', () => {
-      expect(() => registry.get('non-existent')).toThrow(
-        'Plugin non-existent not found'
-      );
+      expect(() => registry.get('non-existent')).toThrow('Plugin non-existent not found');
     });
 
     it('should list all registered plugins', () => {

@@ -105,8 +105,7 @@ describe('Telemetry Performance', () => {
       const durationWithoutTrace = Date.now() - startWithoutTrace;
 
       // オーバーヘッドを計算
-      const overhead =
-        (durationWithTrace - durationWithoutTrace) / durationWithoutTrace;
+      const overhead = (durationWithTrace - durationWithoutTrace) / durationWithoutTrace;
       const overheadPercentage = overhead * 100;
 
       console.log(`トレースなし: ${durationWithoutTrace}ms`);

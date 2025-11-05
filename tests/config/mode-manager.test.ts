@@ -306,9 +306,7 @@ describe('ModeManager', () => {
 
       const manager = new ModeManager(config);
 
-      expect(() => manager.getEmbeddingEngine()).toThrow(
-        '埋め込みエンジンが初期化されていません'
-      );
+      expect(() => manager.getEmbeddingEngine()).toThrow('埋め込みエンジンが初期化されていません');
     });
 
     it('リソースを適切に解放できる', async () => {

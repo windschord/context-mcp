@@ -15,7 +15,10 @@ import {
   incrementRequestCounter,
   recordRequestDuration,
 } from '../../src/telemetry/metrics.js';
-import { propagateTraceContext, extractTraceContext } from '../../src/telemetry/context-propagation.js';
+import {
+  propagateTraceContext,
+  extractTraceContext,
+} from '../../src/telemetry/context-propagation.js';
 
 describe('Telemetry Integration', () => {
   describe('OTLP/gRPCエンドポイント接続テスト', () => {

@@ -92,10 +92,7 @@ class Metrics {
     this.memoryUsage.addCallback((observableResult) => {
       // キャッシュを活用してprocess.memoryUsage()呼び出しを削減
       const now = Date.now();
-      if (
-        this.memoryUsageCache &&
-        now - this.memoryUsageCache.timestamp < this.MEMORY_CACHE_TTL
-      ) {
+      if (this.memoryUsageCache && now - this.memoryUsageCache.timestamp < this.MEMORY_CACHE_TTL) {
         // キャッシュが有効な場合はキャッシュ値を使用
         observableResult.observe(this.memoryUsageCache.value);
       } else {

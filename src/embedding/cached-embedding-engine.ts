@@ -7,7 +7,11 @@
  */
 
 import { EmbeddingEngine } from './types';
-import { QueryCache, QueryCacheOptions } from '../services/query-cache.js';
+import {
+  QueryCache,
+  QueryCacheOptions,
+  CacheStats,
+} from '../services/query-cache.js';
 import { Logger } from '../utils/logger.js';
 
 /**
@@ -87,7 +91,7 @@ export class CachedEmbeddingEngine implements EmbeddingEngine {
   /**
    * キャッシュ統計を取得
    */
-  getCacheStats() {
+  getCacheStats(): CacheStats {
     return this.cache.getStats();
   }
 

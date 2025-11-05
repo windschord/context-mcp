@@ -52,7 +52,12 @@ export const marked = {
       }
 
       // パラグラフとして処理
-      if (trimmed.length > 0 && !trimmed.startsWith('#') && !trimmed.startsWith('-') && !trimmed.startsWith('1.')) {
+      if (
+        trimmed.length > 0 &&
+        !trimmed.startsWith('#') &&
+        !trimmed.startsWith('-') &&
+        !trimmed.startsWith('1.')
+      ) {
         const inlineTokens = extractInlineTokens(line);
         tokens.push({
           type: 'paragraph',
@@ -80,12 +85,14 @@ export const marked = {
             type: 'list_item',
             raw: lines[i],
             text: itemText,
-            tokens: [{
-              type: 'text',
-              raw: itemText,
-              text: itemText,
-              tokens: inlineTokens,
-            }],
+            tokens: [
+              {
+                type: 'text',
+                raw: itemText,
+                text: itemText,
+                tokens: inlineTokens,
+              },
+            ],
           });
           i++;
         }

@@ -425,9 +425,7 @@ describe('FileWatcher', () => {
 
       const error = await Promise.race([
         errorPromise,
-        new Promise<Error>((resolve) =>
-          setTimeout(() => resolve(new Error('Timeout')), 2000)
-        ),
+        new Promise<Error>((resolve) => setTimeout(() => resolve(new Error('Timeout')), 2000)),
       ]);
 
       // Either we get an error or timeout (depending on OS behavior)

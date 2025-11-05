@@ -27,11 +27,7 @@ export const InputSchema = z.object({
     .string()
     .optional()
     .describe('プロジェクトID（オプション、未指定時は全プロジェクト）'),
-  confirm: z
-    .boolean()
-    .optional()
-    .default(false)
-    .describe('確認フラグ（デフォルト: false）'),
+  confirm: z.boolean().optional().default(false).describe('確認フラグ（デフォルト: false）'),
 });
 
 /**

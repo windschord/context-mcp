@@ -128,25 +128,31 @@ export class LocalEmbeddingEngine implements EmbeddingEngine {
         // バッチサイズごとに分割して処理
         for (let i = 0; i < texts.length; i += this.batchSize) {
           const batch = texts.slice(i, i + this.batchSize);
-          logger.debug(`Processing batch ${i / this.batchSize + 1}/${Math.ceil(texts.length / this.batchSize)}`);
+          logger.debug(
+            `Processing batch ${i / this.batchSize + 1}/${Math.ceil(texts.length / this.batchSize)}`
+          );
 
           // バッチ処理（トレースは外側で既に行われているため、内部ではトレースなし）
-          const batchResults = await Promise.all(batch.map(async (text) => {
-            try {
-              const output = await this.model!(text, {
-                pooling: 'mean',
-                normalize: true,
-              });
-              return Array.from(output.data as Float32Array);
-            } catch (error) {
-              logger.error('Failed to embed text in batch', error);
-              throw new Error(`Failed to embed text: ${error}`);
-            }
-          }));
+          const batchResults = await Promise.all(
+            batch.map(async (text) => {
+              try {
+                const output = await this.model!(text, {
+                  pooling: 'mean',
+                  normalize: true,
+                });
+                return Array.from(output.data as Float32Array);
+              } catch (error) {
+                logger.error('Failed to embed text in batch', error);
+                throw new Error(`Failed to embed text: ${error}`);
+              }
+            })
+          );
           results.push(...batchResults);
         }
 
-        logger.info(`Embedded ${texts.length} texts in ${Math.ceil(texts.length / this.batchSize)} batches`);
+        logger.info(
+          `Embedded ${texts.length} texts in ${Math.ceil(texts.length / this.batchSize)} batches`
+        );
         return results;
       } catch (error) {
         logger.error('Failed to embed batch', error);

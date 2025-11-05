@@ -6,7 +6,11 @@
  */
 
 import { LspMcpConfig, Mode } from './types.js';
-import { EmbeddingEngine, LocalEmbeddingOptions, CloudEmbeddingOptions } from '../embedding/types.js';
+import {
+  EmbeddingEngine,
+  LocalEmbeddingOptions,
+  CloudEmbeddingOptions,
+} from '../embedding/types.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -67,14 +71,20 @@ export class ModeManager {
     // ローカルモードの検証
     if (this.isLocalMode()) {
       // クラウド埋め込みプロバイダーの使用をチェック
-      if (this.config.embedding.provider === 'openai' || this.config.embedding.provider === 'voyageai') {
+      if (
+        this.config.embedding.provider === 'openai' ||
+        this.config.embedding.provider === 'voyageai'
+      ) {
         warnings.push(
           `ローカルモードですが、クラウド埋め込みプロバイダー（${this.config.embedding.provider}）が指定されています`
         );
       }
 
       // クラウドベクターDBの使用をチェック
-      if (this.config.vectorStore.backend === 'zilliz' || this.config.vectorStore.backend === 'qdrant') {
+      if (
+        this.config.vectorStore.backend === 'zilliz' ||
+        this.config.vectorStore.backend === 'qdrant'
+      ) {
         warnings.push(
           `ローカルモードですが、クラウドベクターDB（${this.config.vectorStore.backend}）が指定されています`
         );
@@ -107,7 +117,7 @@ export class ModeManager {
     }
 
     // 警告をログに出力
-    warnings.forEach(warning => {
+    warnings.forEach((warning) => {
       logger.warn(`[モード不一致] ${warning}`);
     });
 
@@ -140,7 +150,10 @@ export class ModeManager {
       };
 
       this.embeddingEngine = localFactory(options);
-    } else if (this.config.embedding.provider === 'openai' || this.config.embedding.provider === 'voyageai') {
+    } else if (
+      this.config.embedding.provider === 'openai' ||
+      this.config.embedding.provider === 'voyageai'
+    ) {
       // クラウド埋め込み
       const apiKey = this.config.embedding.apiKey;
 
@@ -174,7 +187,9 @@ export class ModeManager {
    */
   getEmbeddingEngine(): EmbeddingEngine {
     if (!this.embeddingEngine) {
-      throw new Error('埋め込みエンジンが初期化されていません。先に initializeEmbeddingEngine() を呼び出してください');
+      throw new Error(
+        '埋め込みエンジンが初期化されていません。先に initializeEmbeddingEngine() を呼び出してください'
+      );
     }
     return this.embeddingEngine;
   }

@@ -7,7 +7,15 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { LspMcpConfig, Mode, VectorStoreBackend, EmbeddingProvider } from './types.js';
+import {
+  LspMcpConfig,
+  Mode,
+  VectorStoreBackend,
+  EmbeddingProvider,
+  VectorStoreConfig,
+  EmbeddingConfig,
+  PrivacyConfig,
+} from './types.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -94,7 +102,7 @@ export class SetupWizard {
   /**
    * ベクターストア設定を生成
    */
-  private createVectorStoreConfig(options: SetupOptions) {
+  private createVectorStoreConfig(options: SetupOptions): VectorStoreConfig {
     const { vectorBackend, vectorAddress, vectorToken, mode } = options;
 
     switch (vectorBackend) {
@@ -134,7 +142,7 @@ export class SetupWizard {
   /**
    * 埋め込み設定を生成
    */
-  private createEmbeddingConfig(options: SetupOptions) {
+  private createEmbeddingConfig(options: SetupOptions): EmbeddingConfig {
     const { embeddingProvider, embeddingApiKey, embeddingModel, mode } = options;
 
     switch (embeddingProvider) {
@@ -175,7 +183,7 @@ export class SetupWizard {
   /**
    * プライバシー設定を生成
    */
-  private createPrivacyConfig(options: SetupOptions) {
+  private createPrivacyConfig(options: SetupOptions): PrivacyConfig {
     return {
       blockExternalCalls: options.mode === 'local',
     };
@@ -273,8 +281,14 @@ export class SetupWizard {
 
       case 'cloud':
         // クラウドモード
-        if (!cloudOptions?.vectorAddress || !cloudOptions?.vectorToken || !cloudOptions?.embeddingApiKey) {
-          throw new Error('クラウドプリセットにはvectorAddress, vectorToken, embeddingApiKeyが必要です');
+        if (
+          !cloudOptions?.vectorAddress ||
+          !cloudOptions?.vectorToken ||
+          !cloudOptions?.embeddingApiKey
+        ) {
+          throw new Error(
+            'クラウドプリセットにはvectorAddress, vectorToken, embeddingApiKeyが必要です'
+          );
         }
         return this.generateConfig({
           mode: 'cloud',

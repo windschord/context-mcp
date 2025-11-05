@@ -25,11 +25,7 @@ export class HealthChecker {
   private readonly cacheTTL = 30000; // 30秒
   private readonly timeout = 5000; // 5秒
 
-  constructor(
-    version: string,
-    embeddingEngine?: EmbeddingEngine,
-    vectorStore?: VectorStorePlugin
-  ) {
+  constructor(version: string, embeddingEngine?: EmbeddingEngine, vectorStore?: VectorStorePlugin) {
     this.logger = new Logger();
     this.startTime = Date.now();
     this.version = version;
@@ -230,10 +226,7 @@ export class HealthChecker {
    * @returns 処理の結果
    * @throws タイムアウトまたは処理のエラー
    */
-  private async executeWithTimeout<T>(
-    operation: () => Promise<T>,
-    timeoutMs: number
-  ): Promise<T> {
+  private async executeWithTimeout<T>(operation: () => Promise<T>, timeoutMs: number): Promise<T> {
     return Promise.race([
       operation(),
       new Promise<T>((_, reject) =>

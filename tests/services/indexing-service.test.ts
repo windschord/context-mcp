@@ -281,9 +281,15 @@ function hello() {
     test('進捗イベントが発火される', async () => {
       const progressEvents: any[] = [];
 
-      indexingService.on('fileStarted', (event) => progressEvents.push({ type: 'started', ...event }));
-      indexingService.on('fileCompleted', (event) => progressEvents.push({ type: 'completed', ...event }));
-      indexingService.on('progressUpdate', (event) => progressEvents.push({ type: 'progress', ...event }));
+      indexingService.on('fileStarted', (event) =>
+        progressEvents.push({ type: 'started', ...event })
+      );
+      indexingService.on('fileCompleted', (event) =>
+        progressEvents.push({ type: 'completed', ...event })
+      );
+      indexingService.on('progressUpdate', (event) =>
+        progressEvents.push({ type: 'progress', ...event })
+      );
 
       // テストファイルを作成
       await fs.writeFile(path.join(testProjectPath, 'test.ts'), 'export const x = 1;');

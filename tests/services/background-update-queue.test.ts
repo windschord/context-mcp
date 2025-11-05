@@ -386,9 +386,7 @@ describe('BackgroundUpdateQueue', () => {
       queue.start();
 
       // エラーが発生してもクラッシュしない
-      await expect(
-        new Promise((resolve) => setTimeout(resolve, 200))
-      ).resolves.toBeUndefined();
+      await expect(new Promise((resolve) => setTimeout(resolve, 200))).resolves.toBeUndefined();
 
       // 処理はカウントされる（失敗してもカウント）
       expect(queue.getStats().processedCount).toBe(1);

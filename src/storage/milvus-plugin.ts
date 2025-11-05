@@ -96,7 +96,9 @@ export class MilvusPlugin implements VectorStorePlugin {
       }
     }
 
-    throw new Error(`${operationName} failed after ${this.retryConfig.maxRetries + 1} attempts: ${lastError?.message}`);
+    throw new Error(
+      `${operationName} failed after ${this.retryConfig.maxRetries + 1} attempts: ${lastError?.message}`
+    );
   }
 
   /**
@@ -385,11 +387,21 @@ export class MilvusPlugin implements VectorStorePlugin {
       (f: any) => f.data_type === DataType.FloatVector
     );
     const dimValue = vectorField?.dim;
-    const dimension = typeof dimValue === 'number' ? dimValue : (typeof dimValue === 'string' ? parseInt(dimValue, 10) : 0);
+    const dimension =
+      typeof dimValue === 'number'
+        ? dimValue
+        : typeof dimValue === 'string'
+          ? parseInt(dimValue, 10)
+          : 0;
 
     // インデックスサイズを概算（エンティティ数 * 次元数 * 4バイト）
     const rowCount = stats.data.row_count;
-    const vectorCount = typeof rowCount === 'string' ? parseInt(rowCount, 10) : (typeof rowCount === 'number' ? rowCount : 0);
+    const vectorCount =
+      typeof rowCount === 'string'
+        ? parseInt(rowCount, 10)
+        : typeof rowCount === 'number'
+          ? rowCount
+          : 0;
     const indexSize = vectorCount * dimension * 4;
 
     return {

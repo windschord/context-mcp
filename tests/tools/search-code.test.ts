@@ -10,10 +10,7 @@
  */
 
 import { MCPServer } from '../../src/server/mcp-server';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -150,9 +147,7 @@ Database connection utilities are in \`database.ts\`.
       expect(Array.isArray(result.tools)).toBe(true);
 
       // search_codeツールが含まれているか確認
-      const searchCodeTool = result.tools.find(
-        (tool: any) => tool.name === 'search_code'
-      );
+      const searchCodeTool = result.tools.find((tool: any) => tool.name === 'search_code');
 
       expect(searchCodeTool).toBeDefined();
       expect(searchCodeTool).toHaveProperty('description');
@@ -168,9 +163,7 @@ Database connection utilities are in \`database.ts\`.
         ListToolsRequestSchema
       );
 
-      const searchCodeTool = result.tools.find(
-        (tool: any) => tool.name === 'search_code'
-      );
+      const searchCodeTool = result.tools.find((tool: any) => tool.name === 'search_code');
 
       // スキーマの検証
       expect(searchCodeTool.inputSchema).toHaveProperty('type', 'object');
@@ -201,9 +194,7 @@ Database connection utilities are in \`database.ts\`.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should reject invalid query type', async () => {
@@ -221,9 +212,7 @@ Database connection utilities are in \`database.ts\`.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should reject invalid topK type', async () => {
@@ -242,9 +231,7 @@ Database connection utilities are in \`database.ts\`.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should accept valid parameters', async () => {
@@ -266,9 +253,7 @@ Database connection utilities are in \`database.ts\`.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should use default topK when not specified', async () => {

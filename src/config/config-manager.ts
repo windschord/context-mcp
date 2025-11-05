@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import {
   LspMcpConfig,
@@ -19,8 +20,7 @@ export class ConfigManager {
   private readonly configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath =
-      configPath || path.join(process.cwd(), '.lsp-mcp.json');
+    this.configPath = configPath || path.join(process.cwd(), '.lsp-mcp.json');
   }
 
   /**
@@ -31,25 +31,22 @@ export class ConfigManager {
     let userConfig: Partial<LspMcpConfig> = {};
 
     // 設定ファイルが存在する場合は読み込む
-    if (fs.existsSync(this.configPath)) {
-      try {
-        const fileContent = fs.readFileSync(this.configPath, 'utf-8');
-        userConfig = JSON.parse(fileContent);
-        logger.info(`設定ファイルを読み込みました: ${this.configPath}`);
-      } catch (error) {
-        if (error instanceof SyntaxError) {
-          throw new ConfigValidationError(
-            `設定ファイルのJSON形式が不正です: ${this.configPath}`,
-            { cause: error },
-            'JSONの構文エラーを修正してください。末尾のカンマ、引用符の不一致、括弧の不一致などを確認してください。'
-          );
-        }
+    try {
+      const fileContent = await fsPromises.readFile(this.configPath, 'utf-8');
+      userConfig = JSON.parse(fileContent);
+      logger.info(`設定ファイルを読み込みました: ${this.configPath}`);
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        logger.info(`設定ファイルが見つかりません。デフォルト設定を使用します: ${this.configPath}`);
+      } else if (error instanceof SyntaxError) {
+        throw new ConfigValidationError(
+          `設定ファイルのJSON形式が不正です: ${this.configPath}`,
+          { cause: error },
+          'JSONの構文エラーを修正してください。末尾のカンマ、引用符の不一致、括弧の不一致などを確認してください。'
+        );
+      } else {
         throw error;
       }
-    } else {
-      logger.info(
-        `設定ファイルが見つかりません。デフォルト設定を使用します: ${this.configPath}`
-      );
     }
 
     // デフォルト設定とマージ
@@ -109,11 +106,7 @@ export class ConfigManager {
     }
 
     // vectorStore.backend のバリデーション
-    const validBackends: VectorStoreBackend[] = [
-      'milvus',
-      'zilliz',
-      'qdrant',
-    ];
+    const validBackends: VectorStoreBackend[] = ['milvus', 'zilliz', 'qdrant'];
     if (!validBackends.includes(config.vectorStore.backend)) {
       throw new ConfigValidationError(
         `無効なベクターDBバックエンドです: ${config.vectorStore.backend}。有効な値: ${validBackends.join(', ')}`,
@@ -123,11 +116,7 @@ export class ConfigManager {
     }
 
     // embedding.provider のバリデーション
-    const validProviders: EmbeddingProvider[] = [
-      'transformers',
-      'openai',
-      'voyageai',
-    ];
+    const validProviders: EmbeddingProvider[] = ['transformers', 'openai', 'voyageai'];
     if (!validProviders.includes(config.embedding.provider)) {
       throw new ConfigValidationError(
         `無効な埋め込みプロバイダーです: ${config.embedding.provider}。有効な値: ${validProviders.join(', ')}`,
@@ -138,8 +127,7 @@ export class ConfigManager {
 
     // search weights のバリデーション（警告のみ）
     if (config.search) {
-      const totalWeight =
-        config.search.bm25Weight + config.search.vectorWeight;
+      const totalWeight = config.search.bm25Weight + config.search.vectorWeight;
       if (Math.abs(totalWeight - 1.0) > 0.001) {
         logger.warn(
           `検索スコアの重み合計が1.0ではありません（現在: ${totalWeight}）。bm25Weight=${config.search.bm25Weight}, vectorWeight=${config.search.vectorWeight}`
@@ -150,15 +138,10 @@ export class ConfigManager {
     // ローカルモードの制約チェック
     if (config.mode === 'local') {
       if (!config.embedding.local) {
-        logger.warn(
-          'ローカルモードですが、埋め込み設定でlocal=falseが指定されています'
-        );
+        logger.warn('ローカルモードですが、埋め込み設定でlocal=falseが指定されています');
       }
 
-      if (
-        config.vectorStore.backend === 'zilliz' ||
-        config.vectorStore.backend === 'qdrant'
-      ) {
+      if (config.vectorStore.backend === 'zilliz' || config.vectorStore.backend === 'qdrant') {
         logger.warn(
           `ローカルモードでクラウドベクターDB（${config.vectorStore.backend}）が指定されています`
         );
@@ -168,9 +151,7 @@ export class ConfigManager {
     // クラウドモードの推奨チェック
     if (config.mode === 'cloud') {
       if (config.privacy?.blockExternalCalls) {
-        logger.warn(
-          'クラウドモードですが、外部通信ブロック（blockExternalCalls）が有効です'
-        );
+        logger.warn('クラウドモードですが、外部通信ブロック（blockExternalCalls）が有効です');
       }
     }
 
@@ -198,8 +179,7 @@ export class ConfigManager {
     // vectorStore のマージ
     if (userConfig.vectorStore) {
       merged.vectorStore = {
-        backend:
-          userConfig.vectorStore.backend || defaultConfig.vectorStore.backend,
+        backend: userConfig.vectorStore.backend || defaultConfig.vectorStore.backend,
         config: {
           ...defaultConfig.vectorStore.config,
           ...userConfig.vectorStore.config,
@@ -234,18 +214,11 @@ export class ConfigManager {
     // indexing のマージ（配列は上書き）
     if (userConfig.indexing) {
       merged.indexing = {
-        languages:
-          userConfig.indexing.languages ||
-          defaultConfig.indexing?.languages ||
-          [],
+        languages: userConfig.indexing.languages || defaultConfig.indexing?.languages || [],
         excludePatterns:
-          userConfig.indexing.excludePatterns ||
-          defaultConfig.indexing?.excludePatterns ||
-          [],
+          userConfig.indexing.excludePatterns || defaultConfig.indexing?.excludePatterns || [],
         includeDocuments:
-          userConfig.indexing.includeDocuments ??
-          defaultConfig.indexing?.includeDocuments ??
-          true,
+          userConfig.indexing.includeDocuments ?? defaultConfig.indexing?.includeDocuments ?? true,
       };
     }
 
@@ -264,9 +237,7 @@ export class ConfigManager {
     if (process.env['LSP_MCP_MODE']) {
       const mode = process.env['LSP_MCP_MODE'] as Mode;
       overridden.mode = mode;
-      logger.info(
-        `環境変数 LSP_MCP_MODE からモードをオーバーライド: ${mode}`
-      );
+      logger.info(`環境変数 LSP_MCP_MODE からモードをオーバーライド: ${mode}`);
     }
 
     // LSP_MCP_VECTOR_BACKEND
@@ -276,9 +247,7 @@ export class ConfigManager {
         ...overridden.vectorStore,
         backend,
       };
-      logger.info(
-        `環境変数 LSP_MCP_VECTOR_BACKEND からベクターDBをオーバーライド: ${backend}`
-      );
+      logger.info(`環境変数 LSP_MCP_VECTOR_BACKEND からベクターDBをオーバーライド: ${backend}`);
     }
 
     // LSP_MCP_EMBEDDING_PROVIDER
@@ -299,9 +268,7 @@ export class ConfigManager {
         ...overridden.embedding,
         apiKey: process.env['LSP_MCP_EMBEDDING_API_KEY'],
       };
-      logger.info(
-        '環境変数 LSP_MCP_EMBEDDING_API_KEY から埋め込みAPIキーをオーバーライド'
-      );
+      logger.info('環境変数 LSP_MCP_EMBEDDING_API_KEY から埋め込みAPIキーをオーバーライド');
     }
 
     // LSP_MCP_VECTOR_ADDRESS
@@ -327,9 +294,7 @@ export class ConfigManager {
           token: process.env['LSP_MCP_VECTOR_TOKEN'],
         },
       };
-      logger.info(
-        '環境変数 LSP_MCP_VECTOR_TOKEN からベクターDBトークンをオーバーライド'
-      );
+      logger.info('環境変数 LSP_MCP_VECTOR_TOKEN からベクターDBトークンをオーバーライド');
     }
 
     return overridden;
@@ -342,9 +307,7 @@ export class ConfigManager {
    */
   getConfig(): LspMcpConfig {
     if (!this.config) {
-      throw new Error(
-        '設定がまだ読み込まれていません。先に loadConfig() を呼び出してください'
-      );
+      throw new Error('設定がまだ読み込まれていません。先に loadConfig() を呼び出してください');
     }
     return this.config;
   }
