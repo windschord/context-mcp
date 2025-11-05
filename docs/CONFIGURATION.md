@@ -1,6 +1,6 @@
 # 設定リファレンス
 
-このドキュメントでは、LSP-MCPの設定ファイル`.lsp-mcp.json`の全オプションを詳しく説明します。
+このドキュメントでは、Context-MCPの設定ファイル`.context-mcp.json`の全オプションを詳しく説明します。
 
 ## 目次
 
@@ -18,11 +18,11 @@
 
 ## 設定ファイルの場所
 
-設定ファイル`.lsp-mcp.json`は、以下の順序で検索されます:
+設定ファイル`.context-mcp.json`は、以下の順序で検索されます:
 
-1. **プロジェクトルート**: `./lsp-mcp.json` または `./.lsp-mcp.json`
-2. **ホームディレクトリ**: `~/.lsp-mcp/config.json`
-3. **グローバル設定**: `/etc/lsp-mcp/config.json`（Linux/macOS）
+1. **プロジェクトルート**: `./context-mcp.json` または `./.context-mcp.json`
+2. **ホームディレクトリ**: `~/.context-mcp/config.json`
+3. **グローバル設定**: `/etc/context-mcp/config.json`（Linux/macOS）
 
 通常は**プロジェクトルート**に配置することを推奨します。
 
@@ -76,7 +76,7 @@
   },
   "logging": {
     "level": "info",
-    "file": ".lsp-mcp/logs/app.log"
+    "file": ".context-mcp/logs/app.log"
   }
 }
 ```
@@ -168,7 +168,7 @@
   "vectorStore": {
     "backend": "chroma",
     "config": {
-      "path": "./.lsp-mcp/chroma",
+      "path": "./.context-mcp/chroma",
       "collectionName": "lsp_mcp_vectors",
       "persistDirectory": true
     }
@@ -180,7 +180,7 @@
 
 | オプション | 型 | デフォルト | 説明 |
 |-----------|-----|-----------|------|
-| `path` | string | `"./.lsp-mcp/chroma"` | データ保存パス |
+| `path` | string | `"./.context-mcp/chroma"` | データ保存パス |
 | `collectionName` | string | `"lsp_mcp_vectors"` | コレクション名 |
 | `persistDirectory` | boolean | `true` | データを永続化するか |
 
@@ -520,7 +520,7 @@
 {
   "logging": {
     "level": "info",
-    "file": ".lsp-mcp/logs/app.log",
+    "file": ".context-mcp/logs/app.log",
     "maxFileSize": 10485760,
     "maxFiles": 5,
     "console": true
@@ -533,7 +533,7 @@
 | オプション | 型 | デフォルト | 説明 |
 |-----------|-----|-----------|------|
 | `level` | string | `"info"` | ログレベル（debug/info/warn/error） |
-| `file` | string | `".lsp-mcp/logs/app.log"` | ログファイルパス |
+| `file` | string | `".context-mcp/logs/app.log"` | ログファイルパス |
 | `maxFileSize` | number | `10485760` | ログファイルの最大サイズ（10MB） |
 | `maxFiles` | number | `5` | 保持するログファイル数 |
 | `console` | boolean | `true` | コンソール出力を有効にするか |
@@ -730,7 +730,7 @@ source ~/.bashrc
 
 ```bash
 # 設定ファイルの検証
-lsp-mcp validate-config
+context-mcp validate-config
 
 # 成功時:
 # ✓ Configuration is valid
@@ -746,17 +746,17 @@ lsp-mcp validate-config
 
 ## JSON Schema
 
-LSP-MCPの設定ファイルはJSON Schemaで定義されています:
+Context-MCPの設定ファイルはJSON Schemaで定義されています:
 
 ```bash
 # スキーマをダウンロード
-curl -O https://raw.githubusercontent.com/yourusername/lsp-mcp/main/schemas/config.schema.json
+curl -O https://raw.githubusercontent.com/yourusername/context-mcp/main/schemas/config.schema.json
 
 # VSCodeで補完を有効化（.vscode/settings.json）
 {
   "json.schemas": [
     {
-      "fileMatch": [".lsp-mcp.json"],
+      "fileMatch": [".context-mcp.json"],
       "url": "./schemas/config.schema.json"
     }
   ]

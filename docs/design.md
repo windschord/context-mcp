@@ -1,8 +1,8 @@
-# 設計：LSP-MCP（Language Server Protocol based MCP）
+# 設計：Context-MCP（Language Server Protocol based MCP）
 
 ## アーキテクチャ概要
 
-LSP-MCPは、レイヤー化されたアーキテクチャを採用し、各レイヤーが明確な責務を持つ構成となっています。
+Context-MCPは、レイヤー化されたアーキテクチャを採用し、各レイヤーが明確な責務を持つ構成となっています。
 
 ```mermaid
 graph TD
@@ -262,7 +262,7 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
   ↓
 1. 環境変数（LSP_MCP_MODE等）
   ↓
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定（types.ts内のDEFAULT_CONFIG）
   ↓
@@ -334,7 +334,7 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 // OpenTelemetry標準環境変数
 OTEL_EXPORTER_OTLP_ENDPOINT: string       // OTLPエンドポイント
 OTEL_EXPORTER_OTLP_PROTOCOL: 'grpc' | 'http/protobuf'
-OTEL_SERVICE_NAME: string                 // サービス名（デフォルト: 'lsp-mcp'）
+OTEL_SERVICE_NAME: string                 // サービス名（デフォルト: 'context-mcp'）
 OTEL_TRACES_EXPORTER: 'otlp' | 'console' | 'none'
 OTEL_METRICS_EXPORTER: 'otlp' | 'console' | 'none'
 OTEL_LOGS_EXPORTER: 'otlp' | 'console' | 'none'
@@ -866,14 +866,14 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 - **即座に使用開始**: Docker Compose起動 + MCP設定のみで動作
 - **Claude Code統合の簡素化**: claude_desktop_config.jsonの環境変数セクションで完結
 - **CI/CD対応**: 環境変数による設定変更が容易
-- **柔軟性**: 設定ファイル（.lsp-mcp.json）も並行サポート、用途に応じて選択可能
+- **柔軟性**: 設定ファイル（.context-mcp.json）も並行サポート、用途に応じて選択可能
 - **デフォルトの妥当性**: ローカルモード + Milvus localhost:19530 + Transformers.jsが多くのユースケースをカバー
 
 **設定の優先順位**:
 ```
 1. 環境変数（最優先）
    ↓ 上書き
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
    ↓ 補完
 3. デフォルト設定（DEFAULT_CONFIG）
 ```
@@ -892,9 +892,9 @@ docker-compose up -d
 # 2. Claude Code MCP設定（環境変数のみ）
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
@@ -1016,7 +1016,7 @@ interface VectorStorePlugin {
 ```
 
 ### 設定のスキーマ
-`.lsp-mcp.json`でカスタマイズ可能
+`.context-mcp.json`でカスタマイズ可能
 
 ```json
 {
@@ -1060,7 +1060,7 @@ interface VectorStorePlugin {
       "endpoint": "http://localhost:4317",
       "protocol": "grpc"
     },
-    "serviceName": "lsp-mcp",
+    "serviceName": "context-mcp",
     "samplingRate": 0.1,
     "exporters": {
       "traces": "otlp",

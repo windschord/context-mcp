@@ -1,8 +1,8 @@
-# LSP-MCP アーキテクチャドキュメント
+# Context-MCP アーキテクチャドキュメント
 
 ## 概要
 
-LSP-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。レイヤー化されたアーキテクチャを採用し、各コンポーネントが明確な責務を持つ設計となっています。
+Context-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。レイヤー化されたアーキテクチャを採用し、各コンポーネントが明確な責務を持つ設計となっています。
 
 ## システムアーキテクチャ図
 
@@ -432,7 +432,7 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 - **利点**: 高性能、セットアップ簡単、スケーラブル
 
 ### モード切り替え
-設定ファイル `.lsp-mcp.json` の `mode` フィールドで切り替え:
+設定ファイル `.context-mcp.json` の `mode` フィールドで切り替え:
 - `"mode": "local"` → ローカルモード
 - `"mode": "cloud"` → クラウドモード
 

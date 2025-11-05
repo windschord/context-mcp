@@ -1,6 +1,6 @@
 # 可観測性ガイド: OpenTelemetryによる監視
 
-LSP-MCPは、OpenTelemetryによる包括的な可観測性機能を提供します。トレース、メトリクス、ログの3つの観測シグナルを収集し、Jaeger、Prometheus、Grafanaなどの監視バックエンドと統合できます。
+Context-MCPは、OpenTelemetryによる包括的な可観測性機能を提供します。トレース、メトリクス、ログの3つの観測シグナルを収集し、Jaeger、Prometheus、Grafanaなどの監視バックエンドと統合できます。
 
 ## 概要
 
@@ -31,13 +31,13 @@ OpenTelemetry (OTEL)は、ベンダー中立のオープンソース可観測性
 # Claude CodeのMCP設定（claude_desktop_config.json）
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "node",
       "args": ["path/to/lsp_mcp/dist/index.js"],
       "env": {
         "LSP_MCP_TELEMETRY_ENABLED": "true",
         "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
-        "OTEL_SERVICE_NAME": "lsp-mcp"
+        "OTEL_SERVICE_NAME": "context-mcp"
       }
     }
   }
@@ -65,23 +65,23 @@ docker-compose -f docs/observability-stack.yml logs -f
 - **Grafana**: http://localhost:3000 (ダッシュボード)
 - **OTLP Collector**: http://localhost:4317 (テレメトリ受信)
 
-### 3. LSP-MCPの起動
+### 3. Context-MCPの起動
 
-テレメトリ設定を有効にしてLSP-MCPを起動します。
+テレメトリ設定を有効にしてContext-MCPを起動します。
 
 ```bash
 # 環境変数で設定
 export LSP_MCP_TELEMETRY_ENABLED=true
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
-# LSP-MCP起動
+# Context-MCP起動
 node dist/index.js
 ```
 
 ### 4. ダッシュボードへのアクセス
 
 - **Jaeger UI**: http://localhost:16686
-  - サービス名: `lsp-mcp`を選択
+  - サービス名: `context-mcp`を選択
   - トレースを検索・可視化
 
 - **Grafana**: http://localhost:3000
@@ -91,15 +91,15 @@ node dist/index.js
 
 ## 設定ガイド
 
-### 設定ファイル（.lsp-mcp.json）
+### 設定ファイル（.context-mcp.json）
 
-`.lsp-mcp.json`の`telemetry`セクションで詳細な設定が可能です。
+`.context-mcp.json`の`telemetry`セクションで詳細な設定が可能です。
 
 ```json
 {
   "telemetry": {
     "enabled": true,
-    "serviceName": "lsp-mcp",
+    "serviceName": "context-mcp",
     "samplingRate": 0.1,
     "otlp": {
       "endpoint": "http://localhost:4317",
@@ -119,7 +119,7 @@ node dist/index.js
 | 項目 | 型 | 説明 | デフォルト |
 |------|------|------|-----------|
 | `enabled` | boolean | テレメトリ機能の有効化 | `false` |
-| `serviceName` | string | サービス名（Jaeger/Prometheus等で表示） | `"lsp-mcp"` |
+| `serviceName` | string | サービス名（Jaeger/Prometheus等で表示） | `"context-mcp"` |
 | `samplingRate` | number | トレースサンプリングレート（0.0-1.0） | `0.1` (10%) |
 | `otlp.endpoint` | string | OTLPエンドポイントURL | `"http://localhost:4317"` |
 | `otlp.protocol` | string | OTLPプロトコル（grpc/http/protobuf） | `"grpc"` |
@@ -136,7 +136,7 @@ node dist/index.js
 export LSP_MCP_TELEMETRY_ENABLED=true
 
 # サービス名
-export OTEL_SERVICE_NAME=lsp-mcp
+export OTEL_SERVICE_NAME=context-mcp
 
 # OTLPエンドポイント
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
@@ -157,7 +157,7 @@ export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.1
   ↓
 1. 環境変数（LSP_MCP_TELEMETRY_ENABLED、OTEL_*等）
   ↓
-2. 設定ファイル（.lsp-mcp.json）
+2. 設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定
   ↓
@@ -172,14 +172,14 @@ export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.1
 |---------|------|-----|
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLPエンドポイントURL | `http://localhost:4317` |
 | `OTEL_EXPORTER_OTLP_PROTOCOL` | OTLPプロトコル | `grpc` または `http/protobuf` |
-| `OTEL_SERVICE_NAME` | サービス名 | `lsp-mcp` |
+| `OTEL_SERVICE_NAME` | サービス名 | `context-mcp` |
 | `OTEL_TRACES_EXPORTER` | トレースエクスポーター | `otlp`, `console`, `none` |
 | `OTEL_METRICS_EXPORTER` | メトリクスエクスポーター | `otlp`, `console`, `none` |
 | `OTEL_LOGS_EXPORTER` | ログエクスポーター | `otlp`, `console`, `none` |
 
 参考: [OpenTelemetry Environment Variable Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/)
 
-### LSP-MCPカスタム環境変数
+### Context-MCPカスタム環境変数
 
 | 環境変数 | 説明 | 例 |
 |---------|------|-----|
@@ -211,7 +211,7 @@ docker-compose -f docs/observability-stack.yml up -d
 ### トレース可視化の方法
 
 1. **Jaeger UIにアクセス**: http://localhost:16686
-2. **サービス選択**: "Service"ドロップダウンから`lsp-mcp`を選択
+2. **サービス選択**: "Service"ドロップダウンから`context-mcp`を選択
 3. **検索条件設定**:
    - Operation: 特定のMCPツール（例: `search_code`）
    - Lookback: 過去1時間など
@@ -252,7 +252,7 @@ docker run -d --name tempo \
 1. **Grafana UIにアクセス**: http://localhost:3000
 2. **Explore画面**: 左メニューから"Explore"を選択
 3. **データソース**: "Tempo"を選択
-4. **Query**: Service nameに`lsp-mcp`、Operation nameを選択
+4. **Query**: Service nameに`context-mcp`、Operation nameを選択
 5. **Run query**: トレース一覧を表示
 
 Grafanaでは、トレースとメトリクスを同一画面で確認できるため、より高度な分析が可能です。
@@ -277,7 +277,7 @@ Prometheusは、OTLP Collectorが公開するメトリクスエンドポイン�
 ```yaml
 # prometheus.yml（抜粋）
 scrape_configs:
-  - job_name: 'lsp-mcp'
+  - job_name: 'context-mcp'
     scrape_interval: 15s
     static_configs:
       - targets: ['otel-collector:8889']
@@ -290,7 +290,7 @@ scrape_configs:
    - 左メニュー > Dashboards > Import
    - `docs/grafana-dashboard-sample.json`をアップロード
 3. **データソース選択**: Prometheusを選択
-4. **Import完了**: LSP-MCPメトリクスダッシュボードが表示
+4. **Import完了**: Context-MCPメトリクスダッシュボードが表示
 
 サンプルダッシュボードには以下が含まれます:
 - リクエスト数（requests.total）
@@ -395,7 +395,7 @@ Tree-sitterによるAST解析のトレーススパンが記録されます。
 
 ### ログレベル
 
-LSP-MCPは、以下のログレベルをサポートします:
+Context-MCPは、以下のログレベルをサポートします:
 
 - **error**: エラー（重大な問題）
 - **warn**: 警告（注意が必要な事象）
@@ -445,14 +445,14 @@ OpenTelemetryログには、トレースコンテキスト（Trace ID、Span ID�
 
 3. **設定ファイルの確認**:
    ```bash
-   # .lsp-mcp.jsonの内容確認
-   cat .lsp-mcp.json
+   # .context-mcp.jsonの内容確認
+   cat .context-mcp.json
    ```
 
 4. **ログ確認**:
    ```bash
    # エラーメッセージを確認
-   grep -i "telemetry" lsp-mcp.log
+   grep -i "telemetry" context-mcp.log
    ```
 
 ### OTLPエンドポイント接続エラー
@@ -516,7 +516,7 @@ Error: Failed to export spans: connect ECONNREFUSED 127.0.0.1:4317
    ```
 
 3. **バッチ処理設定の調整**:
-   LSP-MCPはデフォルトでバッチ処理を使用しますが、さらに調整したい場合はコードレベルでの変更が必要です（`TelemetryManager.ts`の`BatchSpanProcessor`設定）。
+   Context-MCPはデフォルトでバッチ処理を使用しますが、さらに調整したい場合はコードレベルでの変更が必要です（`TelemetryManager.ts`の`BatchSpanProcessor`設定）。
 
 ### サンプリング率の調整
 
@@ -537,7 +537,7 @@ Error: Failed to export spans: connect ECONNREFUSED 127.0.0.1:4317
 export OTEL_TRACES_EXPORTER=console
 export LSP_MCP_TELEMETRY_ENABLED=true
 
-# LSP-MCP起動
+# Context-MCP起動
 node dist/index.js
 ```
 
@@ -562,7 +562,7 @@ Prometheusアラートルールの例:
 ```yaml
 # prometheus-alerts.yml
 groups:
-  - name: lsp-mcp
+  - name: context-mcp
     interval: 30s
     rules:
       - alert: HighErrorRate
@@ -571,7 +571,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "LSP-MCPのエラー率が5%を超えています"
+          summary: "Context-MCPのエラー率が5%を超えています"
 
       - alert: HighLatency
         expr: histogram_quantile(0.95, rate(lsp_mcp_requests_duration_bucket[5m])) > 2000
@@ -579,7 +579,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "LSP-MCPのP95レイテンシーが2秒を超えています"
+          summary: "Context-MCPのP95レイテンシーが2秒を超えています"
 
       - alert: HighMemoryUsage
         expr: lsp_mcp_memory_usage > 1500
@@ -587,7 +587,7 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "LSP-MCPのメモリ使用量が1.5GBを超えています"
+          summary: "Context-MCPのメモリ使用量が1.5GBを超えています"
 ```
 
 ### ダッシュボードの構成例
