@@ -30,6 +30,7 @@ export default {
     'tests/performance/benchmark.test.ts',
     'tests/services/incremental-update.test.ts',
     'tests/config/config-manager.test.ts',
+    'tests/config/setup-wizard.test.ts',
   ],
   moduleFileExtensions: ['ts', 'js', 'json', 'mts', 'cts', 'tsx', 'jsx'],
   extensionsToTreatAsEsm: ['.ts'],
