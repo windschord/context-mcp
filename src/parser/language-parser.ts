@@ -82,7 +82,7 @@ export class LanguageParser {
     const parser = this.parserPool.acquire(language);
     try {
       const tree = parser.parse(code);
-      const hasError = tree.rootNode.hasError;
+      const hasError = tree?.rootNode?.hasError ?? true;
 
       return {
         tree,

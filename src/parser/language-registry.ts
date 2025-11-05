@@ -40,7 +40,7 @@ export class LanguageRegistry {
   private initializeLanguages(): void {
     // TypeScript/JavaScript uses the .typescript/.tsx sub-properties
     this.languageMap.set(Language.TypeScript, TypeScript.typescript);
-    this.languageMap.set(Language.JavaScript, TypeScript.tsx);
+    this.languageMap.set(Language.JavaScript, TypeScript.typescript); // Use typescript for both TS and JS
 
     // Other languages
     this.languageMap.set(Language.Python, Python);
