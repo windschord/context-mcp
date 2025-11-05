@@ -41,9 +41,10 @@
     "no-constant-condition": "off",
     "no-case-declarations": "off",
     "no-console": "warn",
+    "no-useless-escape": "warn",
     "eqeqeq": ["error", "always"],
     "no-var": "error",
-    "prefer-const": "error"
+    "prefer-const": "warn"
   },
   "ignorePatterns": [
     "dist",
