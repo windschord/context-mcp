@@ -294,7 +294,7 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
   /**
    * リソースの解放
    */
-  async dispose(): Promise<void> {
+  dispose(): void {
     if (!this.initialized) {
       return;
     }
