@@ -5,12 +5,18 @@
  */
 
 import { SetupWizard } from '../../src/config/setup-wizard';
-import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 
 // fsモジュールをモック
-jest.mock('fs');
-const mockFs = fs as jest.Mocked<typeof fs>;
+jest.mock('fs', () => ({
+  promises: {
+    access: jest.fn(),
+    mkdir: jest.fn(),
+    writeFile: jest.fn(),
+  },
+}));
+const mockFsPromises = fsPromises as jest.Mocked<typeof fsPromises>;
 
 describe('SetupWizard', () => {
   let wizard: SetupWizard;
@@ -122,13 +128,13 @@ describe('SetupWizard', () => {
         embeddingProvider: 'transformers',
       });
 
-      mockFs.existsSync.mockReturnValue(false);
-      mockFs.mkdirSync.mockImplementation(() => undefined as any);
-      mockFs.writeFileSync.mockImplementation(() => undefined);
+      mockFsPromises.access.mockRejectedValue({ code: 'ENOENT' });
+      mockFsPromises.mkdir.mockResolvedValue(undefined);
+      mockFsPromises.writeFile.mockResolvedValue(undefined);
 
       await wizard.saveConfig(config);
 
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+      expect(mockFsPromises.writeFile).toHaveBeenCalledWith(
         testConfigPath,
         expect.stringContaining('"mode": "local"'),
         'utf-8'
@@ -142,7 +148,7 @@ describe('SetupWizard', () => {
         embeddingProvider: 'transformers',
       });
 
-      mockFs.existsSync.mockReturnValue(true);
+      mockFsPromises.access.mockResolvedValue(undefined);
 
       await expect(wizard.saveConfig(config, { overwrite: false })).rejects.toThrow(
         '設定ファイルが既に存在します'
@@ -156,12 +162,13 @@ describe('SetupWizard', () => {
         embeddingProvider: 'transformers',
       });
 
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.writeFileSync.mockImplementation(() => undefined);
+      mockFsPromises.access.mockResolvedValue(undefined);
+      mockFsPromises.mkdir.mockResolvedValue(undefined);
+      mockFsPromises.writeFile.mockResolvedValue(undefined);
 
       await wizard.saveConfig(config, { overwrite: true });
 
-      expect(mockFs.writeFileSync).toHaveBeenCalled();
+      expect(mockFsPromises.writeFile).toHaveBeenCalled();
     });
 
     it('ディレクトリが存在しない場合に作成する', async () => {
@@ -171,13 +178,13 @@ describe('SetupWizard', () => {
         embeddingProvider: 'transformers',
       });
 
-      mockFs.existsSync.mockReturnValue(false);
-      mockFs.mkdirSync.mockImplementation(() => undefined as any);
-      mockFs.writeFileSync.mockImplementation(() => undefined);
+      mockFsPromises.access.mockRejectedValue({ code: 'ENOENT' });
+      mockFsPromises.mkdir.mockResolvedValue(undefined);
+      mockFsPromises.writeFile.mockResolvedValue(undefined);
 
       await wizard.saveConfig(config);
 
-      expect(mockFs.mkdirSync).toHaveBeenCalledWith(
+      expect(mockFsPromises.mkdir).toHaveBeenCalledWith(
         path.dirname(testConfigPath),
         expect.objectContaining({ recursive: true })
       );
