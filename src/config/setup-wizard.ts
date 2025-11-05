@@ -5,7 +5,6 @@
  * ユーザーフレンドリーな設定ファイル生成をサポート
  */
 
-import * as fs from 'fs';
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import {
@@ -136,7 +135,9 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(`未対応のベクターDBバックエンドです: ${vectorBackend}`);
+        throw new Error(
+          `未対応のベクターDBバックエンドです: ${vectorBackend as string}`,
+        );
     }
   }
 
@@ -177,7 +178,9 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(`未対応の埋め込みプロバイダーです: ${embeddingProvider}`);
+        throw new Error(
+          `未対応の埋め込みプロバイダーです: ${embeddingProvider as string}`,
+        );
     }
   }
 
@@ -307,7 +310,7 @@ export class SetupWizard {
         });
 
       default:
-        throw new Error(`無効なプリセット名です: ${preset}`);
+        throw new Error(`無効なプリセット名です: ${preset as string}`);
     }
   }
 

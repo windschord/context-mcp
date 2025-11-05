@@ -116,7 +116,9 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
       } else if (this.options.provider === 'voyageai') {
         await this.initializeVoyageAI();
       } else {
-        throw new Error(`Unsupported provider: ${this.options.provider}`);
+        throw new Error(
+          `Unsupported provider: ${this.options.provider as string}`,
+        );
       }
 
       // 次元数を設定
@@ -217,7 +219,9 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
         } else if (this.options.provider === 'voyageai') {
           return await this.embedBatchVoyageAI(texts);
         } else {
-          throw new Error(`Unsupported provider: ${this.options.provider}`);
+          throw new Error(
+            `Unsupported provider: ${this.options.provider as string}`,
+          );
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));

@@ -171,7 +171,9 @@ export class ModeManager {
 
       this.embeddingEngine = cloudFactory(options);
     } else {
-      throw new Error(`未対応の埋め込みプロバイダーです: ${this.config.embedding.provider}`);
+      throw new Error(
+        `未対応の埋め込みプロバイダーです: ${this.config.embedding.provider as string}`,
+      );
     }
 
     // エンジンを初期化
