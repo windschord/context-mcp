@@ -1,6 +1,6 @@
 # トラブルシューティング
 
-LSP-MCPの使用中に発生する一般的な問題と解決方法をまとめています。
+Context-MCPの使用中に発生する一般的な問題と解決方法をまとめています。
 
 ## 目次
 
@@ -38,10 +38,10 @@ echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 
 # 再インストール
-npm install -g lsp-mcp
+npm install -g context-mcp
 
 # 方法2: sudoを使用（非推奨）
-sudo npm install -g lsp-mcp
+sudo npm install -g context-mcp
 ```
 
 ### Node.jsバージョンが古い
@@ -111,7 +111,7 @@ kill -9 <PID>
 # ports:
 #   - "19531:19530"  # 19530 -> 19531に変更
 
-# .lsp-mcp.json も変更
+# .context-mcp.json も変更
 # "address": "localhost:19531"
 ```
 
@@ -220,7 +220,7 @@ wget https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx
 wget https://huggingface.co/Xenova/all-MiniLM-L6-v2/resolve/main/tokenizer.json
 
 # 4. 再試行
-lsp-mcp index .
+context-mcp index .
 ```
 
 ### 埋め込み生成が遅い
@@ -230,7 +230,7 @@ lsp-mcp index .
 **解決方法**:
 
 ```bash
-# 1. バッチサイズを増やす（.lsp-mcp.json）
+# 1. バッチサイズを増やす（.context-mcp.json）
 {
   "embedding": {
     "batchSize": 64  // デフォルト32から増やす
@@ -268,7 +268,7 @@ echo $OPENAI_API_KEY
 # 2. レート制限を確認
 # https://platform.openai.com/account/limits
 
-# 3. バッチサイズを減らす（.lsp-mcp.json）
+# 3. バッチサイズを減らす（.context-mcp.json）
 {
   "embedding": {
     "batchSize": 50,  // デフォルト100から減らす
@@ -295,11 +295,11 @@ echo $OPENAI_API_KEY
 
 ```bash
 # 1. ログを確認
-cat .lsp-mcp/logs/app.log
+cat .context-mcp/logs/app.log
 
 # 2. 問題のファイルをスキップ
 # ログから問題のファイルを特定
-# .lsp-mcp.json にexcludePatternを追加
+# .context-mcp.json にexcludePatternを追加
 {
   "indexing": {
     "excludePatterns": [
@@ -316,8 +316,8 @@ cat .lsp-mcp/logs/app.log
 }
 
 # 4. 再インデックス化
-lsp-mcp clear-index
-lsp-mcp index .
+context-mcp clear-index
+context-mcp index .
 ```
 
 ### 特定のファイルがインデックス化されない
@@ -328,10 +328,10 @@ lsp-mcp index .
 
 ```bash
 # 1. 除外パターンを確認
-lsp-mcp debug-patterns path/to/file.ts
+context-mcp debug-patterns path/to/file.ts
 # Output: EXCLUDED by pattern: "**/*.test.ts"
 
-# 2. 除外パターンを調整（.lsp-mcp.json）
+# 2. 除外パターンを調整（.context-mcp.json）
 {
   "indexing": {
     "excludePatterns": [
@@ -351,7 +351,7 @@ ls -lh path/to/file.ts
 }
 
 # 4. 手動でインデックス化
-lsp-mcp index-file path/to/file.ts
+context-mcp index-file path/to/file.ts
 ```
 
 ### メモリ不足エラー
@@ -367,9 +367,9 @@ Allocation failed - JavaScript heap out of memory
 ```bash
 # 1. Node.jsのヒープサイズを増やす
 export NODE_OPTIONS="--max-old-space-size=4096"  # 4GB
-lsp-mcp index .
+context-mcp index .
 
-# 2. バッチサイズを減らす（.lsp-mcp.json）
+# 2. バッチサイズを減らす（.context-mcp.json）
 {
   "embedding": {
     "batchSize": 16  // 32から減らす
@@ -384,9 +384,9 @@ lsp-mcp index .
 }
 
 # 4. 段階的にインデックス化
-lsp-mcp index src/
-lsp-mcp index tests/
-lsp-mcp index docs/
+context-mcp index src/
+context-mcp index tests/
+context-mcp index docs/
 ```
 
 ## 検索関連
@@ -399,14 +399,14 @@ lsp-mcp index docs/
 
 ```bash
 # 1. インデックス状態を確認
-lsp-mcp status
+context-mcp status
 # Indexed Files: 0 の場合は再インデックス化
 
 # 2. 検索クエリを変更
 # 短いクエリを試す
-lsp-mcp search "function"
+context-mcp search "function"
 
-# 3. 検索パラメータを調整（.lsp-mcp.json）
+# 3. 検索パラメータを調整（.context-mcp.json）
 {
   "search": {
     "topK": 50,  // 20から増やす
@@ -444,7 +444,7 @@ lsp-mcp search "function"
 }
 
 # 3. フィルタリングを使用
-lsp-mcp search "authentication" --file-types ts,py
+context-mcp search "authentication" --file-types ts,py
 
 # 4. より高精度なモデルに変更
 {
@@ -461,7 +461,7 @@ lsp-mcp search "authentication" --file-types ts,py
 **解決方法**:
 
 ```bash
-# 1. Milvusのインデックスタイプを変更（.lsp-mcp.json）
+# 1. Milvusのインデックスタイプを変更（.context-mcp.json）
 {
   "vectorStore": {
     "config": {
@@ -479,15 +479,15 @@ lsp-mcp search "authentication" --file-types ts,py
 }
 
 # 3. インデックスを再構築
-lsp-mcp clear-index
-lsp-mcp index .
+context-mcp clear-index
+context-mcp index .
 ```
 
 ## Claude Code統合関連
 
-### Claude CodeでLSP-MCPが認識されない
+### Claude CodeでContext-MCPが認識されない
 
-**症状**: `@lsp-mcp`が使えない
+**症状**: `@context-mcp`が使えない
 
 **解決方法**:
 
@@ -498,21 +498,21 @@ cat ~/.config/claude-code/mcp.json
 # 2. 設定が正しいか確認
 {
   "mcpServers": {
-    "lsp-mcp": {
-      "command": "lsp-mcp",  // フルパスでも可: "/usr/local/bin/lsp-mcp"
+    "context-mcp": {
+      "command": "context-mcp",  // フルパスでも可: "/usr/local/bin/context-mcp"
       "args": ["serve"]
     }
   }
 }
 
-# 3. lsp-mcpのパスを確認
-which lsp-mcp
+# 3. context-mcpのパスを確認
+which context-mcp
 
 # 4. フルパスで指定
 {
   "mcpServers": {
-    "lsp-mcp": {
-      "command": "/usr/local/bin/lsp-mcp",
+    "context-mcp": {
+      "command": "/usr/local/bin/context-mcp",
       "args": ["serve"]
     }
   }
@@ -527,23 +527,23 @@ killall "Claude Code"
 
 **症状**:
 ```
-Error: MCP tool execution failed: lsp-mcp/index_project
+Error: MCP tool execution failed: context-mcp/index_project
 ```
 
 **解決方法**:
 
 ```bash
 # 1. MCPサーバーのログを確認
-cat ~/.config/claude-code/logs/mcp-lsp-mcp.log
+cat ~/.config/claude-code/logs/mcp-context-mcp.log
 
 # 2. 手動でMCPサーバーをテスト
-lsp-mcp serve --debug
+context-mcp serve --debug
 
 # 3. 環境変数を設定（mcp.json）
 {
   "mcpServers": {
-    "lsp-mcp": {
-      "command": "lsp-mcp",
+    "context-mcp": {
+      "command": "context-mcp",
       "args": ["serve"],
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=4096",
@@ -563,7 +563,7 @@ lsp-mcp serve --debug
 **解決方法**:
 
 ```bash
-# 1. 並列処理を増やす（.lsp-mcp.json）
+# 1. 並列処理を増やす（.context-mcp.json）
 {
   "indexing": {
     "workers": 8  // CPUコア数に合わせる
@@ -622,12 +622,12 @@ lsp-mcp serve --debug
 }
 
 # 3. 段階的にインデックス化
-lsp-mcp index src/ --no-watch
-lsp-mcp index tests/ --no-watch
-lsp-mcp index docs/ --no-watch
+context-mcp index src/ --no-watch
+context-mcp index tests/ --no-watch
+context-mcp index docs/ --no-watch
 
 # 4. ファイル監視を無効化
-lsp-mcp index . --no-watch
+context-mcp index . --no-watch
 ```
 
 ## ネットワーク関連
@@ -679,7 +679,7 @@ export NODE_EXTRA_CA_CERTS=/path/to/ca-certificate.crt
 # 1. 環境変数でログレベルを設定
 export LSP_MCP_LOG_LEVEL=debug
 
-# 2. または設定ファイルで指定（.lsp-mcp.json）
+# 2. または設定ファイルで指定（.context-mcp.json）
 {
   "logging": {
     "level": "debug",
@@ -688,19 +688,19 @@ export LSP_MCP_LOG_LEVEL=debug
 }
 
 # 3. ログファイルを確認
-tail -f .lsp-mcp/logs/app.log
+tail -f .context-mcp/logs/app.log
 ```
 
 ### 詳細な診断情報の取得
 
 ```bash
 # システム情報の収集
-lsp-mcp diagnose > diagnosis.txt
+context-mcp diagnose > diagnosis.txt
 
 # 出力内容:
 # - OS情報
 # - Node.jsバージョン
-# - LSP-MCPバージョン
+# - Context-MCPバージョン
 # - 設定ファイル内容（APIキーはマスク）
 # - インデックス状態
 # - ベクターDB接続状態
@@ -711,10 +711,10 @@ lsp-mcp diagnose > diagnosis.txt
 
 ```bash
 # デバッグモードでMCPサーバーを起動
-lsp-mcp serve --debug --verbose
+context-mcp serve --debug --verbose
 
 # 出力例:
-# [DEBUG] Configuration loaded from: .lsp-mcp.json
+# [DEBUG] Configuration loaded from: .context-mcp.json
 # [DEBUG] Vector Store: milvus
 # [DEBUG] Connecting to localhost:19530...
 # [DEBUG] Connection established
@@ -731,10 +731,10 @@ lsp-mcp serve --debug --verbose
 
 ```bash
 # 設定ファイルを作成
-lsp-mcp init --mode local
+context-mcp init --mode local
 
 # データディレクトリを作成
-mkdir -p .lsp-mcp/chroma
+mkdir -p .context-mcp/chroma
 ```
 
 ### `EADDRINUSE: address already in use`
@@ -769,10 +769,10 @@ npm run build
 
 バグを発見した場合は、以下の情報とともにIssueを作成してください:
 
-1. **LSP-MCPバージョン**: `lsp-mcp --version`
+1. **Context-MCPバージョン**: `context-mcp --version`
 2. **Node.jsバージョン**: `node --version`
 3. **OS情報**: `uname -a`（Linux/macOS）、`ver`（Windows）
-4. **設定ファイル**: `.lsp-mcp.json`（APIキーは削除）
+4. **設定ファイル**: `.context-mcp.json`（APIキーは削除）
 5. **エラーメッセージ**: ログファイルの関連部分
 6. **再現手順**: 問題を再現する手順
 
@@ -780,16 +780,16 @@ npm run build
 
 ```bash
 # 診断情報を収集（APIキーは自動的にマスクされます）
-lsp-mcp diagnose --output diagnosis.txt
+context-mcp diagnose --output diagnosis.txt
 
 # GitHubのIssueに diagnosis.txt を添付
 ```
 
 ### コミュニティサポート
 
-- **GitHub Issues**: https://github.com/yourusername/lsp-mcp/issues
-- **Discussions**: https://github.com/yourusername/lsp-mcp/discussions
-- **Discord**: https://discord.gg/lsp-mcp（もしあれば）
+- **GitHub Issues**: https://github.com/yourusername/context-mcp/issues
+- **Discussions**: https://github.com/yourusername/context-mcp/discussions
+- **Discord**: https://discord.gg/context-mcp（もしあれば）
 
 ### 商用サポート
 
@@ -806,11 +806,11 @@ lsp-mcp diagnose --output diagnosis.txt
 
 上記の方法で問題が解決しない場合は:
 
-1. 最新バージョンにアップデート: `npm update -g lsp-mcp`
+1. 最新バージョンにアップデート: `npm update -g context-mcp`
 2. クリーンインストール:
    ```bash
-   npm uninstall -g lsp-mcp
-   rm -rf ~/.lsp-mcp ~/.cache/transformers
-   npm install -g lsp-mcp
+   npm uninstall -g context-mcp
+   rm -rf ~/.context-mcp ~/.cache/transformers
+   npm install -g context-mcp
    ```
-3. GitHubでIssueを作成: https://github.com/yourusername/lsp-mcp/issues/new
+3. GitHubでIssueを作成: https://github.com/yourusername/context-mcp/issues/new

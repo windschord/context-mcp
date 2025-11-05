@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-LSP-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。ソースコードとドキュメントを統合的に解析し、セマンティック検索を提供します。
+Context-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。ソースコードとドキュメントを統合的に解析し、セマンティック検索を提供します。
 
 **目標**:
 - コンテキストトークン使用量を30-40%削減
@@ -23,7 +23,7 @@ LSP-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた
 ### プライバシーファースト設計
 - **デフォルト**: ローカル埋め込みモデル（Transformers.js）+ ローカルベクターDB（Milvus standalone）
 - **オプション**: クラウドモード（OpenAI API + Zilliz Cloud等）
-- 設定ファイル`.lsp-mcp.json`の`mode`フィールドで切り替え可能
+- 設定ファイル`.context-mcp.json`の`mode`フィールドで切り替え可能
 
 ### ハイブリッド検索
 ```
@@ -160,7 +160,7 @@ CREATE TABLE inverted_index (
 );
 ```
 
-## 設定ファイル `.lsp-mcp.json`
+## 設定ファイル `.context-mcp.json`
 
 ### ローカルモード設定例（デフォルト）
 ```json

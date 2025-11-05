@@ -1,12 +1,12 @@
 {
-  "name": "lsp-mcp",
+  "name": "context-mcp",
   "version": "0.1.0",
-  "description": "LSP-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database",
+  "description": "Context-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
   "bin": {
-    "lsp-mcp": "./bin/lsp-mcp.js"
+    "context-mcp": "./bin/context-mcp.js"
   },
   "files": [
     "dist",
@@ -43,7 +43,7 @@
     "model-context-protocol",
     "claude",
     "claude-code",
-    "lsp",
+    "context",
     "tree-sitter",
     "ast",
     "vector-database",
@@ -53,17 +53,17 @@
     "platformio"
   ],
   "author": {
-    "name": "LSP-MCP Contributors"
+    "name": "Context-MCP Contributors"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/windschord/lsp-mcp.git"
+    "url": "https://github.com/windschord/context-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/windschord/lsp-mcp/issues"
+    "url": "https://github.com/windschord/context-mcp/issues"
   },
-  "homepage": "https://github.com/windschord/lsp-mcp#readme",
+  "homepage": "https://github.com/windschord/context-mcp#readme",
   "devDependencies": {
     "@jest/globals": "^30.2.0",
     "@types/better-sqlite3": "^7.6.13",
