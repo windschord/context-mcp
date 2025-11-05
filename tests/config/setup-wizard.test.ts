@@ -22,8 +22,8 @@ describe('SetupWizard', () => {
   });
 
   describe('ローカルモードのセットアップ', () => {
-    it('Milvusを使用したローカルモード設定を生成できる', async () => {
-      const config = await wizard.generateConfig({
+    it('Milvusを使用したローカルモード設定を生成できる', () => {
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -38,8 +38,8 @@ describe('SetupWizard', () => {
       expect(config.privacy?.blockExternalCalls).toBe(true);
     });
 
-    it('Chromaを使用したローカルモード設定を生成できる', async () => {
-      const config = await wizard.generateConfig({
+    it('Chromaを使用したローカルモード設定を生成できる', () => {
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'chroma',
         embeddingProvider: 'transformers',
@@ -52,8 +52,8 @@ describe('SetupWizard', () => {
       expect(config.embedding.model).toBe('Xenova/all-MiniLM-L6-v2');
     });
 
-    it('ローカルモードでカスタムモデルを指定できる', async () => {
-      const config = await wizard.generateConfig({
+    it('ローカルモードでカスタムモデルを指定できる', () => {
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -65,8 +65,8 @@ describe('SetupWizard', () => {
   });
 
   describe('クラウドモードのセットアップ', () => {
-    it('OpenAI + Zillizのクラウドモード設定を生成できる', async () => {
-      const config = await wizard.generateConfig({
+    it('OpenAI + Zillizのクラウドモード設定を生成できる', () => {
+      const config = wizard.generateConfig({
         mode: 'cloud',
         vectorBackend: 'zilliz',
         embeddingProvider: 'openai',
@@ -85,8 +85,8 @@ describe('SetupWizard', () => {
       expect(config.privacy?.blockExternalCalls).toBe(false);
     });
 
-    it('VoyageAI + Qdrantのクラウドモード設定を生成できる', async () => {
-      const config = await wizard.generateConfig({
+    it('VoyageAI + Qdrantのクラウドモード設定を生成できる', () => {
+      const config = wizard.generateConfig({
         mode: 'cloud',
         vectorBackend: 'qdrant',
         embeddingProvider: 'voyageai',
@@ -102,21 +102,21 @@ describe('SetupWizard', () => {
       expect(config.embedding.model).toBe('voyage-2');
     });
 
-    it('クラウドモードでAPIキーがない場合にエラーを投げる', async () => {
-      await expect(
+    it('クラウドモードでAPIキーがない場合にエラーを投げる', () => {
+      expect(() =>
         wizard.generateConfig({
           mode: 'cloud',
           vectorBackend: 'zilliz',
           embeddingProvider: 'openai',
           // embeddingApiKey が欠落
         })
-      ).rejects.toThrow('クラウドモードではAPIキーが必要です');
+      ).toThrow('クラウドモードではAPIキーが必要です');
     });
   });
 
   describe('設定ファイルの保存', () => {
     it('生成した設定をファイルに保存できる', async () => {
-      const config = await wizard.generateConfig({
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -136,7 +136,7 @@ describe('SetupWizard', () => {
     });
 
     it('設定ファイルが既に存在する場合に確認を求める', async () => {
-      const config = await wizard.generateConfig({
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -150,7 +150,7 @@ describe('SetupWizard', () => {
     });
 
     it('上書きフラグがtrueの場合に既存ファイルを上書きできる', async () => {
-      const config = await wizard.generateConfig({
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -165,7 +165,7 @@ describe('SetupWizard', () => {
     });
 
     it('ディレクトリが存在しない場合に作成する', async () => {
-      const config = await wizard.generateConfig({
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -185,22 +185,22 @@ describe('SetupWizard', () => {
   });
 
   describe('インタラクティブセットアップ', () => {
-    it('ユーザー入力から設定を生成できる', async () => {
+    it('ユーザー入力から設定を生成できる', () => {
       const userInput = {
         mode: 'local' as const,
         vectorBackend: 'chroma' as const,
         embeddingProvider: 'transformers' as const,
       };
 
-      const config = await wizard.runInteractive(userInput);
+      const config = wizard.runInteractive(userInput);
 
       expect(config.mode).toBe('local');
       expect(config.vectorStore.backend).toBe('chroma');
       expect(config.embedding.provider).toBe('transformers');
     });
 
-    it('クイックスタートプリセットを使用できる', async () => {
-      const config = await wizard.usePreset('quickstart');
+    it('クイックスタートプリセットを使用できる', () => {
+      const config = wizard.usePreset('quickstart');
 
       expect(config.mode).toBe('local');
       expect(config.vectorStore.backend).toBe('chroma');
@@ -208,16 +208,16 @@ describe('SetupWizard', () => {
       expect(config.privacy?.blockExternalCalls).toBe(true);
     });
 
-    it('パフォーマンスプリセットを使用できる', async () => {
-      const config = await wizard.usePreset('performance');
+    it('パフォーマンスプリセットを使用できる', () => {
+      const config = wizard.usePreset('performance');
 
       expect(config.mode).toBe('local');
       expect(config.vectorStore.backend).toBe('milvus');
       expect(config.embedding.provider).toBe('transformers');
     });
 
-    it('クラウドプリセットを使用できる', async () => {
-      const config = await wizard.usePreset('cloud', {
+    it('クラウドプリセットを使用できる', () => {
+      const config = wizard.usePreset('cloud', {
         vectorAddress: 'test.zilliz.com:19530',
         vectorToken: 'token',
         embeddingApiKey: 'api-key',
@@ -228,46 +228,46 @@ describe('SetupWizard', () => {
       expect(config.embedding.provider).toBe('openai');
     });
 
-    it('無効なプリセット名の場合にエラーを投げる', async () => {
-      await expect(wizard.usePreset('invalid' as any)).rejects.toThrow('無効なプリセット名です');
+    it('無効なプリセット名の場合にエラーを投げる', () => {
+      expect(() => wizard.usePreset('invalid' as any)).toThrow('無効なプリセット名です');
     });
   });
 
   describe('バリデーション', () => {
-    it('無効なモードでエラーを投げる', async () => {
-      await expect(
+    it('無効なモードでエラーを投げる', () => {
+      expect(() =>
         wizard.generateConfig({
           mode: 'invalid' as any,
           vectorBackend: 'milvus',
           embeddingProvider: 'transformers',
         })
-      ).rejects.toThrow('無効なモードです');
+      ).toThrow('無効なモードです');
     });
 
-    it('無効なベクターDBバックエンドでエラーを投げる', async () => {
-      await expect(
+    it('無効なベクターDBバックエンドでエラーを投げる', () => {
+      expect(() =>
         wizard.generateConfig({
           mode: 'local',
           vectorBackend: 'invalid' as any,
           embeddingProvider: 'transformers',
         })
-      ).rejects.toThrow('無効なベクターDBバックエンドです');
+      ).toThrow('無効なベクターDBバックエンドです');
     });
 
-    it('無効な埋め込みプロバイダーでエラーを投げる', async () => {
-      await expect(
+    it('無効な埋め込みプロバイダーでエラーを投げる', () => {
+      expect(() =>
         wizard.generateConfig({
           mode: 'local',
           vectorBackend: 'milvus',
           embeddingProvider: 'invalid' as any,
         })
-      ).rejects.toThrow('無効な埋め込みプロバイダーです');
+      ).toThrow('無効な埋め込みプロバイダーです');
     });
 
-    it('モードとプロバイダーの不一致で警告を発する', async () => {
+    it('モードとプロバイダーの不一致で警告を発する', () => {
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-      await wizard.generateConfig({
+      wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'openai',
@@ -283,8 +283,8 @@ describe('SetupWizard', () => {
   });
 
   describe('設定のエクスポート/インポート', () => {
-    it('設定をJSON文字列としてエクスポートできる', async () => {
-      const config = await wizard.generateConfig({
+    it('設定をJSON文字列としてエクスポートできる', () => {
+      const config = wizard.generateConfig({
         mode: 'local',
         vectorBackend: 'milvus',
         embeddingProvider: 'transformers',
@@ -297,7 +297,7 @@ describe('SetupWizard', () => {
       expect(parsed.vectorStore.backend).toBe('milvus');
     });
 
-    it('JSON文字列から設定をインポートできる', async () => {
+    it('JSON文字列から設定をインポートできる', () => {
       const jsonConfig = JSON.stringify({
         mode: 'local',
         vectorStore: {
@@ -311,14 +311,14 @@ describe('SetupWizard', () => {
         },
       });
 
-      const config = await wizard.importConfig(jsonConfig);
+      const config = wizard.importConfig(jsonConfig);
 
       expect(config.mode).toBe('local');
       expect(config.vectorStore.backend).toBe('chroma');
     });
 
-    it('無効なJSONでインポートエラーを投げる', async () => {
-      await expect(wizard.importConfig('invalid json')).rejects.toThrow('無効なJSON形式です');
+    it('無効なJSONでインポートエラーを投げる', () => {
+      expect(() => wizard.importConfig('invalid json')).toThrow('無効なJSON形式です');
     });
   });
 });
