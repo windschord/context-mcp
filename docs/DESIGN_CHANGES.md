@@ -53,13 +53,13 @@
 
 ### 変更前（動的アプローチ）
 - Docker Composeファイルを動的にダウンロード
-- LSP-MCPがMilvusコンテナの起動・停止を制御
+- Context-MCPがMilvusコンテナの起動・停止を制御
 - `docker-manager.ts`で自動管理
 
 ### 変更後（静的アプローチ）- 推奨
 - `docker-compose.yml`をリポジトリに静的に含める
 - ユーザーが手動で`docker-compose up -d`を実行
-- LSP-MCPは既に起動しているMilvusに接続するだけ
+- Context-MCPは既に起動しているMilvusに接続するだけ
 - `docker-manager.ts`は削除
 
 ### 変更の理由

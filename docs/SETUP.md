@@ -1,6 +1,6 @@
 # セットアップガイド
 
-このガイドでは、LSP-MCPの詳細なインストール手順とセットアップ方法を説明します。
+このガイドでは、Context-MCPの詳細なインストール手順とセットアップ方法を説明します。
 
 ## 目次
 
@@ -46,18 +46,18 @@
 
 ```bash
 # npmでグローバルインストール
-npm install -g lsp-mcp
+npm install -g context-mcp
 
 # インストール確認
-lsp-mcp --version
+context-mcp --version
 ```
 
 ### 方法2: ローカルインストール（開発者向け）
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/yourusername/lsp-mcp.git
-cd lsp-mcp
+git clone https://github.com/yourusername/context-mcp.git
+cd context-mcp
 
 # 依存関係のインストール
 npm install
@@ -73,7 +73,7 @@ node dist/index.js --version
 
 ```bash
 # GitHubリポジトリから直接使用
-npx github:windschord/lsp-mcp --version
+npx github:windschord/context-mcp --version
 ```
 
 ## クイックスタート（ゼロコンフィグモード）
@@ -87,7 +87,7 @@ npx github:windschord/lsp-mcp --version
 cd /path/to/your/project
 
 # docker-compose.ymlをダウンロード（初回のみ）
-curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/windschord/context-mcp/main/docker-compose.yml
 
 # Milvus standalone起動
 docker-compose up -d
@@ -103,9 +103,9 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
@@ -123,14 +123,14 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
 
 ```
-@lsp-mcp プロジェクトをインデックス化してください
+@context-mcp プロジェクトをインデックス化してください
 ```
 
 これで完了です。より詳細な設定やカスタマイズが必要な場合は、以下のセクションを参照してください。
 
 ## モード選択
 
-LSP-MCPは2つの動作モードをサポートしています:
+Context-MCPは2つの動作モードをサポートしています:
 
 | モード | 特徴 | 推奨用途 | 外部通信 | セットアップ難易度 |
 |--------|------|----------|----------|-------------------|
@@ -197,10 +197,10 @@ cd /path/to/your/project
 curl -O https://github.com/milvus-io/milvus/releases/download/v2.4.0/docker-compose.yml
 ```
 
-または、LSP-MCPが自動ダウンロードします:
+または、Context-MCPが自動ダウンロードします:
 
 ```bash
-lsp-mcp milvus download
+context-mcp milvus download
 ```
 
 ### ステップ3: Milvusの起動
@@ -224,10 +224,10 @@ docker compose -f docker-compose.yml logs -f milvus
 ### ステップ4: 設定ファイルの作成
 
 ```bash
-lsp-mcp init --mode local
+context-mcp init --mode local
 ```
 
-以下の`.lsp-mcp.json`が生成されます:
+以下の`.context-mcp.json`が生成されます:
 
 ```json
 {
@@ -255,7 +255,7 @@ lsp-mcp init --mode local
 
 ```bash
 # Milvusへの接続テスト
-lsp-mcp test-connection
+context-mcp test-connection
 
 # 成功すると以下が表示されます:
 # ✓ Milvus connection successful
@@ -330,7 +330,7 @@ rm -rf volumes/
 
 ### ステップ3: 環境変数の設定
 
-APIキーは環境変数で管理します（`.lsp-mcp.json`に直接書かない）:
+APIキーは環境変数で管理します（`.context-mcp.json`に直接書かない）:
 
 ```bash
 # ~/.bashrc または ~/.zshrc に追加
@@ -344,10 +344,10 @@ source ~/.bashrc  # または source ~/.zshrc
 ### ステップ4: 設定ファイルの作成
 
 ```bash
-lsp-mcp init --mode cloud
+context-mcp init --mode cloud
 ```
 
-以下の`.lsp-mcp.json`が生成されます:
+以下の`.context-mcp.json`が生成されます:
 
 ```json
 {
@@ -372,7 +372,7 @@ lsp-mcp init --mode cloud
 
 ```bash
 # Zilliz CloudとOpenAI APIへの接続テスト
-lsp-mcp test-connection
+context-mcp test-connection
 
 # 成功すると以下が表示されます:
 # ✓ Zilliz Cloud connection successful
@@ -385,7 +385,7 @@ lsp-mcp test-connection
 
 ```bash
 # コスト見積もりコマンド
-lsp-mcp estimate-cost /path/to/project
+context-mcp estimate-cost /path/to/project
 
 # 出力例:
 # Estimated costs for indexing this project:
@@ -398,7 +398,7 @@ lsp-mcp estimate-cost /path/to/project
 
 ## 環境変数による設定
 
-LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
+Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
@@ -407,7 +407,7 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
   ↓
 1. 環境変数（LSP_MCP_MODE等）
   ↓
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定（src/config/types.ts）
   ↓
@@ -438,9 +438,9 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
@@ -455,9 +455,9 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "cloud",
         "LSP_MCP_VECTOR_BACKEND": "zilliz",
@@ -477,9 +477,9 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_EMBEDDING_PROVIDER": "openai",
@@ -493,11 +493,11 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 
 ## 設定ファイルによるカスタマイズ
 
-環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します。
+環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.context-mcp.json`を作成します。
 
 ### 設定ファイルの作成
 
-プロジェクトルートに`.lsp-mcp.json`を作成:
+プロジェクトルートに`.context-mcp.json`を作成:
 
 ```json
 {
@@ -539,10 +539,10 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 
 ### 環境変数と設定ファイルの併用
 
-環境変数と`.lsp-mcp.json`を併用する場合、以下のマージロジックが適用されます：
+環境変数と`.context-mcp.json`を併用する場合、以下のマージロジックが適用されます：
 
 1. デフォルト設定を読み込む
-2. `.lsp-mcp.json`が存在する場合、その内容で上書き
+2. `.context-mcp.json`が存在する場合、その内容で上書き
 3. 環境変数が設定されている場合、その値で上書き（最優先）
 
 ### 設定方式の比較
@@ -567,13 +567,13 @@ nano ~/.config/claude-code/mcp.json
 nano /mnt/c/Users/YourUsername/.config/claude-code/mcp.json
 ```
 
-### ステップ2: LSP-MCPを追加
+### ステップ2: Context-MCPを追加
 
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
-      "command": "lsp-mcp",
+    "context-mcp": {
+      "command": "context-mcp",
       "args": ["serve"],
       "env": {
         "ZILLIZ_TOKEN": "your-token-here",
@@ -595,12 +595,12 @@ nano /mnt/c/Users/YourUsername/.config/claude-code/mcp.json
 Claude Codeを起動し、以下を試してください:
 
 ```
-@lsp-mcp ステータスを教えて
+@context-mcp ステータスを教えて
 ```
 
 期待される応答:
 ```
-LSP-MCP is running.
+Context-MCP is running.
 Mode: local
 Vector Store: milvus (connected)
 Indexed projects: 0
@@ -614,25 +614,25 @@ Indexed projects: 0
 
 ```bash
 # 現在のディレクトリをインデックス化
-lsp-mcp index .
+context-mcp index .
 
 # 特定のディレクトリを指定
-lsp-mcp index /path/to/project
+context-mcp index /path/to/project
 
 # 言語を限定してインデックス化
-lsp-mcp index . --languages typescript,python,go
+context-mcp index . --languages typescript,python,go
 
 # ドキュメントを含めてインデックス化
-lsp-mcp index . --include-docs
+context-mcp index . --include-docs
 
 # 進捗を詳細表示
-lsp-mcp index . --verbose
+context-mcp index . --verbose
 ```
 
 ### Claude Codeから
 
 ```
-@lsp-mcp このプロジェクトをインデックス化してください
+@context-mcp このプロジェクトをインデックス化してください
 ```
 
 ### インデックス化の進捗
@@ -655,7 +655,7 @@ Estimated time remaining: 2m 15s
 ### 1. 接続テスト
 
 ```bash
-lsp-mcp test-connection
+context-mcp test-connection
 ```
 
 期待される出力:
@@ -670,7 +670,7 @@ lsp-mcp test-connection
 ### 2. シンプルな検索テスト
 
 ```bash
-lsp-mcp search "authentication function"
+context-mcp search "authentication function"
 ```
 
 期待される出力:
@@ -691,12 +691,12 @@ Search results (3 found):
 ### 3. ステータス確認
 
 ```bash
-lsp-mcp status
+context-mcp status
 ```
 
 期待される出力:
 ```
-LSP-MCP Status:
+Context-MCP Status:
 - Mode: local
 - Vector Store: milvus (connected)
 - Embedding Provider: transformers (local)
@@ -726,7 +726,7 @@ LSP-MCP Status:
 
 ## 参考資料
 
-- [公式ドキュメント](https://github.com/yourusername/lsp-mcp)
+- [公式ドキュメント](https://github.com/yourusername/context-mcp)
 - [Milvus公式ドキュメント](https://milvus.io/docs)
 - [Chroma公式ドキュメント](https://docs.trychroma.com/)
 - [Claude Code MCP統合](https://docs.anthropic.com/claude-code/mcp)

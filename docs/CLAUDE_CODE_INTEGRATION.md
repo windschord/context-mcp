@@ -1,6 +1,6 @@
 # Claude Code統合ガイド
 
-このガイドでは、LSP-MCPをClaude Codeと統合する手順を説明します。
+このガイドでは、Context-MCPをClaude Codeと統合する手順を説明します。
 
 ## 目次
 
@@ -21,10 +21,10 @@
 
 ## インストール手順
 
-### 1. LSP-MCPのビルド
+### 1. Context-MCPのビルド
 
 ```bash
-cd /path/to/lsp-mcp
+cd /path/to/context-mcp
 npm install
 npm run build
 ```
@@ -41,7 +41,7 @@ node dist/index.js --version
 
 ## MCP設定ファイルの設定
 
-Claude CodeのMCP設定ファイルにLSP-MCPを登録します。
+Claude CodeのMCP設定ファイルにContext-MCPを登録します。
 
 ### 設定ファイルの場所
 
@@ -57,9 +57,9 @@ Claude CodeのMCP設定ファイルにLSP-MCPを登録します。
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["-y", "lsp-mcp"],
+      "args": ["-y", "context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
@@ -74,9 +74,9 @@ Claude CodeのMCP設定ファイルにLSP-MCPを登録します。
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["-y", "lsp-mcp"],
+      "args": ["-y", "context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_BACKEND": "chroma",
@@ -92,9 +92,9 @@ Claude CodeのMCP設定ファイルにLSP-MCPを登録します。
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["-y", "lsp-mcp"],
+      "args": ["-y", "context-mcp"],
       "env": {
         "LSP_MCP_MODE": "cloud",
         "LSP_MCP_VECTOR_BACKEND": "zilliz",
@@ -126,7 +126,7 @@ MCP設定ファイルを更新したら、Claude Codeを完全に終了して再
 
 ### 2. MCPツールの確認
 
-Claude Codeのツールパレットから、LSP-MCPのツールが利用可能か確認します。
+Claude Codeのツールパレットから、Context-MCPのツールが利用可能か確認します。
 以下のツールが表示されるはずです:
 
 - `index_project` - プロジェクトのインデックス化
@@ -144,12 +144,12 @@ Claude Codeで以下のように質問してみます:
 このプロジェクトをインデックス化してください
 ```
 
-LSP-MCPが正常に動作していれば、`index_project`ツールが呼び出され、
+Context-MCPが正常に動作していれば、`index_project`ツールが呼び出され、
 プロジェクトのファイルが解析されてインデックス化されます。
 
 ## 統合チェックリスト
 
-LSP-MCPとClaude Codeの統合が正常に完了したかを確認するためのチェックリストです。
+Context-MCPとClaude Codeの統合が正常に完了したかを確認するためのチェックリストです。
 各項目を順番に確認してください。
 
 ### ✅ インストールと設定
@@ -159,9 +159,9 @@ LSP-MCPとClaude Codeの統合が正常に完了したかを確認するため�
   node --version  # v18.0.0以上が表示される
   ```
 
-- [ ] **LSP-MCPがビルドできる**
+- [ ] **Context-MCPがビルドできる**
   ```bash
-  cd /path/to/lsp-mcp
+  cd /path/to/context-mcp
   npm run build
   # エラーなく完了する
   ```
@@ -170,11 +170,11 @@ LSP-MCPとClaude Codeの統合が正常に完了したかを確認するため�
   - macOS/Linux: `~/.config/claude/mcp_settings.json`
   - Windows: `%APPDATA%\Claude\mcp_settings.json`
 
-- [ ] **MCP設定ファイルにlsp-mcpの設定が追加されている**
+- [ ] **MCP設定ファイルにcontext-mcpの設定が追加されている**
   ```json
   {
     "mcpServers": {
-      "lsp-mcp": { ... }
+      "context-mcp": { ... }
     }
   }
   ```
@@ -214,7 +214,7 @@ LSP-MCPとClaude Codeの統合が正常に完了したかを確認するため�
   ```
 
 - [ ] **Chromaデータディレクトリが作成可能**
-  - デフォルト: `./.lsp-mcp/chroma`
+  - デフォルト: `./.context-mcp/chroma`
   - 書き込み権限がある
 
 #### クラウドモード
@@ -251,7 +251,7 @@ LSP-MCPとClaude Codeの統合が正常に完了したかを確認するため�
 - [ ] **MCPサーバーのログが確認できる**
   ```bash
   # ログファイルの場所（例）
-  tail -f ~/.config/claude/logs/mcp-lsp-mcp.log
+  tail -f ~/.config/claude/logs/mcp-context-mcp.log
   ```
 
 ### ✅ 機能テスト
@@ -516,12 +516,12 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 2. パスが絶対パスであることを確認:
    ```json
-   "args": ["/Users/username/path/to/lsp-mcp/dist/index.js"]
+   "args": ["/Users/username/path/to/context-mcp/dist/index.js"]
    ```
 
 3. ビルドエラーを確認:
    ```bash
-   cd /path/to/lsp-mcp
+   cd /path/to/context-mcp
    npm run build
    ```
 
@@ -538,7 +538,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 1. Milvus standaloneを起動:
    ```bash
-   cd /path/to/lsp-mcp
+   cd /path/to/context-mcp
    docker-compose up -d
    ```
 
@@ -550,7 +550,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 3. ログを確認:
    ```bash
    # Claude Codeのログを確認
-   tail -f ~/.config/claude/logs/mcp-lsp-mcp.log
+   tail -f ~/.config/claude/logs/mcp-context-mcp.log
    ```
 
 ### 検索結果が不正確
@@ -637,7 +637,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 問題が解決しない場合は、以下をご確認ください:
 
-- GitHub Issues: https://github.com/yourusername/lsp-mcp/issues
+- GitHub Issues: https://github.com/yourusername/context-mcp/issues
 - ドキュメント: `docs/TROUBLESHOOTING.md`
 - セットアップガイド: `docs/SETUP.md`
 

@@ -1,10 +1,10 @@
 # 環境変数リファレンス
 
-このドキュメントでは、LSP-MCPで使用可能なすべての環境変数について説明します。
+このドキュメントでは、Context-MCPで使用可能なすべての環境変数について説明します。
 
 ## 概要
 
-LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
+Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
@@ -13,7 +13,7 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、環境�
   ↓
 1. 環境変数（LSP_MCP_MODE等）
   ↓
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定（src/config/types.ts）
   ↓
@@ -157,9 +157,9 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
@@ -186,9 +186,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "cloud",
         "LSP_MCP_VECTOR_BACKEND": "zilliz",
@@ -222,9 +222,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_BACKEND": "milvus",
@@ -246,9 +246,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "DEBUG"
@@ -260,15 +260,15 @@ LOG_LEVEL=INFO
 
 ## 環境変数と設定ファイルの併用
 
-環境変数と`.lsp-mcp.json`を併用する場合、以下のマージロジックが適用されます：
+環境変数と`.context-mcp.json`を併用する場合、以下のマージロジックが適用されます：
 
 1. デフォルト設定を読み込む
-2. `.lsp-mcp.json`が存在する場合、その内容で上書き
+2. `.context-mcp.json`が存在する場合、その内容で上書き
 3. 環境変数が設定されている場合、その値で上書き（最優先）
 
 ### 例: 部分的な上書き
 
-`.lsp-mcp.json`:
+`.context-mcp.json`:
 ```json
 {
   "mode": "local",
@@ -357,14 +357,14 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 
 ### 現在の設定を確認
 
-LSP-MCPは起動時に適用された設定をログに出力します。
+Context-MCPは起動時に適用された設定をログに出力します。
 
 ```bash
 # Claude Codeのログを確認（macOS）
-tail -f ~/Library/Logs/Claude/mcp-server-lsp-mcp.log
+tail -f ~/Library/Logs/Claude/mcp-server-context-mcp.log
 
 # 起動時の設定ログを確認
-grep "設定ファイルを読み込みました\|環境変数.*からオーバーライド" ~/Library/Logs/Claude/mcp-server-lsp-mcp.log
+grep "設定ファイルを読み込みました\|環境変数.*からオーバーライド" ~/Library/Logs/Claude/mcp-server-context-mcp.log
 ```
 
 ### 環境変数の確認
