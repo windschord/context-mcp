@@ -550,8 +550,9 @@ describe('ASTEngine', () => {
     });
 
     test('should handle Unknown language gracefully', () => {
-      const result = astEngine.parseToAST('some code', Language.Unknown);
-      expect(result).toBeDefined();
+      expect(() => {
+        astEngine.parseToAST('some code', Language.Unknown);
+      }).toThrow('Cannot parse code with Unknown language');
     });
 
     test('should find nodes by type', () => {
