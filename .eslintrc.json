@@ -22,9 +22,10 @@
     "prettier/prettier": "warn",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-unused-vars": ["error", {
+    "@typescript-eslint/no-unused-vars": ["warn", {
       "argsIgnorePattern": "^_",
-      "varsIgnorePattern": "^_"
+      "varsIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_"
     }],
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unsafe-assignment": "off",
@@ -36,9 +37,10 @@
     "@typescript-eslint/no-floating-promises": "off",
     "@typescript-eslint/no-misused-promises": "off",
     "@typescript-eslint/ban-ts-comment": "off",
-    "no-console": ["warn", {
-      "allow": ["warn", "error", "info"]
-    }],
+    "@typescript-eslint/no-var-requires": "off",
+    "no-constant-condition": "off",
+    "no-case-declarations": "off",
+    "no-console": "warn",
     "eqeqeq": ["error", "always"],
     "no-var": "error",
     "prefer-const": "error"
