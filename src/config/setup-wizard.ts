@@ -6,6 +6,7 @@
  */
 
 import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import {
   LspMcpConfig,
@@ -61,7 +62,7 @@ export class SetupWizard {
    * @param options セットアップオプション
    * @returns 生成された設定
    */
-  async generateConfig(options: SetupOptions): Promise<LspMcpConfig> {
+  generateConfig(options: SetupOptions): LspMcpConfig {
     // バリデーション
     this.validateOptions(options);
 
@@ -237,19 +238,25 @@ export class SetupWizard {
     const { overwrite = false } = options || {};
 
     // ファイルが既に存在する場合のチェック
-    if (fs.existsSync(this.configPath) && !overwrite) {
-      throw new Error(`設定ファイルが既に存在します: ${this.configPath}`);
+    try {
+      await fsPromises.access(this.configPath);
+      if (!overwrite) {
+        throw new Error(`設定ファイルが既に存在します: ${this.configPath}`);
+      }
+    } catch (error: unknown) {
+      // ファイルが存在しない場合は続行
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
     }
 
     // ディレクトリの作成
     const dir = path.dirname(this.configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    await fsPromises.mkdir(dir, { recursive: true });
 
     // 設定をJSON形式で保存
     const json = this.exportConfig(config);
-    fs.writeFileSync(this.configPath, json, 'utf-8');
+    await fsPromises.writeFile(this.configPath, json, 'utf-8');
 
     logger.info(`設定ファイルを保存しました: ${this.configPath}`);
   }
@@ -261,7 +268,7 @@ export class SetupWizard {
    * @param cloudOptions クラウドプリセット用のオプション
    * @returns 生成された設定
    */
-  async usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): Promise<LspMcpConfig> {
+  usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): LspMcpConfig {
     switch (preset) {
       case 'quickstart':
         // ローカルセットアップ（Milvus standaloneを使用）
@@ -310,7 +317,7 @@ export class SetupWizard {
    * @param userInput ユーザー入力
    * @returns 生成された設定
    */
-  async runInteractive(userInput: SetupOptions): Promise<LspMcpConfig> {
+  runInteractive(userInput: SetupOptions): LspMcpConfig {
     return this.generateConfig(userInput);
   }
 
@@ -330,7 +337,7 @@ export class SetupWizard {
    * @param json JSON文字列
    * @returns 設定オブジェクト
    */
-  async importConfig(json: string): Promise<LspMcpConfig> {
+  importConfig(json: string): LspMcpConfig {
     try {
       const config = JSON.parse(json) as LspMcpConfig;
       return config;
