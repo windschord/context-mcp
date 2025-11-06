@@ -22,52 +22,52 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const tsFiles = files.filter(f => f.endsWith('.ts'));
+      const tsFiles = files.filter((f) => f.endsWith('.ts'));
       expect(tsFiles.length).toBeGreaterThan(0);
-      expect(tsFiles.some(f => f.includes('index.ts'))).toBe(true);
+      expect(tsFiles.some((f) => f.includes('index.ts'))).toBe(true);
     });
 
     it('should find Python files', async () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const pyFiles = files.filter(f => f.endsWith('.py'));
+      const pyFiles = files.filter((f) => f.endsWith('.py'));
       expect(pyFiles.length).toBeGreaterThan(0);
-      expect(pyFiles.some(f => f.includes('utils.py'))).toBe(true);
+      expect(pyFiles.some((f) => f.includes('utils.py'))).toBe(true);
     });
 
     it('should find Go files', async () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const goFiles = files.filter(f => f.endsWith('.go'));
+      const goFiles = files.filter((f) => f.endsWith('.go'));
       expect(goFiles.length).toBeGreaterThan(0);
-      expect(goFiles.some(f => f.includes('main.go'))).toBe(true);
+      expect(goFiles.some((f) => f.includes('main.go'))).toBe(true);
     });
 
     it('should find Arduino files', async () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const inoFiles = files.filter(f => f.endsWith('.ino'));
+      const inoFiles = files.filter((f) => f.endsWith('.ino'));
       expect(inoFiles.length).toBeGreaterThan(0);
-      expect(inoFiles.some(f => f.includes('sketch.ino'))).toBe(true);
+      expect(inoFiles.some((f) => f.includes('sketch.ino'))).toBe(true);
     });
 
     it('should find Markdown files', async () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const mdFiles = files.filter(f => f.endsWith('.md'));
+      const mdFiles = files.filter((f) => f.endsWith('.md'));
       expect(mdFiles.length).toBeGreaterThan(0);
-      expect(mdFiles.some(f => f.includes('README.md'))).toBe(true);
+      expect(mdFiles.some((f) => f.includes('README.md'))).toBe(true);
     });
 
     it('should find platformio.ini files', async () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const iniFiles = files.filter(f => f.endsWith('platformio.ini'));
+      const iniFiles = files.filter((f) => f.endsWith('platformio.ini'));
       expect(iniFiles.length).toBeGreaterThan(0);
     });
   });
@@ -77,7 +77,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const nodeModulesFiles = files.filter(f => f.includes('node_modules'));
+      const nodeModulesFiles = files.filter((f) => f.includes('node_modules'));
       expect(nodeModulesFiles.length).toBe(0);
     });
 
@@ -85,7 +85,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const gitFiles = files.filter(f => f.includes('.git'));
+      const gitFiles = files.filter((f) => f.includes('.git'));
       expect(gitFiles.length).toBe(0);
     });
 
@@ -93,7 +93,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const envFiles = files.filter(f => f.endsWith('.env'));
+      const envFiles = files.filter((f) => f.endsWith('.env'));
       expect(envFiles.length).toBe(0);
     });
   });
@@ -104,9 +104,9 @@ describe('FileScanner', () => {
       const files = await scanner.scan();
 
       // node_modules is in .gitignore
-      expect(files.some(f => f.includes('node_modules'))).toBe(false);
+      expect(files.some((f) => f.includes('node_modules'))).toBe(false);
       // .env is in .gitignore
-      expect(files.some(f => f.endsWith('.env'))).toBe(false);
+      expect(files.some((f) => f.endsWith('.env'))).toBe(false);
     });
   });
 
@@ -116,7 +116,7 @@ describe('FileScanner', () => {
       const files = await scanner.scan();
 
       // *.test.ts is in .mcpignore
-      expect(files.some(f => f.endsWith('.test.ts'))).toBe(false);
+      expect(files.some((f) => f.endsWith('.test.ts'))).toBe(false);
     });
   });
 
@@ -127,8 +127,8 @@ describe('FileScanner', () => {
       });
       const files = await scanner.scan();
 
-      expect(files.some(f => f.endsWith('.py'))).toBe(false);
-      expect(files.some(f => f.includes('docs/'))).toBe(false);
+      expect(files.some((f) => f.endsWith('.py'))).toBe(false);
+      expect(files.some((f) => f.includes('docs/'))).toBe(false);
     });
   });
 
@@ -137,9 +137,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const tsJsFiles = files.filter(f =>
-        /\.(ts|tsx|js|jsx|mjs)$/.test(f)
-      );
+      const tsJsFiles = files.filter((f) => /\.(ts|tsx|js|jsx|mjs)$/.test(f));
       expect(tsJsFiles.length).toBeGreaterThan(0);
     });
 
@@ -147,7 +145,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const pyFiles = files.filter(f => f.endsWith('.py'));
+      const pyFiles = files.filter((f) => f.endsWith('.py'));
       expect(pyFiles.length).toBeGreaterThan(0);
     });
 
@@ -155,9 +153,7 @@ describe('FileScanner', () => {
       const scanner = new FileScanner(project1Path);
       const files = await scanner.scan();
 
-      const cppFiles = files.filter(f =>
-        /\.(c|cpp|h|hpp|ino)$/.test(f)
-      );
+      const cppFiles = files.filter((f) => /\.(c|cpp|h|hpp|ino)$/.test(f));
       expect(cppFiles.length).toBeGreaterThan(0);
     });
   });
@@ -200,7 +196,7 @@ describe('FileScanner', () => {
       await scanner.scan();
 
       expect(enteredDirs.length).toBeGreaterThan(0);
-      expect(enteredDirs.some(d => d.includes('src'))).toBe(true);
+      expect(enteredDirs.some((d) => d.includes('src'))).toBe(true);
     });
 
     it('should emit scanComplete event', async () => {
@@ -244,7 +240,7 @@ describe('FileScanner', () => {
       const files2 = await scanner2.scan();
 
       expect(files1.length).not.toBe(files2.length);
-      expect(files2.some(f => f.includes('app.js'))).toBe(true);
+      expect(files2.some((f) => f.includes('app.js'))).toBe(true);
     });
   });
 

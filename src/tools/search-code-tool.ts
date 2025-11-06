@@ -39,13 +39,7 @@ export const InputSchema = z.object({
     .array(z.string())
     .optional()
     .describe('言語フィルタ（例: ["TypeScript", "Python"]）'),
-  topK: z
-    .number()
-    .int()
-    .positive()
-    .optional()
-    .default(10)
-    .describe('返す結果数（デフォルト: 10）'),
+  topK: z.number().int().positive().optional().default(10).describe('返す結果数（デフォルト: 10）'),
 });
 
 /**

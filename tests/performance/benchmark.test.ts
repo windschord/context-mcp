@@ -118,17 +118,21 @@ class PerformanceMonitor {
 
       if (metric.requirement) {
         const statusEmoji = metric.status === 'PASS' ? '✅' : '❌';
-        console.log(`   ${statusEmoji} ${metric.requirement}: ${metric.actual} (threshold: ${metric.threshold})`);
+        console.log(
+          `   ${statusEmoji} ${metric.requirement}: ${metric.actual} (threshold: ${metric.threshold})`
+        );
       }
     }
 
     console.log('\n' + '='.repeat(80));
 
-    const totalPassed = this.metrics.filter(m => m.status === 'PASS').length;
-    const totalFailed = this.metrics.filter(m => m.status === 'FAIL').length;
-    const totalTests = this.metrics.filter(m => m.requirement).length;
+    const totalPassed = this.metrics.filter((m) => m.status === 'PASS').length;
+    const totalFailed = this.metrics.filter((m) => m.status === 'FAIL').length;
+    const totalTests = this.metrics.filter((m) => m.requirement).length;
 
-    console.log(`\nResults: ${totalPassed}/${totalTests} passed, ${totalFailed}/${totalTests} failed`);
+    console.log(
+      `\nResults: ${totalPassed}/${totalTests} passed, ${totalFailed}/${totalTests} failed`
+    );
     console.log('='.repeat(80) + '\n');
   }
 
@@ -186,17 +190,9 @@ describe('Performance Tests', () => {
     pluginRegistry.register('mock', mockVectorStore as any);
     pluginRegistry.setDefault('mock');
 
-    indexingService = new IndexingService(
-      pluginRegistry,
-      embeddingEngine,
-      bm25Engine
-    );
+    indexingService = new IndexingService(pluginRegistry, embeddingEngine, bm25Engine);
 
-    searchEngine = new HybridSearchEngine(
-      pluginRegistry,
-      embeddingEngine,
-      bm25Engine
-    );
+    searchEngine = new HybridSearchEngine(pluginRegistry, embeddingEngine, bm25Engine);
   }, 600000); // 10 minutes timeout for setup
 
   afterAll(async () => {
@@ -236,7 +232,9 @@ describe('Performance Tests', () => {
           }
         );
 
-        console.log(`\n   Indexed ${result.totalFiles} files in ${(metric.duration / 1000).toFixed(2)}s`);
+        console.log(
+          `\n   Indexed ${result.totalFiles} files in ${(metric.duration / 1000).toFixed(2)}s`
+        );
         console.log(`   Throughput: ${metric.throughput?.toFixed(2)} files/s`);
 
         // Expectation: should complete within threshold
@@ -403,12 +401,14 @@ describe('Performance Tests', () => {
       const bottlenecks: string[] = [];
 
       // Check if any metric failed
-      const failedMetrics = monitor.getMetrics().filter(m => m.status === 'FAIL');
+      const failedMetrics = monitor.getMetrics().filter((m) => m.status === 'FAIL');
 
       if (failedMetrics.length > 0) {
         console.log('\n⚠️  Performance requirements not met:');
         for (const metric of failedMetrics) {
-          console.log(`   - ${metric.operation}: ${metric.actual} (threshold: ${metric.threshold})`);
+          console.log(
+            `   - ${metric.operation}: ${metric.actual} (threshold: ${metric.threshold})`
+          );
           bottlenecks.push(`${metric.requirement}: ${metric.operation}`);
         }
       } else {
@@ -416,7 +416,7 @@ describe('Performance Tests', () => {
       }
 
       // Analyze slow operations (>10s)
-      const slowOperations = monitor.getMetrics().filter(m => m.duration > 10000);
+      const slowOperations = monitor.getMetrics().filter((m) => m.duration > 10000);
       if (slowOperations.length > 0) {
         console.log('\n⚠️  Slow operations detected (>10s):');
         for (const op of slowOperations) {
@@ -428,7 +428,7 @@ describe('Performance Tests', () => {
       }
 
       // Analyze high memory operations (>500MB)
-      const highMemoryOps = monitor.getMetrics().filter(m => m.memoryUsed > 500 * 1024 * 1024);
+      const highMemoryOps = monitor.getMetrics().filter((m) => m.memoryUsed > 500 * 1024 * 1024);
       if (highMemoryOps.length > 0) {
         console.log('\n⚠️  High memory operations detected (>500MB):');
         for (const op of highMemoryOps) {
@@ -443,7 +443,7 @@ describe('Performance Tests', () => {
       const bottleneckReport = {
         timestamp: new Date().toISOString(),
         bottlenecks,
-        failedMetrics: failedMetrics.map(m => ({
+        failedMetrics: failedMetrics.map((m) => ({
           operation: m.operation,
           requirement: m.requirement,
           actual: m.actual,
@@ -462,14 +462,11 @@ describe('Performance Tests', () => {
   });
 });
 
-function generateRecommendations(
-  bottlenecks: string[],
-  metrics: PerformanceMetrics[]
-): string[] {
+function generateRecommendations(bottlenecks: string[], metrics: PerformanceMetrics[]): string[] {
   const recommendations: string[] = [];
 
   // Indexing performance recommendations
-  if (bottlenecks.some(b => b.includes('NFR-001') || b.includes('Index'))) {
+  if (bottlenecks.some((b) => b.includes('NFR-001') || b.includes('Index'))) {
     recommendations.push(
       '🔧 Indexing Optimization:',
       '   - Implement parallel processing with worker threads',
@@ -481,7 +478,7 @@ function generateRecommendations(
   }
 
   // Search performance recommendations
-  if (bottlenecks.some(b => b.includes('NFR-002') || b.includes('Search'))) {
+  if (bottlenecks.some((b) => b.includes('NFR-002') || b.includes('Search'))) {
     recommendations.push(
       '🔧 Search Optimization:',
       '   - Implement query result caching',
@@ -493,7 +490,7 @@ function generateRecommendations(
   }
 
   // Memory usage recommendations
-  if (bottlenecks.some(b => b.includes('NFR-003') || b.includes('Memory'))) {
+  if (bottlenecks.some((b) => b.includes('NFR-003') || b.includes('Memory'))) {
     recommendations.push(
       '🔧 Memory Optimization:',
       '   - Implement streaming file processing',

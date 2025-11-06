@@ -68,6 +68,24 @@ export interface IndexingConfig {
 }
 
 /**
+ * テレメトリ設定
+ */
+export interface TelemetryConfig {
+  enabled: boolean;
+  otlp?: {
+    endpoint: string;
+    protocol: 'grpc' | 'http/protobuf';
+  };
+  serviceName?: string;
+  samplingRate?: number;
+  exporters?: {
+    traces?: 'otlp' | 'console' | 'none';
+    metrics?: 'otlp' | 'console' | 'none';
+    logs?: 'otlp' | 'console' | 'none';
+  };
+}
+
+/**
  * LSP-MCP設定の完全な型定義
  */
 export interface LspMcpConfig {
@@ -77,6 +95,7 @@ export interface LspMcpConfig {
   privacy?: PrivacyConfig;
   search?: SearchConfig;
   indexing?: IndexingConfig;
+  telemetry?: TelemetryConfig;
 }
 
 /**

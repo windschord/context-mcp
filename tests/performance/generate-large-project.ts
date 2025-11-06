@@ -30,12 +30,12 @@ const config: GeneratorConfig = {
   outputDir: path.join(__dirname, '../fixtures/large-project'),
   totalFiles: 10000,
   languages: {
-    typescript: 0.3,  // 30%
-    python: 0.25,     // 25%
-    go: 0.15,         // 15%
-    rust: 0.15,       // 15%
-    java: 0.10,       // 10%
-    cpp: 0.05,        // 5%
+    typescript: 0.3, // 30%
+    python: 0.25, // 25%
+    go: 0.15, // 15%
+    rust: 0.15, // 15%
+    java: 0.1, // 10%
+    cpp: 0.05, // 5%
   },
   filesPerDirectory: 50,
 };
@@ -73,7 +73,9 @@ export class UserService${index} {
     }
   }
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
   public getUser${i}(id: number): User${index} | undefined {
     return this.users.get(id);
   }
@@ -86,7 +88,8 @@ ${Array.from({ length: funcCount }, (_, i) => `
     this.users.set(id, { ...user, ...data });
     return true;
   }
-`).join('\n')}
+`
+).join('\n')}
 
   public getAllUsers(): User${index}[] {
     return Array.from(this.users.values());
@@ -135,7 +138,9 @@ class UserService${index}:
         for i in range(100):
             self.users[i] = User${index}(i, f'User{i}', f'user{i}@example.com')
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
     def get_user_${i}(self, user_id: int) -> Optional[User${index}]:
         """Get user by ID"""
         return self.users.get(user_id)
@@ -148,7 +153,8 @@ ${Array.from({ length: funcCount }, (_, i) => `
         for key, value in kwargs.items():
             setattr(user, key, value)
         return True
-`).join('\n')}
+`
+).join('\n')}
 
     def get_all_users(self) -> List[User${index}]:
         """Get all users"""
@@ -197,7 +203,9 @@ func (s *UserService${index}) initializeUsers() {
     }
 }
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
 // GetUser${i} retrieves a user by ID
 func (s *UserService${index}) GetUser${i}(id int) (*User${index}, bool) {
     user, ok := s.users[id]
@@ -218,7 +226,8 @@ func (s *UserService${index}) UpdateUser${i}(id int, name, email string) bool {
     }
     return true
 }
-`).join('\n')}
+`
+).join('\n')}
 
 // GetAllUsers returns all users
 func (s *UserService${index}) GetAllUsers() []*User${index} {
@@ -272,7 +281,9 @@ impl UserService${index} {
         }
     }
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
     /// Get user by ID
     pub fn get_user_${i}(&self, id: i32) -> Option<&User${index}> {
         self.users.get(&id)
@@ -288,7 +299,8 @@ ${Array.from({ length: funcCount }, (_, i) => `
             false
         }
     }
-`).join('\n')}
+`
+).join('\n')}
 
     /// Get all users
     pub fn get_all_users(&self) -> Vec<&User${index}> {
@@ -351,7 +363,9 @@ public class UserService${index} {
         }
     }
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
     /**
      * Get user by ID
      */
@@ -371,7 +385,8 @@ ${Array.from({ length: funcCount }, (_, i) => `
         if (email != null) user.setEmail(email);
         return true;
     }
-`).join('\n')}
+`
+).join('\n')}
 
     /**
      * Get all users
@@ -443,7 +458,9 @@ public:
         }
     }
 
-${Array.from({ length: funcCount }, (_, i) => `
+${Array.from(
+  { length: funcCount },
+  (_, i) => `
     /**
      * Get user by ID
      */
@@ -464,7 +481,8 @@ ${Array.from({ length: funcCount }, (_, i) => `
         if (!email.empty()) it->second->setEmail(email);
         return true;
     }
-`).join('\n')}
+`
+).join('\n')}
 
     /**
      * Get all users
@@ -582,7 +600,9 @@ This is an automatically generated test project for performance testing.
 - **Total Files**: ${filesGenerated}
 - **Languages**: ${Object.keys(distribution).length}
 - **File Distribution**:
-${Object.entries(distribution).map(([lang, count]) => `  - ${lang}: ${count} files`).join('\n')}
+${Object.entries(distribution)
+  .map(([lang, count]) => `  - ${lang}: ${count} files`)
+  .join('\n')}
 
 ## Generated on
 

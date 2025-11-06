@@ -5,9 +5,17 @@
  * ユーザーフレンドリーな設定ファイル生成をサポート
  */
 
-import * as fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import * as path from 'path';
-import { LspMcpConfig, Mode, VectorStoreBackend, EmbeddingProvider } from './types.js';
+import {
+  LspMcpConfig,
+  Mode,
+  VectorStoreBackend,
+  EmbeddingProvider,
+  VectorStoreConfig,
+  EmbeddingConfig,
+  PrivacyConfig,
+} from './types.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -53,7 +61,7 @@ export class SetupWizard {
    * @param options セットアップオプション
    * @returns 生成された設定
    */
-  async generateConfig(options: SetupOptions): Promise<LspMcpConfig> {
+  generateConfig(options: SetupOptions): LspMcpConfig {
     // バリデーション
     this.validateOptions(options);
 
@@ -94,7 +102,7 @@ export class SetupWizard {
   /**
    * ベクターストア設定を生成
    */
-  private createVectorStoreConfig(options: SetupOptions) {
+  private createVectorStoreConfig(options: SetupOptions): VectorStoreConfig {
     const { vectorBackend, vectorAddress, vectorToken, mode } = options;
 
     switch (vectorBackend) {
@@ -127,14 +135,16 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(`未対応のベクターDBバックエンドです: ${vectorBackend}`);
+        throw new Error(
+          `未対応のベクターDBバックエンドです: ${vectorBackend as string}`,
+        );
     }
   }
 
   /**
    * 埋め込み設定を生成
    */
-  private createEmbeddingConfig(options: SetupOptions) {
+  private createEmbeddingConfig(options: SetupOptions): EmbeddingConfig {
     const { embeddingProvider, embeddingApiKey, embeddingModel, mode } = options;
 
     switch (embeddingProvider) {
@@ -168,14 +178,16 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(`未対応の埋め込みプロバイダーです: ${embeddingProvider}`);
+        throw new Error(
+          `未対応の埋め込みプロバイダーです: ${embeddingProvider as string}`,
+        );
     }
   }
 
   /**
    * プライバシー設定を生成
    */
-  private createPrivacyConfig(options: SetupOptions) {
+  private createPrivacyConfig(options: SetupOptions): PrivacyConfig {
     return {
       blockExternalCalls: options.mode === 'local',
     };
@@ -229,19 +241,25 @@ export class SetupWizard {
     const { overwrite = false } = options || {};
 
     // ファイルが既に存在する場合のチェック
-    if (fs.existsSync(this.configPath) && !overwrite) {
-      throw new Error(`設定ファイルが既に存在します: ${this.configPath}`);
+    try {
+      await fsPromises.access(this.configPath);
+      if (!overwrite) {
+        throw new Error(`設定ファイルが既に存在します: ${this.configPath}`);
+      }
+    } catch (error: unknown) {
+      // ファイルが存在しない場合は続行
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
     }
 
     // ディレクトリの作成
     const dir = path.dirname(this.configPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+    await fsPromises.mkdir(dir, { recursive: true });
 
     // 設定をJSON形式で保存
     const json = this.exportConfig(config);
-    fs.writeFileSync(this.configPath, json, 'utf-8');
+    await fsPromises.writeFile(this.configPath, json, 'utf-8');
 
     logger.info(`設定ファイルを保存しました: ${this.configPath}`);
   }
@@ -253,7 +271,7 @@ export class SetupWizard {
    * @param cloudOptions クラウドプリセット用のオプション
    * @returns 生成された設定
    */
-  async usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): Promise<LspMcpConfig> {
+  usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): LspMcpConfig {
     switch (preset) {
       case 'quickstart':
         // ローカルセットアップ（Milvus standaloneを使用）
@@ -273,8 +291,14 @@ export class SetupWizard {
 
       case 'cloud':
         // クラウドモード
-        if (!cloudOptions?.vectorAddress || !cloudOptions?.vectorToken || !cloudOptions?.embeddingApiKey) {
-          throw new Error('クラウドプリセットにはvectorAddress, vectorToken, embeddingApiKeyが必要です');
+        if (
+          !cloudOptions?.vectorAddress ||
+          !cloudOptions?.vectorToken ||
+          !cloudOptions?.embeddingApiKey
+        ) {
+          throw new Error(
+            'クラウドプリセットにはvectorAddress, vectorToken, embeddingApiKeyが必要です'
+          );
         }
         return this.generateConfig({
           mode: 'cloud',
@@ -286,7 +310,7 @@ export class SetupWizard {
         });
 
       default:
-        throw new Error(`無効なプリセット名です: ${preset}`);
+        throw new Error(`無効なプリセット名です: ${preset as string}`);
     }
   }
 
@@ -296,7 +320,7 @@ export class SetupWizard {
    * @param userInput ユーザー入力
    * @returns 生成された設定
    */
-  async runInteractive(userInput: SetupOptions): Promise<LspMcpConfig> {
+  runInteractive(userInput: SetupOptions): LspMcpConfig {
     return this.generateConfig(userInput);
   }
 
@@ -316,7 +340,7 @@ export class SetupWizard {
    * @param json JSON文字列
    * @returns 設定オブジェクト
    */
-  async importConfig(json: string): Promise<LspMcpConfig> {
+  importConfig(json: string): LspMcpConfig {
     try {
       const config = JSON.parse(json) as LspMcpConfig;
       return config;

@@ -6,6 +6,8 @@
  */
 
 import type { EmbeddingEngine, CloudEmbeddingOptions } from './types';
+import { traceEmbedding } from '../telemetry/instrumentation.js';
+import { propagateTraceContext, withTraceContext } from '../telemetry/context-propagation.js';
 
 /**
  * クラウド埋め込みエンジン
@@ -114,12 +116,13 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
       } else if (this.options.provider === 'voyageai') {
         await this.initializeVoyageAI();
       } else {
-        throw new Error(`Unsupported provider: ${this.options.provider}`);
+        throw new Error(
+          `Unsupported provider: ${this.options.provider as string}`,
+        );
       }
 
       // 次元数を設定
-      this.dimension =
-        CloudEmbeddingEngine.MODEL_DIMENSIONS[this.options.modelName] || 1536;
+      this.dimension = CloudEmbeddingEngine.MODEL_DIMENSIONS[this.options.modelName] || 1536;
 
       this.initialized = true;
     } catch (error) {
@@ -137,6 +140,8 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
     this.client = new OpenAI({
       apiKey: this.options.apiKey,
       timeout: this.options.timeout,
+      // デフォルトヘッダーにトレースコンテキストを含める
+      defaultHeaders: propagateTraceContext(),
     });
   }
 
@@ -156,11 +161,15 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
   async embed(text: string): Promise<number[]> {
     this.ensureInitialized();
 
-    const vectors = await this.embedBatch([text]);
-    if (!vectors || vectors.length === 0 || !vectors[0]) {
-      throw new Error('Failed to generate embedding');
-    }
-    return vectors[0];
+    return await traceEmbedding(this.options.provider, this.options.modelName, 1, async () => {
+      return await withTraceContext(async () => {
+        const vectors = await this.embedBatch([text]);
+        if (!vectors || vectors.length === 0 || !vectors[0]) {
+          throw new Error('Failed to generate embedding');
+        }
+        return vectors[0];
+      });
+    });
   }
 
   /**
@@ -169,22 +178,31 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
   async embedBatch(texts: string[]): Promise<number[][]> {
     this.ensureInitialized();
 
-    if (texts.length === 0) {
-      return [];
-    }
+    return await traceEmbedding(
+      this.options.provider,
+      this.options.modelName,
+      texts.length,
+      async () => {
+        return await withTraceContext(async () => {
+          if (texts.length === 0) {
+            return [];
+          }
 
-    const allVectors: number[][] = [];
+          const allVectors: number[][] = [];
 
-    // バッチサイズに従って分割処理
-    for (let i = 0; i < texts.length; i += this.options.batchSize) {
-      const batch = texts.slice(i, i + this.options.batchSize);
-      const vectors = await this.embedBatchWithRetry(batch);
-      if (vectors) {
-        allVectors.push(...vectors);
+          // バッチサイズに従って分割処理
+          for (let i = 0; i < texts.length; i += this.options.batchSize) {
+            const batch = texts.slice(i, i + this.options.batchSize);
+            const vectors = await this.embedBatchWithRetry(batch);
+            if (vectors) {
+              allVectors.push(...vectors);
+            }
+          }
+
+          return allVectors;
+        });
       }
-    }
-
-    return allVectors;
+    );
   }
 
   /**
@@ -201,7 +219,9 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
         } else if (this.options.provider === 'voyageai') {
           return await this.embedBatchVoyageAI(texts);
         } else {
-          throw new Error(`Unsupported provider: ${this.options.provider}`);
+          throw new Error(
+            `Unsupported provider: ${this.options.provider as string}`,
+          );
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -210,8 +230,8 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
         const isRateLimitError =
           (error as any).status === 429 ||
           (error as any).code === 'rate_limit_exceeded' ||
-          (lastError.message.includes('rate limit') ||
-            lastError.message.includes('429'));
+          lastError.message.includes('rate limit') ||
+          lastError.message.includes('429');
 
         if (attempt < this.options.maxRetries - 1) {
           // 最後の試行でない場合のみリトライ
@@ -236,10 +256,18 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
    * OpenAIでバッチ埋め込み
    */
   private async embedBatchOpenAI(texts: string[]): Promise<number[][]> {
-    const response = await this.client.embeddings.create({
-      model: this.options.modelName,
-      input: texts,
-    });
+    // トレースコンテキストを含むヘッダーを生成
+    const headers = propagateTraceContext();
+
+    const response = await this.client.embeddings.create(
+      {
+        model: this.options.modelName,
+        input: texts,
+      },
+      {
+        headers,
+      }
+    );
 
     return response.data.map((item: any) => item.embedding);
   }
@@ -281,9 +309,7 @@ export class CloudEmbeddingEngine implements EmbeddingEngine {
    */
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new Error(
-        'CloudEmbeddingEngine is not initialized. Call initialize() first.'
-      );
+      throw new Error('CloudEmbeddingEngine is not initialized. Call initialize() first.');
     }
   }
 

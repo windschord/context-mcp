@@ -111,10 +111,7 @@ export class SymbolExtractor {
     this.astEngine.traverseAST(rootNode, (node) => {
       try {
         // グローバル変数・定数
-        if (
-          node.type === 'variable_declaration' ||
-          node.type === 'lexical_declaration'
-        ) {
+        if (node.type === 'variable_declaration' || node.type === 'lexical_declaration') {
           this.extractTSVariable(node, _code, symbols, SymbolScope.Global);
         }
 
@@ -162,9 +159,7 @@ export class SymbolExtractor {
     symbols: SymbolInfo[],
     scope: SymbolScope
   ): void {
-    const declarators = node.children.filter(
-      (c) => c.type === 'variable_declarator'
-    );
+    const declarators = node.children.filter((c) => c.type === 'variable_declarator');
 
     const kind = node.firstChild?.text; // const, let, var
 
@@ -173,8 +168,7 @@ export class SymbolExtractor {
       if (!nameNode) continue;
 
       const name = nameNode.text;
-      const type =
-        kind === 'const' ? SymbolType.Constant : SymbolType.Variable;
+      const type = kind === 'const' ? SymbolType.Constant : SymbolType.Variable;
 
       const typeAnnotation = declarator.childForFieldName('type');
       const value = declarator.childForFieldName('value');
@@ -294,10 +288,7 @@ export class SymbolExtractor {
     if (!paramsNode) return params;
 
     for (const child of paramsNode.children) {
-      if (
-        child.type === 'required_parameter' ||
-        child.type === 'optional_parameter'
-      ) {
+      if (child.type === 'required_parameter' || child.type === 'optional_parameter') {
         const patternNode = child.childForFieldName('pattern');
         const typeNode = child.childForFieldName('type');
         const valueNode = child.childForFieldName('value');
@@ -319,11 +310,7 @@ export class SymbolExtractor {
   /**
    * TypeScriptインターフェース抽出
    */
-  private extractTSInterface(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractTSInterface(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -352,20 +339,14 @@ export class SymbolExtractor {
   /**
    * TypeScriptクラス抽出
    */
-  private extractTSClass(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractTSClass(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
     const name = nameNode.text;
 
     // 継承とインターフェース実装の抽出
-    const extendsClause = node.children.find(
-      (c) => c.type === 'class_heritage'
-    );
+    const extendsClause = node.children.find((c) => c.type === 'class_heritage');
     const extendsClasses: string[] = [];
     const implementsInterfaces: string[] = [];
 
@@ -421,8 +402,7 @@ export class SymbolExtractor {
       scope: SymbolScope.Global,
       position: this.astEngine.getNodePosition(node),
       extends: extendsClasses.length > 0 ? extendsClasses : undefined,
-      implements:
-        implementsInterfaces.length > 0 ? implementsInterfaces : undefined,
+      implements: implementsInterfaces.length > 0 ? implementsInterfaces : undefined,
       members: members.length > 0 ? members : undefined,
       isAbstract,
       isExported,
@@ -432,11 +412,7 @@ export class SymbolExtractor {
   /**
    * TypeScriptメソッド抽出
    */
-  private extractTSMethod(
-    node: Parser.SyntaxNode,
-    _code: string,
-    members: SymbolInfo[]
-  ): void {
+  private extractTSMethod(node: Parser.SyntaxNode, _code: string, members: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -466,11 +442,7 @@ export class SymbolExtractor {
   /**
    * TypeScriptクラスフィールド抽出
    */
-  private extractTSClassField(
-    node: Parser.SyntaxNode,
-    _code: string,
-    members: SymbolInfo[]
-  ): void {
+  private extractTSClassField(node: Parser.SyntaxNode, _code: string, members: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -496,11 +468,7 @@ export class SymbolExtractor {
   /**
    * TypeScript Enum抽出
    */
-  private extractTSEnum(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractTSEnum(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -640,11 +608,7 @@ export class SymbolExtractor {
   /**
    * Pythonクラス抽出
    */
-  private extractPythonClass(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractPythonClass(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -755,11 +719,7 @@ export class SymbolExtractor {
   /**
    * Go定数抽出
    */
-  private extractGoConst(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractGoConst(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const specs = node.children.filter((c) => c.type === 'const_spec');
 
     for (const spec of specs) {
@@ -784,11 +744,7 @@ export class SymbolExtractor {
   /**
    * Go変数抽出
    */
-  private extractGoVar(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractGoVar(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const specs = node.children.filter((c) => c.type === 'var_spec');
 
     for (const spec of specs) {
@@ -813,11 +769,7 @@ export class SymbolExtractor {
   /**
    * Go関数抽出
    */
-  private extractGoFunction(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractGoFunction(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -838,11 +790,7 @@ export class SymbolExtractor {
   /**
    * Goメソッド抽出
    */
-  private extractGoMethod(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractGoMethod(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -889,11 +837,7 @@ export class SymbolExtractor {
   /**
    * Go型定義抽出
    */
-  private extractGoType(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractGoType(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const specs = node.children.filter((c) => c.type === 'type_spec');
 
     for (const spec of specs) {
@@ -957,22 +901,16 @@ export class SymbolExtractor {
   /**
    * C++関数抽出
    */
-  private extractCppFunction(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractCppFunction(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const declaratorNode = node.childForFieldName('declarator');
     if (!declaratorNode) return;
 
     let functionDeclarator = declaratorNode;
 
     // function_declaratorを探す
-    while (
-      functionDeclarator &&
-      functionDeclarator.type !== 'function_declarator'
-    ) {
-      const nextDeclarator = functionDeclarator.childForFieldName('declarator') || functionDeclarator.children[0];
+    while (functionDeclarator && functionDeclarator.type !== 'function_declarator') {
+      const nextDeclarator =
+        functionDeclarator.childForFieldName('declarator') || functionDeclarator.children[0];
       if (!nextDeclarator) break;
       functionDeclarator = nextDeclarator;
     }
@@ -1030,11 +968,7 @@ export class SymbolExtractor {
   /**
    * C++クラス抽出
    */
-  private extractCppClass(
-    node: Parser.SyntaxNode,
-    _code: string,
-    symbols: SymbolInfo[]
-  ): void {
+  private extractCppClass(node: Parser.SyntaxNode, _code: string, symbols: SymbolInfo[]): void {
     const nameNode = node.childForFieldName('name');
     if (!nameNode) return;
 
@@ -1066,21 +1000,15 @@ export class SymbolExtractor {
   /**
    * C++メソッド抽出
    */
-  private extractCppMethod(
-    node: Parser.SyntaxNode,
-    _code: string,
-    members: SymbolInfo[]
-  ): void {
+  private extractCppMethod(node: Parser.SyntaxNode, _code: string, members: SymbolInfo[]): void {
     const declaratorNode = node.childForFieldName('declarator');
     if (!declaratorNode) return;
 
     let functionDeclarator = declaratorNode;
 
-    while (
-      functionDeclarator &&
-      functionDeclarator.type !== 'function_declarator'
-    ) {
-      const nextDeclarator = functionDeclarator.childForFieldName('declarator') || functionDeclarator.children[0];
+    while (functionDeclarator && functionDeclarator.type !== 'function_declarator') {
+      const nextDeclarator =
+        functionDeclarator.childForFieldName('declarator') || functionDeclarator.children[0];
       if (!nextDeclarator) break;
       functionDeclarator = nextDeclarator;
     }
@@ -1107,11 +1035,7 @@ export class SymbolExtractor {
   /**
    * C++フィールド抽出
    */
-  private extractCppField(
-    node: Parser.SyntaxNode,
-    _code: string,
-    members: SymbolInfo[]
-  ): void {
+  private extractCppField(node: Parser.SyntaxNode, _code: string, members: SymbolInfo[]): void {
     const declarators = node.children.filter(
       (c) => c.type === 'field_declaration' || c.type === 'init_declarator'
     );
@@ -1141,9 +1065,7 @@ export class SymbolExtractor {
     _code: string,
     symbols: SymbolInfo[]
   ): void {
-    const declarators = node.children.filter(
-      (c) => c.type === 'init_declarator'
-    );
+    const declarators = node.children.filter((c) => c.type === 'init_declarator');
 
     for (const declarator of declarators) {
       const nameDeclarator = declarator.childForFieldName('declarator');
@@ -1153,9 +1075,7 @@ export class SymbolExtractor {
       const typeNode = node.childForFieldName('type');
 
       // constキーワードの確認
-      const isConst = node.children.some(
-        (c) => c.type === 'type_qualifier' && c.text === 'const'
-      );
+      const isConst = node.children.some((c) => c.type === 'type_qualifier' && c.text === 'const');
 
       symbols.push({
         name,

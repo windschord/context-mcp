@@ -317,7 +317,7 @@ export class IndexingService extends EventEmitter {
       const symbols = symbolResult.symbols;
 
       // コメント抽出
-      const comments = this.commentExtractor.extractComments(content, language);
+      const _comments = this.commentExtractor.extractComments(content, language);
 
       // 埋め込みを生成
       const vectors: Vector[] = [];
@@ -512,7 +512,7 @@ export class IndexingService extends EventEmitter {
   /**
    * ファイルを削除（インデックスから削除）
    */
-  async deleteFile(filePath: string, projectId: string): Promise<RemoveResult> {
+  async deleteFile(filePath: string, _projectId: string): Promise<RemoveResult> {
     try {
       await this.deleteFileFromIndex(filePath);
       return { success: true, filePath };

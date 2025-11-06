@@ -91,7 +91,7 @@ export class BM25Engine {
    */
   constructor(
     private dbPath: string,
-    params?: Partial<BM25Params>,
+    params?: Partial<BM25Params>
   ) {
     this.params = {
       k1: params?.k1 ?? 1.5,
@@ -267,7 +267,9 @@ export class BM25Engine {
         const score =
           idf *
           ((tf * (this.params.k1 + 1)) /
-            (tf + this.params.k1 * (1 - this.params.b + this.params.b * (docLength / stats.averageDocumentLength))));
+            (tf +
+              this.params.k1 *
+                (1 - this.params.b + this.params.b * (docLength / stats.averageDocumentLength))));
 
         const currentScore = scores.get(doc.documentId) ?? 0;
         scores.set(doc.documentId, currentScore + score);
@@ -375,7 +377,9 @@ export class BM25Engine {
       LIMIT 1
     `);
 
-    const row = stmt.get(term) as { document_id: string; frequency: number; positions: string } | undefined;
+    const row = stmt.get(term) as
+      | { document_id: string; frequency: number; positions: string }
+      | undefined;
 
     if (!row) {
       return null;

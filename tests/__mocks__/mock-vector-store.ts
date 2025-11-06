@@ -2,7 +2,13 @@
  * Mock Vector Store for Testing
  */
 
-import type { VectorStorePlugin, Vector, QueryResult, CollectionStats, VectorStoreConfig } from '../../src/storage/types';
+import type {
+  VectorStorePlugin,
+  Vector,
+  QueryResult,
+  CollectionStats,
+  VectorStoreConfig,
+} from '../../src/storage/types';
 
 export class MockVectorStore implements VectorStorePlugin {
   readonly name = 'mock';

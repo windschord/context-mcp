@@ -162,9 +162,7 @@ describe('VectorStorePlugin Interface', () => {
     });
 
     it('should throw error when operating without connection', async () => {
-      await expect(
-        plugin.createCollection('test', 384)
-      ).rejects.toThrow('Not connected');
+      await expect(plugin.createCollection('test', 384)).rejects.toThrow('Not connected');
     });
   });
 
@@ -174,23 +172,19 @@ describe('VectorStorePlugin Interface', () => {
     });
 
     it('should create a new collection', async () => {
-      await expect(
-        plugin.createCollection('test_collection', 384)
-      ).resolves.not.toThrow();
+      await expect(plugin.createCollection('test_collection', 384)).resolves.not.toThrow();
     });
 
     it('should throw error when creating duplicate collection', async () => {
       await plugin.createCollection('test_collection', 384);
-      await expect(
-        plugin.createCollection('test_collection', 384)
-      ).rejects.toThrow('already exists');
+      await expect(plugin.createCollection('test_collection', 384)).rejects.toThrow(
+        'already exists'
+      );
     });
 
     it('should delete a collection', async () => {
       await plugin.createCollection('test_collection', 384);
-      await expect(
-        plugin.deleteCollection('test_collection')
-      ).resolves.not.toThrow();
+      await expect(plugin.deleteCollection('test_collection')).resolves.not.toThrow();
     });
   });
 
@@ -214,9 +208,7 @@ describe('VectorStorePlugin Interface', () => {
         },
       ];
 
-      await expect(
-        plugin.upsert('test_collection', vectors)
-      ).resolves.not.toThrow();
+      await expect(plugin.upsert('test_collection', vectors)).resolves.not.toThrow();
     });
 
     it('should update existing vectors on upsert', async () => {
@@ -274,12 +266,9 @@ describe('VectorStorePlugin Interface', () => {
 
       await plugin.upsert('test_collection', vectors);
 
-      const results = await plugin.query(
-        'test_collection',
-        [1.0, 0.0, 0.0],
-        10,
-        { language: 'python' }
-      );
+      const results = await plugin.query('test_collection', [1.0, 0.0, 0.0], 10, {
+        language: 'python',
+      });
 
       expect(results).toHaveLength(2);
       expect(results.every((r) => r.metadata?.language === 'python')).toBe(true);
@@ -340,21 +329,15 @@ describe('VectorStorePlugin Interface', () => {
     });
 
     it('should throw error for non-existent collection on query', async () => {
-      await expect(
-        plugin.query('non_existent', [1, 2, 3], 10)
-      ).rejects.toThrow('not found');
+      await expect(plugin.query('non_existent', [1, 2, 3], 10)).rejects.toThrow('not found');
     });
 
     it('should throw error for non-existent collection on delete', async () => {
-      await expect(
-        plugin.delete('non_existent', ['vec1'])
-      ).rejects.toThrow('not found');
+      await expect(plugin.delete('non_existent', ['vec1'])).rejects.toThrow('not found');
     });
 
     it('should throw error for non-existent collection on getStats', async () => {
-      await expect(
-        plugin.getStats('non_existent')
-      ).rejects.toThrow('not found');
+      await expect(plugin.getStats('non_existent')).rejects.toThrow('not found');
     });
   });
 });

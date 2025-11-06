@@ -6,12 +6,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { CommentExtractor } from '../../src/parser/comment-extractor.js';
 import { LanguageParser } from '../../src/parser/language-parser.js';
-import {
-  Language,
-  CommentType,
-  CommentMarker,
-  CommentInfo,
-} from '../../src/parser/types.js';
+import { Language, CommentType, CommentMarker, CommentInfo } from '../../src/parser/types.js';
 
 describe('CommentExtractor', () => {
   let languageParser: LanguageParser;
@@ -23,31 +18,19 @@ describe('CommentExtractor', () => {
   });
 
   const loadFixture = (filename: string): string => {
-    const fixturePath = join(
-      __dirname,
-      '..',
-      'fixtures',
-      'comment-extraction',
-      filename
-    );
+    const fixturePath = join(__dirname, '..', 'fixtures', 'comment-extraction', filename);
     return readFileSync(fixturePath, 'utf-8');
   };
 
   // Test helper functions
-  const testMarkerDetection = (
-    comments: CommentInfo[],
-    markers: CommentMarker[]
-  ) => {
+  const testMarkerDetection = (comments: CommentInfo[], markers: CommentMarker[]) => {
     markers.forEach((marker) => {
       const markerComments = comments.filter((c) => c.marker === marker);
       expect(markerComments.length).toBeGreaterThan(0);
     });
   };
 
-  const testCommentTypes = (
-    comments: CommentInfo[],
-    types: CommentType[]
-  ) => {
+  const testCommentTypes = (comments: CommentInfo[], types: CommentType[]) => {
     types.forEach((type) => {
       const typeComments = comments.filter((c) => c.type === type);
       expect(typeComments.length).toBeGreaterThan(0);
@@ -65,9 +48,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract single line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
       expect(singleLineComments.length).toBeGreaterThan(0);
 
       const beforeFunction = singleLineComments.find((c) =>
@@ -77,9 +58,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract JSDoc comments', () => {
-      const jsdocComments = comments.filter(
-        (c) => c.type === CommentType.DocComment
-      );
+      const jsdocComments = comments.filter((c) => c.type === CommentType.DocComment);
       expect(jsdocComments.length).toBeGreaterThan(0);
 
       const addFunctionDoc = jsdocComments.find((c) =>
@@ -100,9 +79,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract multi-line block comments', () => {
-      const multiLineComments = comments.filter(
-        (c) => c.type === CommentType.MultiLine
-      );
+      const multiLineComments = comments.filter((c) => c.type === CommentType.MultiLine);
       expect(multiLineComments.length).toBeGreaterThan(0);
 
       const userClassComment = multiLineComments.find((c) =>
@@ -115,16 +92,12 @@ describe('CommentExtractor', () => {
       const todoComments = comments.filter((c) => c.marker === CommentMarker.TODO);
       expect(todoComments.length).toBeGreaterThan(0);
 
-      const todoComment = todoComments.find((c) =>
-        c.content.includes('Implement user validation')
-      );
+      const todoComment = todoComments.find((c) => c.content.includes('Implement user validation'));
       expect(todoComment).toBeDefined();
     });
 
     test('should detect FIXME markers', () => {
-      const fixmeComments = comments.filter(
-        (c) => c.marker === CommentMarker.FIXME
-      );
+      const fixmeComments = comments.filter((c) => c.marker === CommentMarker.FIXME);
       expect(fixmeComments.length).toBeGreaterThan(0);
 
       const fixmeComment = fixmeComments.find((c) =>
@@ -160,16 +133,13 @@ describe('CommentExtractor', () => {
       // JSDoc for add function should be associated with 'add'
       const addDoc = comments.find(
         (c) =>
-          c.type === CommentType.DocComment &&
-          c.content.includes('JSDoc comment for add function')
+          c.type === CommentType.DocComment && c.content.includes('JSDoc comment for add function')
       );
       expect(addDoc?.associatedSymbol).toBe('add');
 
       // Constructor comment should be associated with 'constructor'
       const constructorDoc = comments.find(
-        (c) =>
-          c.type === CommentType.DocComment &&
-          c.content.includes('Constructor comment')
+        (c) => c.type === CommentType.DocComment && c.content.includes('Constructor comment')
       );
       expect(constructorDoc?.associatedSymbol).toBe('constructor');
     });
@@ -186,9 +156,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract single line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
       expect(singleLineComments.length).toBeGreaterThan(0);
     });
 
@@ -204,11 +172,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should detect all special markers', () => {
-      testMarkerDetection(comments, [
-        CommentMarker.TODO,
-        CommentMarker.FIXME,
-        CommentMarker.NOTE,
-      ]);
+      testMarkerDetection(comments, [CommentMarker.TODO, CommentMarker.FIXME, CommentMarker.NOTE]);
     });
   });
 
@@ -223,16 +187,12 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract single line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
       expect(singleLineComments.length).toBeGreaterThan(0);
     });
 
     test('should extract multi-line comments', () => {
-      const multiLineComments = comments.filter(
-        (c) => c.type === CommentType.MultiLine
-      );
+      const multiLineComments = comments.filter((c) => c.type === CommentType.MultiLine);
       expect(multiLineComments.length).toBeGreaterThan(0);
     });
 
@@ -256,16 +216,12 @@ describe('CommentExtractor', () => {
       const docComments = comments.filter((c) => c.type === CommentType.DocComment);
       expect(docComments.length).toBeGreaterThan(0);
 
-      const addDoc = docComments.find((c) =>
-        c.content.includes('Doc comment for add function')
-      );
+      const addDoc = docComments.find((c) => c.content.includes('Doc comment for add function'));
       expect(addDoc).toBeDefined();
     });
 
     test('should extract single line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
       expect(singleLineComments.length).toBeGreaterThan(0);
     });
 
@@ -286,9 +242,7 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract JavaDoc comments', () => {
-      const javadocComments = comments.filter(
-        (c) => c.type === CommentType.DocComment
-      );
+      const javadocComments = comments.filter((c) => c.type === CommentType.DocComment);
       expect(javadocComments.length).toBeGreaterThan(0);
 
       const classDoc = javadocComments.find((c) =>
@@ -298,12 +252,8 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract single line and multi-line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
-      const multiLineComments = comments.filter(
-        (c) => c.type === CommentType.MultiLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
+      const multiLineComments = comments.filter((c) => c.type === CommentType.MultiLine);
 
       expect(singleLineComments.length).toBeGreaterThan(0);
       expect(multiLineComments.length).toBeGreaterThan(0);
@@ -334,12 +284,8 @@ describe('CommentExtractor', () => {
     });
 
     test('should extract single line and multi-line comments', () => {
-      const singleLineComments = comments.filter(
-        (c) => c.type === CommentType.SingleLine
-      );
-      const multiLineComments = comments.filter(
-        (c) => c.type === CommentType.MultiLine
-      );
+      const singleLineComments = comments.filter((c) => c.type === CommentType.SingleLine);
+      const multiLineComments = comments.filter((c) => c.type === CommentType.MultiLine);
 
       expect(singleLineComments.length).toBeGreaterThan(0);
       expect(multiLineComments.length).toBeGreaterThan(0);
@@ -347,9 +293,7 @@ describe('CommentExtractor', () => {
 
     test('should detect special markers', () => {
       const todoComments = comments.filter((c) => c.marker === CommentMarker.TODO);
-      const fixmeComments = comments.filter(
-        (c) => c.marker === CommentMarker.FIXME
-      );
+      const fixmeComments = comments.filter((c) => c.marker === CommentMarker.FIXME);
 
       expect(todoComments.length).toBeGreaterThan(0);
       expect(fixmeComments.length).toBeGreaterThan(0);
@@ -372,10 +316,7 @@ describe('CommentExtractor', () => {
 
     test('should handle parse errors gracefully', () => {
       const invalidCode = 'function { invalid syntax }';
-      const result = commentExtractor.extractComments(
-        invalidCode,
-        Language.TypeScript
-      );
+      const result = commentExtractor.extractComments(invalidCode, Language.TypeScript);
       // Should not throw, might have errors but still try to extract
       expect(result).toBeDefined();
     });
@@ -415,7 +356,7 @@ describe('CommentExtractor', () => {
       const code = 'def foo():\n    """Single line docstring"""\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
       expect(result.comments.length).toBeGreaterThan(0);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docstring).toBeDefined();
       expect(docstring?.content).toContain('Single line docstring');
     });
@@ -423,7 +364,7 @@ describe('CommentExtractor', () => {
     test('should handle Python multi-line docstring with content on first line', () => {
       const code = 'def foo():\n    """First line\n    Second line\n    Third line"""\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docstring).toBeDefined();
       expect(docstring?.content).toContain('First line');
       expect(docstring?.content).toContain('Second line');
@@ -433,7 +374,7 @@ describe('CommentExtractor', () => {
     test('should handle Python multi-line docstring with single quotes', () => {
       const code = "def foo():\n    '''Multi-line docstring\n    with single quotes'''\n    pass";
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docstring).toBeDefined();
       expect(docstring?.content).toContain('Multi-line docstring');
     });
@@ -441,7 +382,7 @@ describe('CommentExtractor', () => {
     test('should handle Rust doc comments with multiple lines', () => {
       const code = '/// First line\n/// Second line\n/// Third line\nfn foo() {}';
       const result = commentExtractor.extractComments(code, Language.Rust);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment).toBeDefined();
       expect(docComment?.content).toContain('First line');
       expect(docComment?.content).toContain('Second line');
@@ -451,7 +392,7 @@ describe('CommentExtractor', () => {
     test('should handle Rust module doc comments (//!)', () => {
       const code = '//! Module documentation\n//! Second line\nfn foo() {}';
       const result = commentExtractor.extractComments(code, Language.Rust);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment).toBeDefined();
       expect(docComment?.content).toContain('Module documentation');
     });
@@ -459,7 +400,7 @@ describe('CommentExtractor', () => {
     test('should handle C++ doc comments (///)', () => {
       const code = '/// Function documentation\n/// Second line\nvoid foo() {}';
       const result = commentExtractor.extractComments(code, Language.CPP);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment).toBeDefined();
       expect(docComment?.content).toContain('Function documentation');
     });
@@ -492,8 +433,8 @@ describe('CommentExtractor', () => {
       const code = '/* Not JSDoc */\n/** JSDoc */\nfunction foo() {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
       expect(result.comments.length).toBe(2);
-      const multiLine = result.comments.find(c => c.type === CommentType.MultiLine);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const multiLine = result.comments.find((c) => c.type === CommentType.MultiLine);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(multiLine).toBeDefined();
       expect(docComment).toBeDefined();
       expect(docComment?.associatedSymbol).toBe('foo');
@@ -502,60 +443,65 @@ describe('CommentExtractor', () => {
 
   describe('Doc tag extraction', () => {
     test('should extract JSDoc @param tags', () => {
-      const code = '/**\n * @param x - First parameter\n * @param y - Second parameter\n */\nfunction add(x, y) {}';
+      const code =
+        '/**\n * @param x - First parameter\n * @param y - Second parameter\n */\nfunction add(x, y) {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment?.tags).toBeDefined();
       expect(docComment?.tags?.length).toBeGreaterThanOrEqual(2);
-      const paramTags = docComment?.tags?.filter(t => t.name === 'param');
+      const paramTags = docComment?.tags?.filter((t) => t.name === 'param');
       expect(paramTags?.length).toBe(2);
     });
 
     test('should extract JSDoc @returns tag', () => {
       const code = '/**\n * @returns The sum\n */\nfunction add(x, y) {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
-      const returnTag = docComment?.tags?.find(t => t.name === 'returns');
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
+      const returnTag = docComment?.tags?.find((t) => t.name === 'returns');
       expect(returnTag).toBeDefined();
     });
 
     test('should extract Python docstring Args: tag', () => {
-      const code = 'def foo(x, y):\n    """Function\n    Args:\n        x: First\n        y: Second\n    """\n    pass';
+      const code =
+        'def foo(x, y):\n    """Function\n    Args:\n        x: First\n        y: Second\n    """\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
-      const argsTag = docstring?.tags?.find(t => t.name === 'args');
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
+      const argsTag = docstring?.tags?.find((t) => t.name === 'args');
       expect(argsTag).toBeDefined();
     });
 
     test('should extract Python docstring Returns: tag', () => {
-      const code = 'def foo():\n    """Function\n    Returns:\n        Something\n    """\n    pass';
+      const code =
+        'def foo():\n    """Function\n    Returns:\n        Something\n    """\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
-      const returnsTag = docstring?.tags?.find(t => t.name === 'returns');
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
+      const returnsTag = docstring?.tags?.find((t) => t.name === 'returns');
       expect(returnsTag).toBeDefined();
     });
 
     test('should extract Python docstring Raises: tag', () => {
-      const code = 'def foo():\n    """Function\n    Raises:\n        ValueError: When invalid\n    """\n    pass';
+      const code =
+        'def foo():\n    """Function\n    Raises:\n        ValueError: When invalid\n    """\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
-      const raisesTag = docstring?.tags?.find(t => t.name === 'raises');
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
+      const raisesTag = docstring?.tags?.find((t) => t.name === 'raises');
       expect(raisesTag).toBeDefined();
     });
 
     test('should extract Python docstring Yields: tag', () => {
-      const code = 'def foo():\n    """Generator\n    Yields:\n        int: Numbers\n    """\n    pass';
+      const code =
+        'def foo():\n    """Generator\n    Yields:\n        int: Numbers\n    """\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
-      const yieldsTag = docstring?.tags?.find(t => t.name === 'yields');
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
+      const yieldsTag = docstring?.tags?.find((t) => t.name === 'yields');
       expect(yieldsTag).toBeDefined();
     });
 
     test('should extract Rust # Arguments tag', () => {
       const code = '/// Function\n/// # Arguments\n/// * `x` - First\nfn foo(x: i32) {}';
       const result = commentExtractor.extractComments(code, Language.Rust);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
-      const argsTag = docComment?.tags?.find(t => t.name === 'arguments');
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
+      const argsTag = docComment?.tags?.find((t) => t.name === 'arguments');
       expect(argsTag).toBeDefined();
     });
   });
@@ -564,28 +510,28 @@ describe('CommentExtractor', () => {
     test('should associate comment with symbol within 3 lines', () => {
       const code = '/**\n * Doc comment\n */\n\n\nfunction foo() {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment?.associatedSymbol).toBe('foo');
     });
 
     test('should not associate comment with symbol more than 3 lines away', () => {
       const code = '/**\n * Doc comment\n */\n\n\n\n\nfunction foo() {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment?.associatedSymbol).toBeUndefined();
     });
 
     test('should associate comment with class', () => {
       const code = '/**\n * Class documentation\n */\nclass User {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment?.associatedSymbol).toBe('User');
     });
 
     test('should associate comment with method', () => {
       const code = 'class User {\n  /**\n   * Method doc\n   */\n  getName() {}\n}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.content.includes('Method doc'));
+      const docComment = result.comments.find((c) => c.content.includes('Method doc'));
       expect(docComment?.associatedSymbol).toBe('getName');
     });
   });
@@ -603,14 +549,14 @@ describe('CommentExtractor', () => {
     test('should detect markers in multi-line comments', () => {
       const code = '/**\n * TODO: Implement this\n */\nfunction foo() {}';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const docComment = result.comments.find(c => c.type === CommentType.DocComment);
+      const docComment = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docComment?.marker).toBe(CommentMarker.TODO);
     });
 
     test('should detect markers in Python docstrings', () => {
       const code = 'def foo():\n    """FIXME: Fix this\n    """\n    pass';
       const result = commentExtractor.extractComments(code, Language.Python);
-      const docstring = result.comments.find(c => c.type === CommentType.DocComment);
+      const docstring = result.comments.find((c) => c.type === CommentType.DocComment);
       expect(docstring?.marker).toBe(CommentMarker.FIXME);
     });
   });
@@ -626,7 +572,7 @@ describe('CommentExtractor', () => {
     test('should provide correct line numbers for multi-line comments', () => {
       const code = 'const x = 1;\n/*\n * Line 2\n * Line 3\n */\nconst y = 2;';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
-      const multiLine = result.comments.find(c => c.type === CommentType.MultiLine);
+      const multiLine = result.comments.find((c) => c.type === CommentType.MultiLine);
       expect(multiLine?.position.startLine).toBe(1);
       expect(multiLine?.position.endLine).toBe(4);
     });
@@ -635,7 +581,9 @@ describe('CommentExtractor', () => {
       const code = 'const x = 1; // Inline';
       const result = commentExtractor.extractComments(code, Language.TypeScript);
       expect(result.comments[0]?.position.startColumn).toBeGreaterThan(0);
-      expect(result.comments[0]?.position.endColumn).toBeGreaterThan(result.comments[0]?.position.startColumn || 0);
+      expect(result.comments[0]?.position.endColumn).toBeGreaterThan(
+        result.comments[0]?.position.startColumn || 0
+      );
     });
   });
 });

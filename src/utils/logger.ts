@@ -134,7 +134,7 @@ export class Logger {
           message: 'Failed to initialize log file',
           timestamp: new Date().toISOString(),
           data: error,
-        }) + '\n',
+        }) + '\n'
       );
     }
   }

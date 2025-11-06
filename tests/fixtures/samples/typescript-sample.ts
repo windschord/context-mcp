@@ -29,7 +29,7 @@ export class UserManager {
   }
 
   getUserById(id: number): User | undefined {
-    return this.users.find(u => u.id === id);
+    return this.users.find((u) => u.id === id);
   }
 
   get userCount(): number {

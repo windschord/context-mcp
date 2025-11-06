@@ -176,55 +176,27 @@ export class CommentExtractor {
       const trimmedLine = line.trim();
 
       // Doc comment チェック (優先度高)
-      const docCommentResult = this.tryExtractDocComment(
-        lines,
-        i,
-        trimmedLine,
-        patterns,
-        language
-      );
+      const docCommentResult = this.tryExtractDocComment(lines, i, trimmedLine, patterns, language);
       if (docCommentResult) {
-        const comment = this.associateCommentWithSymbol(
-          docCommentResult.comment,
-          symbols,
-          i
-        );
+        const comment = this.associateCommentWithSymbol(docCommentResult.comment, symbols, i);
         comments.push(comment);
         i = docCommentResult.nextLine;
         continue;
       }
 
       // Multi-line comment チェック
-      const multiLineResult = this.tryExtractMultiLineComment(
-        lines,
-        i,
-        trimmedLine,
-        patterns
-      );
+      const multiLineResult = this.tryExtractMultiLineComment(lines, i, trimmedLine, patterns);
       if (multiLineResult) {
-        const comment = this.associateCommentWithSymbol(
-          multiLineResult.comment,
-          symbols,
-          i
-        );
+        const comment = this.associateCommentWithSymbol(multiLineResult.comment, symbols, i);
         comments.push(comment);
         i = multiLineResult.nextLine;
         continue;
       }
 
       // Single line comment チェック
-      const singleLineComment = this.tryExtractSingleLineComment(
-        line,
-        i,
-        trimmedLine,
-        patterns
-      );
+      const singleLineComment = this.tryExtractSingleLineComment(line, i, trimmedLine, patterns);
       if (singleLineComment) {
-        const comment = this.associateCommentWithSymbol(
-          singleLineComment,
-          symbols,
-          i
-        );
+        const comment = this.associateCommentWithSymbol(singleLineComment, symbols, i);
         comments.push(comment);
       }
 
@@ -287,13 +259,8 @@ export class CommentExtractor {
     const contentAfterStart = firstLine.substring(delimiter.length);
 
     // 1行で閉じている場合
-    if (
-      contentAfterStart.endsWith(delimiter) &&
-      contentAfterStart.length > delimiter.length
-    ) {
-      content.push(
-        contentAfterStart.substring(0, contentAfterStart.length - delimiter.length)
-      );
+    if (contentAfterStart.endsWith(delimiter) && contentAfterStart.length > delimiter.length) {
+      content.push(contentAfterStart.substring(0, contentAfterStart.length - delimiter.length));
     } else {
       // 最初の行に内容がある場合
       if (contentAfterStart.length > 0) {
@@ -306,10 +273,7 @@ export class CommentExtractor {
         // @ts-ignore - array bounds are checked in loop condition
         const line = lines[endLine];
         if (line && line.trim().endsWith(delimiter)) {
-          const lineContent = line.substring(
-            0,
-            line.lastIndexOf(delimiter)
-          );
+          const lineContent = line.substring(0, line.lastIndexOf(delimiter));
           if (lineContent.trim().length > 0) {
             content.push(lineContent);
           }
@@ -452,18 +416,14 @@ export class CommentExtractor {
           const lineContent = line.substring(0, line.indexOf(endDelimiter));
           const cleaned = lineContent.trim();
           // 先頭の * を削除
-          const withoutAsterisk = cleaned.startsWith('*')
-            ? cleaned.substring(1).trim()
-            : cleaned;
+          const withoutAsterisk = cleaned.startsWith('*') ? cleaned.substring(1).trim() : cleaned;
           if (withoutAsterisk.length > 0) {
             content.push(withoutAsterisk);
           }
           break;
         }
         const cleaned = line.trim();
-        const withoutAsterisk = cleaned.startsWith('*')
-          ? cleaned.substring(1).trim()
-          : cleaned;
+        const withoutAsterisk = cleaned.startsWith('*') ? cleaned.substring(1).trim() : cleaned;
         if (withoutAsterisk.length > 0) {
           content.push(withoutAsterisk);
         }
@@ -508,12 +468,7 @@ export class CommentExtractor {
         trimmedLine.startsWith(startPattern) &&
         !trimmedLine.startsWith('/' + '**') // Doc commentは除外
       ) {
-        return this.extractMultiLineComment(
-          lines,
-          startLine,
-          startPattern,
-          endPattern
-        );
+        return this.extractMultiLineComment(lines, startLine, startPattern, endPattern);
       }
     }
 
@@ -555,10 +510,7 @@ export class CommentExtractor {
 
     // 1行で閉じている場合
     if (firstLineContent.includes(endPattern)) {
-      const singleLineContent = firstLineContent.substring(
-        0,
-        firstLineContent.indexOf(endPattern)
-      );
+      const singleLineContent = firstLineContent.substring(0, firstLineContent.indexOf(endPattern));
       content.push(singleLineContent.trim());
     } else {
       // 複数行の場合
@@ -700,9 +652,7 @@ export class CommentExtractor {
   /**
    * ASTからシンボル位置情報を抽出
    */
-  private extractSymbolPositions(
-    rootNode: any
-  ): Array<{ name: string; line: number }> {
+  private extractSymbolPositions(rootNode: any): Array<{ name: string; line: number }> {
     const symbols: Array<{ name: string; line: number }> = [];
 
     // 関数、クラス、メソッドなどの定義を検索
@@ -782,10 +732,7 @@ export class CommentExtractor {
     // コメントの直後にあるシンボルを検索
     for (const symbol of symbols) {
       // コメントが終わった次の行からの数行以内にシンボルがあれば関連付け
-      if (
-        symbol.line > comment.position.endLine &&
-        symbol.line <= comment.position.endLine + 3
-      ) {
+      if (symbol.line > comment.position.endLine && symbol.line <= comment.position.endLine + 3) {
         return {
           ...comment,
           associatedSymbol: symbol.name,

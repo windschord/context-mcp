@@ -65,12 +65,7 @@ describe('Error Classes', () => {
     });
 
     it('should include suggestion in JSON when present', () => {
-      const error = new MCPError(
-        -32600,
-        'Invalid Request',
-        undefined,
-        'Check the request format'
-      );
+      const error = new MCPError(-32600, 'Invalid Request', undefined, 'Check the request format');
       const json = error.toJSON();
 
       expect(json).toHaveProperty('suggestion');
@@ -114,9 +109,7 @@ describe('Error Classes', () => {
         { param: 'rootPath' },
         'Provide a rootPath parameter in the request'
       );
-      expect(error.suggestion).toBe(
-        'Provide a rootPath parameter in the request'
-      );
+      expect(error.suggestion).toBe('Provide a rootPath parameter in the request');
     });
   });
 

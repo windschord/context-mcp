@@ -76,10 +76,7 @@ describe('ASTEngine', () => {
       const functionNodes: any[] = [];
 
       astEngine.traverseAST(result.rootNode, (node) => {
-        if (
-          node.type === 'function_declaration' ||
-          node.type === 'method_definition'
-        ) {
+        if (node.type === 'function_declaration' || node.type === 'method_definition') {
           functionNodes.push(node);
         }
       });
@@ -159,10 +156,7 @@ describe('ASTEngine', () => {
       const functionNodes: any[] = [];
 
       astEngine.traverseAST(result.rootNode, (node) => {
-        if (
-          node.type === 'function_declaration' ||
-          node.type === 'method_declaration'
-        ) {
+        if (node.type === 'function_declaration' || node.type === 'method_declaration') {
           functionNodes.push(node);
         }
       });
@@ -556,8 +550,9 @@ describe('ASTEngine', () => {
     });
 
     test('should handle Unknown language gracefully', () => {
-      const result = astEngine.parseToAST('some code', Language.Unknown);
-      expect(result).toBeDefined();
+      expect(() => {
+        astEngine.parseToAST('some code', Language.Unknown);
+      }).toThrow('Cannot parse code with Unknown language');
     });
 
     test('should find nodes by type', () => {
@@ -570,7 +565,10 @@ describe('ASTEngine', () => {
     test('should find nodes by multiple types', () => {
       const code = 'function foo() {} const bar = () => {};';
       const result = astEngine.parseToAST(code, Language.JavaScript);
-      const nodes = astEngine.findNodesByTypes(result.rootNode, ['function_declaration', 'arrow_function']);
+      const nodes = astEngine.findNodesByTypes(result.rootNode, [
+        'function_declaration',
+        'arrow_function',
+      ]);
       expect(nodes.length).toBeGreaterThan(0);
     });
 
@@ -614,9 +612,13 @@ describe('ASTEngine', () => {
       const code = 'function foo() { const x = 1; }';
       const result = astEngine.parseToAST(code, Language.JavaScript);
       const nodes: any[] = [];
-      astEngine.traverseAST(result.rootNode, (node) => {
-        nodes.push(node);
-      }, { maxDepth: 0 });
+      astEngine.traverseAST(
+        result.rootNode,
+        (node) => {
+          nodes.push(node);
+        },
+        { maxDepth: 0 }
+      );
       expect(nodes.length).toBe(1);
       expect(nodes[0]).toBe(result.rootNode);
     });

@@ -10,10 +10,7 @@
  */
 
 import { MCPServer } from '../../src/server/mcp-server';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -90,18 +87,13 @@ console.log("Hello, world!");
         params: {},
       };
 
-      const result = await server.request(
-        request,
-        ListToolsRequestSchema
-      );
+      const result = await server.request(request, ListToolsRequestSchema);
 
       expect(result).toHaveProperty('tools');
       expect(Array.isArray(result.tools)).toBe(true);
 
       // index_projectツールが含まれているか確認
-      const indexProjectTool = result.tools.find(
-        (tool: any) => tool.name === 'index_project'
-      );
+      const indexProjectTool = result.tools.find((tool: any) => tool.name === 'index_project');
 
       expect(indexProjectTool).toBeDefined();
       expect(indexProjectTool).toHaveProperty('description');
@@ -117,9 +109,7 @@ console.log("Hello, world!");
         ListToolsRequestSchema
       );
 
-      const indexProjectTool = result.tools.find(
-        (tool: any) => tool.name === 'index_project'
-      );
+      const indexProjectTool = result.tools.find((tool: any) => tool.name === 'index_project');
 
       // スキーマの検証
       expect(indexProjectTool.inputSchema).toHaveProperty('type', 'object');
@@ -149,9 +139,7 @@ console.log("Hello, world!");
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should reject invalid rootPath type', async () => {
@@ -169,9 +157,7 @@ console.log("Hello, world!");
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should accept valid parameters', async () => {
@@ -192,9 +178,7 @@ console.log("Hello, world!");
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
   });
 
@@ -283,9 +267,7 @@ console.log("Hello, world!");
       };
 
       // 進捗トークンがあってもエラーにならないことを確認
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
   });
 

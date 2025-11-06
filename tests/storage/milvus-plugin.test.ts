@@ -101,24 +101,18 @@ describe('MilvusPlugin', () => {
   describe('createCollection', () => {
     it('コレクションを作成できる', async () => {
       await plugin.connect(localConfig);
-      await expect(
-        plugin.createCollection(testCollectionName, dimension)
-      ).resolves.not.toThrow();
+      await expect(plugin.createCollection(testCollectionName, dimension)).resolves.not.toThrow();
     });
 
     it('同じ名前のコレクションを二重作成するとエラー', async () => {
       await plugin.connect(localConfig);
       await plugin.createCollection(testCollectionName, dimension);
-      await expect(
-        plugin.createCollection(testCollectionName, dimension)
-      ).rejects.toThrow();
+      await expect(plugin.createCollection(testCollectionName, dimension)).rejects.toThrow();
     });
 
     it('接続前にコレクション作成しようとするとエラー', async () => {
       const plugin2 = new MilvusPlugin();
-      await expect(
-        plugin2.createCollection(testCollectionName, dimension)
-      ).rejects.toThrow();
+      await expect(plugin2.createCollection(testCollectionName, dimension)).rejects.toThrow();
     });
   });
 
@@ -131,9 +125,7 @@ describe('MilvusPlugin', () => {
 
     it('存在しないコレクションを削除してもエラーにならない', async () => {
       await plugin.connect(localConfig);
-      await expect(
-        plugin.deleteCollection('non_existent_collection')
-      ).resolves.not.toThrow();
+      await expect(plugin.deleteCollection('non_existent_collection')).resolves.not.toThrow();
     });
   });
 
@@ -294,32 +286,20 @@ describe('MilvusPlugin', () => {
       await expect(plugin.delete(testCollectionName, ['vec1'])).resolves.not.toThrow();
 
       // 削除後に検索して確認
-      const results = await plugin.query(
-        testCollectionName,
-        Array(dimension).fill(0.1),
-        10
-      );
+      const results = await plugin.query(testCollectionName, Array(dimension).fill(0.1), 10);
       expect(results.find((r) => r.id === 'vec1')).toBeUndefined();
     });
 
     it('複数のベクトルを一度に削除できる', async () => {
-      await expect(
-        plugin.delete(testCollectionName, ['vec1', 'vec2'])
-      ).resolves.not.toThrow();
+      await expect(plugin.delete(testCollectionName, ['vec1', 'vec2'])).resolves.not.toThrow();
 
-      const results = await plugin.query(
-        testCollectionName,
-        Array(dimension).fill(0.5),
-        10
-      );
+      const results = await plugin.query(testCollectionName, Array(dimension).fill(0.5), 10);
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('vec3');
     });
 
     it('存在しないIDを削除してもエラーにならない', async () => {
-      await expect(
-        plugin.delete(testCollectionName, ['non_existent_id'])
-      ).resolves.not.toThrow();
+      await expect(plugin.delete(testCollectionName, ['non_existent_id'])).resolves.not.toThrow();
     });
 
     it('存在しないコレクションから削除するとエラー', async () => {
@@ -373,11 +353,7 @@ describe('MilvusPlugin', () => {
       // 再接続してデータを確認
       const plugin2 = new MilvusPlugin();
       await plugin2.connect(localConfig);
-      const results = await plugin2.query(
-        testCollectionName,
-        Array(dimension).fill(0.1),
-        1
-      );
+      const results = await plugin2.query(testCollectionName, Array(dimension).fill(0.1), 1);
 
       expect(results).toHaveLength(1);
       expect(results[0].id).toBe('vec1');

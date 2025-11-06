@@ -17,12 +17,7 @@ describe('MarkdownParser', () => {
 
   beforeAll(() => {
     parser = new MarkdownParser();
-    const samplePath = join(
-      process.cwd(),
-      'tests',
-      'fixtures',
-      'sample.md'
-    );
+    const samplePath = join(process.cwd(), 'tests', 'fixtures', 'sample.md');
     sampleContent = readFileSync(samplePath, 'utf-8');
   });
 
@@ -97,16 +92,12 @@ describe('MarkdownParser', () => {
       const result = await parser.parse(sampleContent);
 
       // TypeScriptコードブロック
-      const tsBlock = result.codeBlocks.find(
-        (block) => block.language === 'typescript'
-      );
+      const tsBlock = result.codeBlocks.find((block) => block.language === 'typescript');
       expect(tsBlock).toBeDefined();
       expect(tsBlock?.code).toContain('function hello');
 
       // Pythonコードブロック
-      const pyBlock = result.codeBlocks.find(
-        (block) => block.language === 'python'
-      );
+      const pyBlock = result.codeBlocks.find((block) => block.language === 'python');
       expect(pyBlock).toBeDefined();
       expect(pyBlock?.code).toContain('def greet');
     });
@@ -140,9 +131,7 @@ describe('MarkdownParser', () => {
     it('リンクテキストとURLを取得できること', async () => {
       const result = await parser.parse(sampleContent);
 
-      const externalLink = result.links.find((link) =>
-        link.url.includes('example.com')
-      );
+      const externalLink = result.links.find((link) => link.url.includes('example.com'));
       expect(externalLink).toBeDefined();
       expect(externalLink?.text).toBeTruthy();
       expect(externalLink?.url).toBeTruthy();
@@ -152,16 +141,12 @@ describe('MarkdownParser', () => {
       const result = await parser.parse(sampleContent);
 
       // 内部リンク（相対パス）
-      const internalLink = result.links.find((link) =>
-        link.url.includes('./other-doc.md')
-      );
+      const internalLink = result.links.find((link) => link.url.includes('./other-doc.md'));
       expect(internalLink).toBeDefined();
       expect(internalLink?.type).toBe('internal');
 
       // 外部リンク（http/https）
-      const externalLink = result.links.find((link) =>
-        link.url.startsWith('http')
-      );
+      const externalLink = result.links.find((link) => link.url.startsWith('http'));
       expect(externalLink).toBeDefined();
       expect(externalLink?.type).toBe('external');
     });
@@ -178,16 +163,12 @@ describe('MarkdownParser', () => {
       const result = await parser.parse(sampleContent);
 
       // 相対パス
-      const relativePath = result.filePaths.find((fp) =>
-        fp.path.startsWith('src/')
-      );
+      const relativePath = result.filePaths.find((fp) => fp.path.startsWith('src/'));
       expect(relativePath).toBeDefined();
       expect(relativePath?.isAbsolute).toBe(false);
 
       // 絶対パス
-      const absolutePath = result.filePaths.find((fp) =>
-        fp.path.startsWith('/')
-      );
+      const absolutePath = result.filePaths.find((fp) => fp.path.startsWith('/'));
       expect(absolutePath).toBeDefined();
       expect(absolutePath?.isAbsolute).toBe(true);
     });
@@ -221,15 +202,11 @@ describe('MarkdownParser', () => {
       const result = await parser.parse(sampleContent);
 
       // ローカル画像
-      const localImage = result.images.find((img) =>
-        img.url.startsWith('./')
-      );
+      const localImage = result.images.find((img) => img.url.startsWith('./'));
       expect(localImage).toBeDefined();
 
       // 外部画像
-      const externalImage = result.images.find((img) =>
-        img.url.startsWith('http')
-      );
+      const externalImage = result.images.find((img) => img.url.startsWith('http'));
       expect(externalImage).toBeDefined();
     });
   });

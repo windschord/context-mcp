@@ -33,21 +33,12 @@ export const InputSchema = z
       .string()
       .optional()
       .describe('コードファイルのパス（filePathまたはsymbolNameが必須）'),
-    symbolName: z
-      .string()
-      .optional()
-      .describe('シンボル名（filePathまたはsymbolNameが必須）'),
+    symbolName: z.string().optional().describe('シンボル名（filePathまたはsymbolNameが必須）'),
     projectId: z
       .string()
       .optional()
       .describe('プロジェクトID（オプション、未指定時は全プロジェクト）'),
-    topK: z
-      .number()
-      .int()
-      .positive()
-      .optional()
-      .default(5)
-      .describe('返す結果数（デフォルト: 5）'),
+    topK: z.number().int().positive().optional().default(5).describe('返す結果数（デフォルト: 5）'),
   })
   .refine((data) => data.filePath || data.symbolName, {
     message: 'filePathまたはsymbolNameのいずれかが必須です',
@@ -220,12 +211,7 @@ async function getCodeFiles(
     // ダミーベクトルで検索（メタデータフィルタのみ使用）
     const dummyVector = new Array(384).fill(0);
 
-    const results = await vectorStore.query(
-      collectionName,
-      dummyVector,
-      100,
-      filter
-    );
+    const results = await vectorStore.query(collectionName, dummyVector, 100, filter);
 
     // ファイルパスを一意に取得
     const filePathsSet = new Set<string>();
@@ -284,10 +270,7 @@ async function findMarkdownFiles(rootPath: string): Promise<string[]> {
 /**
  * ディレクトリを再帰的にスキャン
  */
-async function scanDirectory(
-  dir: string,
-  markdownFiles: string[]
-): Promise<void> {
+async function scanDirectory(dir: string, markdownFiles: string[]): Promise<void> {
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
 
@@ -352,10 +335,7 @@ async function aggregateMatchedReferences(
     }
 
     // シンボル参照を検出
-    const symbolRefs = await docCodeLinker.findSymbolReferences(
-      markdownContent,
-      codeFiles
-    );
+    const symbolRefs = await docCodeLinker.findSymbolReferences(markdownContent, codeFiles);
 
     for (const ref of symbolRefs) {
       references.push({
@@ -366,10 +346,7 @@ async function aggregateMatchedReferences(
     }
 
     // コード類似を検出
-    const similarCodeMatches = await docCodeLinker.findSimilarCode(
-      markdownContent,
-      codeFiles
-    );
+    const similarCodeMatches = await docCodeLinker.findSimilarCode(markdownContent, codeFiles);
 
     for (const match of similarCodeMatches.slice(0, 3)) {
       // 上位3件のみ
@@ -415,11 +392,7 @@ function extractSnippet(content: string, maxLength: number = 100): string {
   for (const line of lines) {
     const trimmed = line.trim();
     // 見出し、コードブロック、空行をスキップ
-    if (
-      !trimmed.startsWith('#') &&
-      !trimmed.startsWith('```') &&
-      trimmed.length > 0
-    ) {
+    if (!trimmed.startsWith('#') && !trimmed.startsWith('```') && trimmed.length > 0) {
       textContent += trimmed + ' ';
       if (textContent.length >= maxLength) {
         break;

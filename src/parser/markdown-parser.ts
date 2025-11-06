@@ -93,15 +93,7 @@ export class MarkdownParser {
     const tokens = markedInstance.lexer(content);
 
     // トークンを走査して情報を抽出
-    this.extractFromTokens(
-      tokens,
-      lines,
-      headings,
-      codeBlocks,
-      links,
-      images,
-      filePaths
-    );
+    this.extractFromTokens(tokens, lines, headings, codeBlocks, links, images, filePaths);
 
     return {
       headings,
@@ -154,13 +146,7 @@ export class MarkdownParser {
         case 'text':
           // テキスト内のリンクや画像、ファイルパスを抽出
           if ('tokens' in token && token.tokens) {
-            this.extractInlineElements(
-              token.tokens,
-              lineNumber,
-              links,
-              images,
-              filePaths
-            );
+            this.extractInlineElements(token.tokens, lineNumber, links, images, filePaths);
           }
           break;
 
@@ -242,13 +228,7 @@ export class MarkdownParser {
         case 'text':
           // ネストされたトークンを処理
           if ('tokens' in token && token.tokens) {
-            this.extractInlineElements(
-              token.tokens,
-              lineNumber,
-              links,
-              images,
-              filePaths
-            );
+            this.extractInlineElements(token.tokens, lineNumber, links, images, filePaths);
           }
           break;
       }
@@ -273,8 +253,7 @@ export class MarkdownParser {
    */
   private extractFilePath(text: string): string | null {
     // ファイルパスのパターン（拡張子付き）
-    const filePathPattern =
-      /^(?:\.{0,2}\/)?(?:[\w-]+\/)*[\w-]+\.[\w]+$/;
+    const filePathPattern = /^(?:\.{0,2}\/)?(?:[\w-]+\/)*[\w-]+\.[\w]+$/;
 
     if (filePathPattern.test(text.trim())) {
       return text.trim();

@@ -63,6 +63,14 @@ import { DocCodeLinker } from '../parser/doc-code-linker.js';
 import { SymbolExtractor } from '../parser/symbol-extractor.js';
 import { MarkdownParser } from '../parser/markdown-parser.js';
 import { LanguageParser } from '../parser/language-parser.js';
+import {
+  TOOL_NAME as HEALTH_CHECK_TOOL_NAME,
+  TOOL_DESCRIPTION as HEALTH_CHECK_TOOL_DESCRIPTION,
+  getInputSchemaJSON as getHealthCheckInputSchema,
+  handleHealthCheck,
+  type HealthCheckInput,
+} from '../tools/health-check-tool.js';
+import { HealthChecker } from '../health/HealthChecker.js';
 
 export class MCPServer {
   private server: Server;
@@ -75,6 +83,7 @@ export class MCPServer {
   private embeddingEngine?: EmbeddingEngine;
   private vectorStore?: VectorStorePlugin;
   private docCodeLinker?: DocCodeLinker;
+  private healthChecker?: HealthChecker;
 
   constructor(
     name = 'lsp-mcp',
@@ -98,6 +107,9 @@ export class MCPServer {
       const markdownParser = new MarkdownParser();
       this.docCodeLinker = new DocCodeLinker(symbolExtractor, markdownParser);
     }
+
+    // HealthCheckerを初期化
+    this.healthChecker = new HealthChecker(version, embeddingEngine, vectorStore);
 
     // MCPサーバーインスタンスを作成
     this.server = new Server(
@@ -128,26 +140,23 @@ export class MCPServer {
    * initialize ハンドラーをセットアップ
    */
   private setupInitializeHandler(): void {
-    this.server.setRequestHandler(
-      InitializeRequestSchema,
-      async (): Promise<InitializeResult> => {
-        logger.info('MCP Server initializing', {
+    this.server.setRequestHandler(InitializeRequestSchema, async (): Promise<InitializeResult> => {
+      logger.info('MCP Server initializing', {
+        name: this.name,
+        version: this.version,
+      });
+
+      return {
+        serverInfo: {
           name: this.name,
           version: this.version,
-        });
-
-        return {
-          serverInfo: {
-            name: this.name,
-            version: this.version,
-          },
-          capabilities: {
-            tools: {},
-          },
-          protocolVersion: '2024-11-05',
-        };
-      }
-    );
+        },
+        capabilities: {
+          tools: {},
+        },
+        protocolVersion: '2024-11-05',
+      };
+    });
   }
 
   /**
@@ -211,6 +220,15 @@ export class MCPServer {
           name: CLEAR_INDEX_TOOL_NAME,
           description: CLEAR_INDEX_TOOL_DESCRIPTION,
           inputSchema: getClearIndexInputSchema(),
+        });
+      }
+
+      // health_checkツールを登録（常に利用可能）
+      if (this.healthChecker) {
+        tools.push({
+          name: HEALTH_CHECK_TOOL_NAME,
+          description: HEALTH_CHECK_TOOL_DESCRIPTION,
+          inputSchema: getHealthCheckInputSchema(),
         });
       }
 
@@ -297,10 +315,7 @@ export class MCPServer {
           }
 
           // ツールハンドラーを実行
-          const result = await handleGetSymbol(
-            args as GetSymbolInput,
-            this.vectorStore
-          );
+          const result = await handleGetSymbol(args as GetSymbolInput, this.vectorStore);
 
           // MCPレスポンス形式で返す
           return {
@@ -367,10 +382,27 @@ export class MCPServer {
           }
 
           // ツールハンドラーを実行
-          const result = await handleClearIndex(
-            args as ClearIndexInput,
-            this.indexingService
-          );
+          const result = await handleClearIndex(args as ClearIndexInput, this.indexingService);
+
+          // MCPレスポンス形式で返す
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(result, null, 2),
+              },
+            ],
+          };
+        }
+
+        // health_checkツール
+        if (toolName === HEALTH_CHECK_TOOL_NAME) {
+          if (!this.healthChecker) {
+            throw new Error('Health checker is not available');
+          }
+
+          // ツールハンドラーを実行
+          const result = await handleHealthCheck(args as HealthCheckInput, this.healthChecker);
 
           // MCPレスポンス形式で返す
           return {

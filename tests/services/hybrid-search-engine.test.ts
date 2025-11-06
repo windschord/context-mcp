@@ -1,6 +1,11 @@
 import { HybridSearchEngine } from '../../src/services/hybrid-search-engine';
 import { BM25Engine } from '../../src/storage/bm25-engine';
-import type { VectorStorePlugin, Vector, QueryResult, CollectionStats } from '../../src/storage/types';
+import type {
+  VectorStorePlugin,
+  Vector,
+  QueryResult,
+  CollectionStats,
+} from '../../src/storage/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -37,8 +42,8 @@ class MockVectorStorePlugin implements VectorStorePlugin {
     }
 
     // 既存のベクトルを削除してから追加（upsert動作）
-    vectors.forEach(v => {
-      const index = collection.vectors.findIndex(existing => existing.id === v.id);
+    vectors.forEach((v) => {
+      const index = collection.vectors.findIndex((existing) => existing.id === v.id);
       if (index >= 0) {
         collection.vectors[index] = v;
       } else {
@@ -59,23 +64,25 @@ class MockVectorStorePlugin implements VectorStorePlugin {
     }
 
     // コサイン類似度を計算
-    const results = collection.vectors.map(v => {
-      // フィルタチェック
-      if (filter) {
-        for (const [key, value] of Object.entries(filter)) {
-          if (v.metadata?.[key] !== value) {
-            return null;
+    const results = collection.vectors
+      .map((v) => {
+        // フィルタチェック
+        if (filter) {
+          for (const [key, value] of Object.entries(filter)) {
+            if (v.metadata?.[key] !== value) {
+              return null;
+            }
           }
         }
-      }
 
-      const similarity = this.cosineSimilarity(vector, v.vector);
-      return {
-        id: v.id,
-        score: similarity,
-        metadata: v.metadata,
-      };
-    }).filter((r): r is QueryResult => r !== null);
+        const similarity = this.cosineSimilarity(vector, v.vector);
+        return {
+          id: v.id,
+          score: similarity,
+          metadata: v.metadata,
+        };
+      })
+      .filter((r): r is QueryResult => r !== null);
 
     // スコアでソートしてtopKを返す
     return results.sort((a, b) => b.score - a.score).slice(0, topK);
@@ -87,7 +94,7 @@ class MockVectorStorePlugin implements VectorStorePlugin {
       throw new Error(`Collection ${collectionName} does not exist`);
     }
 
-    collection.vectors = collection.vectors.filter(v => !ids.includes(v.id));
+    collection.vectors = collection.vectors.filter((v) => !ids.includes(v.id));
   }
 
   async getStats(collectionName: string): Promise<CollectionStats> {
@@ -207,7 +214,7 @@ describe('HybridSearchEngine', () => {
 
       const normalized = hybridEngine.normalizeScores(scores);
 
-      normalized.forEach(item => {
+      normalized.forEach((item) => {
         expect(item.score).toBe(1.0);
       });
     });
@@ -245,13 +252,9 @@ describe('HybridSearchEngine', () => {
     });
 
     test('重複するドキュメントIDが正しく処理される', () => {
-      const bm25Results = [
-        { documentId: 'doc1', score: 0.8 },
-      ];
+      const bm25Results = [{ documentId: 'doc1', score: 0.8 }];
 
-      const vectorResults = [
-        { id: 'doc1', score: 0.9, metadata: {} },
-      ];
+      const vectorResults = [{ id: 'doc1', score: 0.9, metadata: {} }];
 
       const merged = hybridEngine.mergeResults(bm25Results, vectorResults);
 
@@ -263,7 +266,8 @@ describe('HybridSearchEngine', () => {
 
     test('片方の結果のみの場合も正しく処理される', () => {
       const bm25Results = [{ documentId: 'doc1', score: 0.8 }];
-      const vectorResults: Array<{ id: string; score: number; metadata: Record<string, unknown> }> = [];
+      const vectorResults: Array<{ id: string; score: number; metadata: Record<string, unknown> }> =
+        [];
 
       const merged = hybridEngine.mergeResults(bm25Results, vectorResults);
 
@@ -322,7 +326,7 @@ describe('HybridSearchEngine', () => {
       const filtered = hybridEngine.filterResults(results, { fileTypes: ['ts'] });
 
       expect(filtered.length).toBe(2);
-      expect(filtered.every(r => (r.metadata?.fileType as string) === 'ts')).toBe(true);
+      expect(filtered.every((r) => (r.metadata?.fileType as string) === 'ts')).toBe(true);
     });
 
     test('言語でフィルタリングできる', async () => {
@@ -335,7 +339,7 @@ describe('HybridSearchEngine', () => {
       const filtered = hybridEngine.filterResults(results, { languages: ['TypeScript', 'Go'] });
 
       expect(filtered.length).toBe(2);
-      expect(filtered.some(r => (r.metadata?.language as string) === 'Python')).toBe(false);
+      expect(filtered.some((r) => (r.metadata?.language as string) === 'Python')).toBe(false);
     });
 
     test('パスパターンでフィルタリングできる', async () => {
@@ -348,12 +352,16 @@ describe('HybridSearchEngine', () => {
       const filtered = hybridEngine.filterResults(results, { pathPattern: 'src/' });
 
       expect(filtered.length).toBe(2);
-      expect(filtered.every(r => r.id.startsWith('src/'))).toBe(true);
+      expect(filtered.every((r) => r.id.startsWith('src/'))).toBe(true);
     });
 
     test('複数のフィルタ条件を組み合わせられる', async () => {
       const results = [
-        { id: 'src/utils/helper.ts', score: 0.9, metadata: { fileType: 'ts', language: 'TypeScript' } },
+        {
+          id: 'src/utils/helper.ts',
+          score: 0.9,
+          metadata: { fileType: 'ts', language: 'TypeScript' },
+        },
         { id: 'src/utils/helper.py', score: 0.8, metadata: { fileType: 'py', language: 'Python' } },
         { id: 'tests/test.ts', score: 0.7, metadata: { fileType: 'ts', language: 'TypeScript' } },
       ];
@@ -439,8 +447,16 @@ describe('HybridSearchEngine', () => {
 
       // ベクトルインデックス（ダミーベクトル）
       await vectorStore.upsert('test-collection', [
-        { id: 'doc1', vector: [0.9, 0.1, 0.1], metadata: { fileType: 'ts', language: 'TypeScript' } },
-        { id: 'doc2', vector: [0.8, 0.2, 0.0], metadata: { fileType: 'js', language: 'JavaScript' } },
+        {
+          id: 'doc1',
+          vector: [0.9, 0.1, 0.1],
+          metadata: { fileType: 'ts', language: 'TypeScript' },
+        },
+        {
+          id: 'doc2',
+          vector: [0.8, 0.2, 0.0],
+          metadata: { fileType: 'js', language: 'JavaScript' },
+        },
         { id: 'doc3', vector: [0.1, 0.8, 0.9], metadata: { fileType: 'py', language: 'Python' } },
       ]);
     });
@@ -476,21 +492,18 @@ describe('HybridSearchEngine', () => {
       );
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results.every(r => {
-        const fileType = r.metadata?.fileType as string;
-        return fileType === 'ts' || fileType === 'js';
-      })).toBe(true);
+      expect(
+        results.every((r) => {
+          const fileType = r.metadata?.fileType as string;
+          return fileType === 'ts' || fileType === 'js';
+        })
+      ).toBe(true);
     });
 
     test('topK制限付きハイブリッド検索が機能する', async () => {
       const queryVector = [0.85, 0.15, 0.05];
 
-      const results = await hybridEngine.search(
-        'test-collection',
-        'programming',
-        queryVector,
-        1
-      );
+      const results = await hybridEngine.search('test-collection', 'programming', queryVector, 1);
 
       expect(results.length).toBeLessThanOrEqual(1);
     });
@@ -501,15 +514,10 @@ describe('HybridSearchEngine', () => {
 
       const queryVector = [0.0, 0.0, 0.0]; // 低類似度ベクトル
 
-      const results = await hybridEngine.search(
-        'test-collection',
-        'Rust systems',
-        queryVector,
-        10
-      );
+      const results = await hybridEngine.search('test-collection', 'Rust systems', queryVector, 10);
 
       // BM25でdoc4がヒットするはず
-      expect(results.some(r => r.id === 'doc4')).toBe(true);
+      expect(results.some((r) => r.id === 'doc4')).toBe(true);
     });
 
     test('ベクトル検索のみがヒットする場合も正しく動作する', async () => {
@@ -528,22 +536,17 @@ describe('HybridSearchEngine', () => {
       );
 
       // ベクトル類似度でdoc5がヒットするはず
-      expect(results.some(r => r.id === 'doc5')).toBe(true);
+      expect(results.some((r) => r.id === 'doc5')).toBe(true);
     });
 
     test('クエリが空の場合はベクトル検索のみ実行される', async () => {
       const queryVector = [0.85, 0.15, 0.05];
 
-      const results = await hybridEngine.search(
-        'test-collection',
-        '',
-        queryVector,
-        10
-      );
+      const results = await hybridEngine.search('test-collection', '', queryVector, 10);
 
       expect(results.length).toBeGreaterThan(0);
       // ベクトル検索のみなのでBM25スコアは0のはず
-      results.forEach(r => {
+      results.forEach((r) => {
         expect(r.metadata?.bm25Score).toBeUndefined();
       });
     });
@@ -555,12 +558,7 @@ describe('HybridSearchEngine', () => {
 
       const queryVector = [0.5, 0.5, 0.5];
 
-      const results = await hybridEngine.search(
-        'empty-collection',
-        'nonexistent',
-        queryVector,
-        10
-      );
+      const results = await hybridEngine.search('empty-collection', 'nonexistent', queryVector, 10);
 
       expect(results).toEqual([]);
     });
@@ -582,12 +580,7 @@ describe('HybridSearchEngine', () => {
 
       const queryVector = [0.5, 0.5, 0.5];
 
-      const results = await hybridEngine.search(
-        'test-large-topk',
-        'test',
-        queryVector,
-        10000
-      );
+      const results = await hybridEngine.search('test-large-topk', 'test', queryVector, 10000);
 
       // 実際のドキュメント数以上は返らない
       expect(results.length).toBeLessThanOrEqual(1);

@@ -9,10 +9,7 @@
  */
 
 import { MCPServer } from '../../src/server/mcp-server';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { tmpdir } from 'os';
@@ -280,9 +277,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
 
     it('should accept filePath only', async () => {
@@ -300,9 +295,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should accept symbolName only', async () => {
@@ -320,9 +313,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should accept both filePath and symbolName', async () => {
@@ -341,9 +332,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should accept topK parameter', async () => {
@@ -362,9 +351,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).resolves.toBeDefined();
+      await expect(server.request(request, CallToolRequestSchema)).resolves.toBeDefined();
     });
 
     it('should reject invalid topK type', async () => {
@@ -383,9 +370,7 @@ Just some random text here.
         },
       };
 
-      await expect(
-        server.request(request, CallToolRequestSchema)
-      ).rejects.toThrow();
+      await expect(server.request(request, CallToolRequestSchema)).rejects.toThrow();
     });
   });
 
@@ -532,9 +517,9 @@ Just some random text here.
       );
 
       if (calculatorGuide) {
-        expect(calculatorGuide.matchedReferences.some(
-          (ref: any) => ref.type === 'file_path'
-        )).toBe(true);
+        expect(calculatorGuide.matchedReferences.some((ref: any) => ref.type === 'file_path')).toBe(
+          true
+        );
       }
     });
 
@@ -584,9 +569,9 @@ Just some random text here.
       );
 
       if (examplesDoc) {
-        expect(examplesDoc.matchedReferences.some(
-          (ref: any) => ref.type === 'code_similarity'
-        )).toBe(true);
+        expect(
+          examplesDoc.matchedReferences.some((ref: any) => ref.type === 'code_similarity')
+        ).toBe(true);
       }
     });
   });

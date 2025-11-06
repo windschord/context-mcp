@@ -67,10 +67,7 @@ export class ParserPool {
    * Execute a function with a parser from the pool.
    * The parser is automatically released back to the pool after execution.
    */
-  async withParser<T>(
-    language: Language,
-    fn: (parser: Parser) => T | Promise<T>
-  ): Promise<T> {
+  async withParser<T>(language: Language, fn: (parser: Parser) => T | Promise<T>): Promise<T> {
     const parser = this.acquire(language);
     try {
       return await fn(parser);
