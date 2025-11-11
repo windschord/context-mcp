@@ -1,0 +1,11 @@
+# Build output
+dist
+coverage
+
+# Dependencies
+node_modules
+
+# Test fixtures (auto-generated or intentionally broken)
+tests/fixtures/large-project
+tests/fixtures/integration/sample-project/src/invalid-syntax.ts
+tests/fixtures/samples/typescript-error.ts
