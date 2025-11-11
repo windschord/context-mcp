@@ -135,9 +135,7 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(
-          `未対応のベクターDBバックエンドです: ${vectorBackend as string}`,
-        );
+        throw new Error(`未対応のベクターDBバックエンドです: ${vectorBackend as string}`);
     }
   }
 
@@ -178,9 +176,7 @@ export class SetupWizard {
         };
 
       default:
-        throw new Error(
-          `未対応の埋め込みプロバイダーです: ${embeddingProvider as string}`,
-        );
+        throw new Error(`未対応の埋め込みプロバイダーです: ${embeddingProvider as string}`);
     }
   }
 

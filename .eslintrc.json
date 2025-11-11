@@ -19,10 +19,10 @@
     "prettier"
   ],
   "rules": {
-    "prettier/prettier": "warn",
+    "prettier/prettier": "error",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", {
+    "@typescript-eslint/no-unused-vars": ["error", {
       "argsIgnorePattern": "^_",
       "varsIgnorePattern": "^_",
       "caughtErrorsIgnorePattern": "^_"
@@ -38,18 +38,37 @@
     "@typescript-eslint/no-misused-promises": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-var-requires": "off",
-    "no-constant-condition": "off",
-    "no-case-declarations": "off",
-    "no-console": "warn",
-    "no-useless-escape": "warn",
-    "eqeqeq": ["warn", "always"],
-    "no-var": "warn",
-    "prefer-const": "warn"
+    "no-constant-condition": "error",
+    "no-case-declarations": "error",
+    "no-console": "error",
+    "no-useless-escape": "error",
+    "eqeqeq": ["error", "always"],
+    "no-var": "error",
+    "prefer-const": "error"
   },
   "ignorePatterns": [
     "dist",
     "node_modules",
     "coverage",
-    "*.js"
+    "*.js",
+    "tests/fixtures/**/*"
+  ],
+  "overrides": [
+    {
+      "files": ["tests/**/*.test.ts", "tests/performance/**/*.ts"],
+      "rules": {
+        "no-console": "off"
+      }
+    },
+    {
+      "files": [
+        "src/telemetry/logger.ts",
+        "src/telemetry/context-propagation.ts",
+        "src/config/setup-wizard.ts"
+      ],
+      "rules": {
+        "no-console": "off"
+      }
+    }
   ]
 }

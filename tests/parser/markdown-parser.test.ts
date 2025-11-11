@@ -1,15 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import {
-  MarkdownParser,
-  type HeadingNode,
-  type CodeBlockNode,
-  type LinkNode,
-  type FilePathReference,
-  type ImageNode,
-  type MarkdownDocument,
-} from '../../src/parser/markdown-parser.js';
+import { MarkdownParser } from '../../src/parser/markdown-parser.js';
 
 describe('MarkdownParser', () => {
   let parser: MarkdownParser;

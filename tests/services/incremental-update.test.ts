@@ -6,7 +6,6 @@ import { CommentExtractor } from '../../src/parser/comment-extractor';
 import { MarkdownParser } from '../../src/parser/markdown-parser';
 import { DocCodeLinker } from '../../src/parser/doc-code-linker';
 import { FileWatcher } from '../../src/watcher/file-watcher';
-import { FileWatcherEvent } from '../../src/watcher/types';
 import { MockEmbeddingEngine } from '../__mocks__/mock-embedding-engine';
 import { MockVectorStore } from '../__mocks__/mock-vector-store';
 import { MockBM25Engine } from '../__mocks__/mock-bm25-engine';

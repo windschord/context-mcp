@@ -16,7 +16,7 @@ class MockVectorStorePlugin implements VectorStorePlugin {
   private connected = false;
   private collections: Map<string, Array<Vector>> = new Map();
 
-  async connect(config: VectorStoreConfig): Promise<void> {
+  async connect(_config: VectorStoreConfig): Promise<void> {
     this.connected = true;
   }
 
@@ -25,7 +25,7 @@ class MockVectorStorePlugin implements VectorStorePlugin {
     this.collections.clear();
   }
 
-  async createCollection(name: string, dimension: number): Promise<void> {
+  async createCollection(name: string, _dimension: number): Promise<void> {
     if (!this.connected) {
       throw new Error('Not connected');
     }

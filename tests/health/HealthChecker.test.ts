@@ -2,7 +2,7 @@
  * HealthCheckerのテスト
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 import { HealthChecker } from '../../src/health/HealthChecker.js';
 import type { EmbeddingEngine } from '../../src/embedding/types.js';
 import type { VectorStorePlugin } from '../../src/storage/types.js';

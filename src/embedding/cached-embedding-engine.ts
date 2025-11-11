@@ -7,11 +7,7 @@
  */
 
 import { EmbeddingEngine } from './types';
-import {
-  QueryCache,
-  QueryCacheOptions,
-  CacheStats,
-} from '../services/query-cache.js';
+import { QueryCache, QueryCacheOptions, CacheStats } from '../services/query-cache.js';
 import { Logger } from '../utils/logger.js';
 
 /**

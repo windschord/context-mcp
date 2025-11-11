@@ -436,7 +436,7 @@ console.log("Hello, world!");
       );
 
       // インデックスが存在することを確認
-      let statusResult = await server.request(
+      const statusResult = await server.request(
         {
           method: 'tools/call',
           params: {
@@ -448,7 +448,7 @@ console.log("Hello, world!");
         },
         CallToolRequestSchema
       );
-      let statusResponse = JSON.parse(statusResult.content[0].text);
+      const statusResponse = JSON.parse(statusResult.content[0].text);
       expect(statusResponse.projects.length).toBeGreaterThan(0);
 
       // インデックスをクリア

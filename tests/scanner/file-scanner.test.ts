@@ -1,7 +1,6 @@
-import { describe, expect, it, beforeEach, afterEach } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { FileScanner } from '../../src/scanner/file-scanner';
 import path from 'path';
-import fs from 'fs/promises';
 
 describe('FileScanner', () => {
   const fixturesPath = path.join(__dirname, '../fixtures/scanner');

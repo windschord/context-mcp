@@ -14,21 +14,21 @@ import {
 class DummyPluginA implements VectorStorePlugin {
   name = 'dummy-a';
 
-  async connect(config: VectorStoreConfig): Promise<void> {}
+  async connect(_config: VectorStoreConfig): Promise<void> {}
   async disconnect(): Promise<void> {}
-  async createCollection(name: string, dimension: number): Promise<void> {}
-  async deleteCollection(name: string): Promise<void> {}
-  async upsert(collectionName: string, vectors: Vector[]): Promise<void> {}
+  async createCollection(_name: string, _dimension: number): Promise<void> {}
+  async deleteCollection(_name: string): Promise<void> {}
+  async upsert(_collectionName: string, _vectors: Vector[]): Promise<void> {}
   async query(
-    collectionName: string,
-    vector: number[],
-    topK: number,
-    filter?: Record<string, unknown>
+    _collectionName: string,
+    _vector: number[],
+    _topK: number,
+    _filter?: Record<string, unknown>
   ): Promise<QueryResult[]> {
     return [];
   }
-  async delete(collectionName: string, ids: string[]): Promise<void> {}
-  async getStats(collectionName: string): Promise<CollectionStats> {
+  async delete(_collectionName: string, _ids: string[]): Promise<void> {}
+  async getStats(_collectionName: string): Promise<CollectionStats> {
     return { vectorCount: 0, dimension: 0, indexSize: 0 };
   }
 }
@@ -36,21 +36,21 @@ class DummyPluginA implements VectorStorePlugin {
 class DummyPluginB implements VectorStorePlugin {
   name = 'dummy-b';
 
-  async connect(config: VectorStoreConfig): Promise<void> {}
+  async connect(_config: VectorStoreConfig): Promise<void> {}
   async disconnect(): Promise<void> {}
-  async createCollection(name: string, dimension: number): Promise<void> {}
-  async deleteCollection(name: string): Promise<void> {}
-  async upsert(collectionName: string, vectors: Vector[]): Promise<void> {}
+  async createCollection(_name: string, _dimension: number): Promise<void> {}
+  async deleteCollection(_name: string): Promise<void> {}
+  async upsert(_collectionName: string, _vectors: Vector[]): Promise<void> {}
   async query(
-    collectionName: string,
-    vector: number[],
-    topK: number,
-    filter?: Record<string, unknown>
+    _collectionName: string,
+    _vector: number[],
+    _topK: number,
+    _filter?: Record<string, unknown>
   ): Promise<QueryResult[]> {
     return [];
   }
-  async delete(collectionName: string, ids: string[]): Promise<void> {}
-  async getStats(collectionName: string): Promise<CollectionStats> {
+  async delete(_collectionName: string, _ids: string[]): Promise<void> {}
+  async getStats(_collectionName: string): Promise<CollectionStats> {
     return { vectorCount: 0, dimension: 0, indexSize: 0 };
   }
 }

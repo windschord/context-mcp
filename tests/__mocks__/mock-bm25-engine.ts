@@ -2,7 +2,7 @@
  * Mock BM25 Engine for Testing
  */
 
-import type { BM25Params, SearchResult, DocumentStats } from '../../src/storage/bm25-engine';
+import type { SearchResult, DocumentStats } from '../../src/storage/bm25-engine';
 
 export class MockBM25Engine {
   private documents: Map<string, string> = new Map();
