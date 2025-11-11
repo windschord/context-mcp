@@ -428,7 +428,7 @@ describe('HybridSearchEngine', () => {
 
       expect(ranked.length).toBe(3);
       // スコアが同じなので順序は元の順序を保持
-      ranked.forEach((result, index) => {
+      ranked.forEach((result, _index) => {
         expect(result.score).toBe(0.8);
       });
     });

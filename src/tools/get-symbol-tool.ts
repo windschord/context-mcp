@@ -250,6 +250,7 @@ async function searchSymbolReferences(
 
           // 行内でシンボル名を検索
           let columnIndex = 0;
+          // eslint-disable-next-line no-constant-condition
           while (true) {
             const index = line.indexOf(symbolName, columnIndex);
             if (index === -1) break;

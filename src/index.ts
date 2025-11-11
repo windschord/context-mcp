@@ -112,11 +112,7 @@ export async function main(): Promise<void> {
 
     // 7. Hybrid Search Engineを作成
     logger.info('Creating hybrid search engine...');
-    hybridSearchEngine = new HybridSearchEngine(
-      bm25Engine,
-      vectorStore,
-      0.3
-    );
+    hybridSearchEngine = new HybridSearchEngine(bm25Engine, vectorStore, 0.3);
     logger.info('Hybrid search engine created');
 
     // 8. MCPサーバーを起動

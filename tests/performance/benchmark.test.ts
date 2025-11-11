@@ -170,7 +170,7 @@ describe('Performance Tests', () => {
 
     // Initialize services
     const configManager = new ConfigManager();
-    const config = configManager.loadConfig();
+    const _config = configManager.loadConfig();
 
     const pluginRegistry = new PluginRegistry();
     const embeddingEngine = new LocalEmbeddingEngine();
@@ -315,7 +315,7 @@ describe('Performance Tests', () => {
             alpha: 0.3,
           });
 
-          const metric = monitor.endMeasurement(
+          const _metric = monitor.endMeasurement(
             `Search: "${query}"`,
             startTime,
             startMemory,
@@ -349,7 +349,7 @@ describe('Performance Tests', () => {
 
       // Monitor peak memory usage
       let peakMemory = startMemory.heapUsed;
-      const memoryCheckInterval = setInterval(() => {
+      const _memoryCheckInterval = setInterval(() => {
         const currentMemory = process.memoryUsage().heapUsed;
         if (currentMemory > peakMemory) {
           peakMemory = currentMemory;
@@ -364,12 +364,12 @@ describe('Performance Tests', () => {
           includeDocuments: false,
         });
 
-        clearInterval(memoryCheckInterval);
+        clearInterval(_memoryCheckInterval);
 
         const endMemory = process.memoryUsage();
         const peakMemoryMB = peakMemory / (1024 * 1024);
 
-        const metric = monitor.endMeasurement(
+        const _metric = monitor.endMeasurement(
           'Memory usage during indexing',
           startTime,
           startMemory,
@@ -387,7 +387,7 @@ describe('Performance Tests', () => {
         // Expectation: peak memory should stay under 2GB
         expect(peakMemoryMB).toBeLessThanOrEqual(2048);
       } catch (error) {
-        clearInterval(memoryCheckInterval);
+        clearInterval(_memoryCheckInterval);
         console.error('❌ Memory test failed:', error);
         throw error;
       }
@@ -401,11 +401,11 @@ describe('Performance Tests', () => {
       const bottlenecks: string[] = [];
 
       // Check if any metric failed
-      const failedMetrics = monitor.getMetrics().filter((m) => m.status === 'FAIL');
+      const _failedMetrics = monitor.getMetrics().filter((m) => m.status === 'FAIL');
 
-      if (failedMetrics.length > 0) {
+      if (_failedMetrics.length > 0) {
         console.log('\n⚠️  Performance requirements not met:');
-        for (const metric of failedMetrics) {
+        for (const metric of _failedMetrics) {
           console.log(
             `   - ${metric.operation}: ${metric.actual} (threshold: ${metric.threshold})`
           );
@@ -443,7 +443,7 @@ describe('Performance Tests', () => {
       const bottleneckReport = {
         timestamp: new Date().toISOString(),
         bottlenecks,
-        failedMetrics: failedMetrics.map((m) => ({
+        failedMetrics: _failedMetrics.map((m) => ({
           operation: m.operation,
           requirement: m.requirement,
           actual: m.actual,
@@ -462,7 +462,7 @@ describe('Performance Tests', () => {
   });
 });
 
-function generateRecommendations(bottlenecks: string[], metrics: PerformanceMetrics[]): string[] {
+function generateRecommendations(bottlenecks: string[], _metrics: PerformanceMetrics[]): string[] {
   const recommendations: string[] = [];
 
   // Indexing performance recommendations

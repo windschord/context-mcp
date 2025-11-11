@@ -78,7 +78,7 @@ describe('MilvusPlugin', () => {
 
     it('Zilliz Cloud設定でTLS/SSL接続が有効化される', async () => {
       // 実際の接続はせず、設定の検証のみ
-      const plugin2 = new MilvusPlugin();
+      const _plugin2 = new MilvusPlugin();
       // connectメソッドの内部でssl設定が適用されることを確認
       // （実際のZilliz Cloudへの接続はモックまたはスキップ）
       expect(cloudConfig.config.ssl).toBe(true);

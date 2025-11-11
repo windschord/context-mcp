@@ -15,7 +15,7 @@ export class MockVectorStore implements VectorStorePlugin {
   private collections: Map<string, Vector[]> = new Map();
   private connected = false;
 
-  async connect(config: VectorStoreConfig): Promise<void> {
+  async connect(_config: VectorStoreConfig): Promise<void> {
     this.connected = true;
   }
 
@@ -24,7 +24,7 @@ export class MockVectorStore implements VectorStorePlugin {
     this.collections.clear();
   }
 
-  async createCollection(name: string, dimension: number): Promise<void> {
+  async createCollection(name: string, _dimension: number): Promise<void> {
     if (!this.collections.has(name)) {
       this.collections.set(name, []);
     }
@@ -52,9 +52,9 @@ export class MockVectorStore implements VectorStorePlugin {
 
   async query(
     collectionName: string,
-    vector: number[],
+    _vector: number[],
     topK: number,
-    filter?: Record<string, unknown>
+    _filter?: Record<string, unknown>
   ): Promise<QueryResult[]> {
     const collection = this.collections.get(collectionName) || [];
 

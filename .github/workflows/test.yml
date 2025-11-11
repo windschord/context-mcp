@@ -31,9 +31,8 @@ jobs:
     - name: Run type check
       run: npm run typecheck
 
-    # Lintは一時的にスキップ（OpenTelemetry機能実装後に別PRで対応）
-    # - name: Run linter
-    #   run: npm run lint
+    - name: Run linter
+      run: npm run lint
 
     - name: Run tests
       run: npm test -- --passWithNoTests

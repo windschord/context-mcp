@@ -12,7 +12,7 @@
 
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { IndexingService, type IndexingOptions } from '../../src/services/indexing-service';
+import { IndexingService } from '../../src/services/indexing-service';
 import { HybridSearchEngine } from '../../src/services/hybrid-search-engine';
 import { FileWatcher } from '../../src/watcher/file-watcher';
 import { FileScanner } from '../../src/scanner/file-scanner';
@@ -393,11 +393,11 @@ describe('E2E Workflow Integration Tests', () => {
     });
 
     it('ファイル作成イベントを検知できる', async () => {
-      let fileDetected = false;
+      let _fileDetected = false;
 
       fileWatcher.on('add', (filePath: string) => {
         if (filePath.includes('temp-test.ts')) {
-          fileDetected = true;
+          _fileDetected = true;
         }
       });
 

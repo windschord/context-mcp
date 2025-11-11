@@ -7,7 +7,6 @@
 import { ModeManager } from '../../src/config/mode-manager';
 import { LspMcpConfig } from '../../src/config/types';
 import { EmbeddingEngine } from '../../src/embedding/types';
-import { VectorStorePlugin } from '../../src/storage/types';
 
 // モックの作成
 const mockLocalEmbedding: EmbeddingEngine = {
@@ -26,16 +25,17 @@ const mockCloudEmbedding: EmbeddingEngine = {
   dispose: jest.fn().mockResolvedValue(undefined),
 };
 
-const mockVectorStore: VectorStorePlugin = {
-  connect: jest.fn().mockResolvedValue(undefined),
-  disconnect: jest.fn().mockResolvedValue(undefined),
-  createCollection: jest.fn().mockResolvedValue(undefined),
-  deleteCollection: jest.fn().mockResolvedValue(undefined),
-  upsert: jest.fn().mockResolvedValue(undefined),
-  query: jest.fn().mockResolvedValue([]),
-  delete: jest.fn().mockResolvedValue(undefined),
-  getStats: jest.fn().mockResolvedValue({ totalVectors: 0 }),
-};
+// Unused mock vector store
+// const mockVectorStore: VectorStorePlugin = {
+//   connect: jest.fn().mockResolvedValue(undefined),
+//   disconnect: jest.fn().mockResolvedValue(undefined),
+//   createCollection: jest.fn().mockResolvedValue(undefined),
+//   deleteCollection: jest.fn().mockResolvedValue(undefined),
+//   upsert: jest.fn().mockResolvedValue(undefined),
+//   query: jest.fn().mockResolvedValue([]),
+//   delete: jest.fn().mockResolvedValue(undefined),
+//   getStats: jest.fn().mockResolvedValue({ totalVectors: 0 }),
+// };
 
 describe('ModeManager', () => {
   describe('ローカルモード', () => {

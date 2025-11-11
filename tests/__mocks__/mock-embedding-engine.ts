@@ -12,7 +12,7 @@ export class MockEmbeddingEngine implements EmbeddingEngine {
     this.initialized = true;
   }
 
-  async embed(text: string): Promise<number[]> {
+  async embed(_text: string): Promise<number[]> {
     if (!this.initialized) {
       throw new Error('Engine not initialized');
     }

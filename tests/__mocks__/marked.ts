@@ -116,7 +116,7 @@ function extractInlineTokens(text: string): Token[] {
   const tokens: Token[] = [];
 
   // リンクの検出
-  const linkRegex = /\[([^\]]+)\]\(([^\)]+)\)/g;
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   let match;
   while ((match = linkRegex.exec(text)) !== null) {
     tokens.push({
@@ -128,7 +128,7 @@ function extractInlineTokens(text: string): Token[] {
   }
 
   // 画像の検出
-  const imageRegex = /!\[([^\]]*)\]\(([^\)]+)\)/g;
+  const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   while ((match = imageRegex.exec(text)) !== null) {
     tokens.push({
       type: 'image',

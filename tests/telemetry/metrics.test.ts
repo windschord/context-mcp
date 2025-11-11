@@ -305,7 +305,7 @@ describe('Metrics', () => {
   describe('メトリクス初期化前の動作', () => {
     it('初期化されていない場合でもメトリクス関数は安全に呼び出せる', () => {
       // 新しいTelemetryManagerを作成し、メトリクスを初期化しない
-      const uninitializedManager = new TelemetryManager();
+      const _uninitializedManager = new TelemetryManager();
 
       // メトリクスインスタンスがnullの場合の動作を確認
       expect(() => {

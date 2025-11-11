@@ -30,12 +30,13 @@ describe('CommentExtractor', () => {
     });
   };
 
-  const testCommentTypes = (comments: CommentInfo[], types: CommentType[]) => {
-    types.forEach((type) => {
-      const typeComments = comments.filter((c) => c.type === type);
-      expect(typeComments.length).toBeGreaterThan(0);
-    });
-  };
+  // Unused helper function
+  // const testCommentTypes = (comments: CommentInfo[], types: CommentType[]) => {
+  //   types.forEach((type) => {
+  //     const typeComments = comments.filter((c) => c.type === type);
+  //     expect(typeComments.length).toBeGreaterThan(0);
+  //   });
+  // };
 
   describe('TypeScript/JavaScript', () => {
     let code: string;

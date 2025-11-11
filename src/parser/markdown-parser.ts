@@ -132,7 +132,7 @@ export class MarkdownParser {
           });
           break;
 
-        case 'code':
+        case 'code': {
           const codeLines = token.text.split('\n');
           codeBlocks.push({
             language: token.lang || '',
@@ -141,6 +141,7 @@ export class MarkdownParser {
             endLine: lineNumber + codeLines.length - 1,
           });
           break;
+        }
 
         case 'paragraph':
         case 'text':
@@ -213,7 +214,7 @@ export class MarkdownParser {
           });
           break;
 
-        case 'codespan':
+        case 'codespan': {
           // インラインコード内のファイルパス参照を検出
           const filePath = this.extractFilePath(token.text);
           if (filePath) {
@@ -224,6 +225,7 @@ export class MarkdownParser {
             });
           }
           break;
+        }
 
         case 'text':
           // ネストされたトークンを処理
