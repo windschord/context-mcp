@@ -20,7 +20,7 @@ const mockFsPromises = fsPromises as jest.Mocked<typeof fsPromises>;
 
 describe('SetupWizard', () => {
   let wizard: SetupWizard;
-  const testConfigPath = '/tmp/test-project/.lsp-mcp.json';
+  const testConfigPath = '/tmp/test-project/.context-mcp.json';
 
   beforeEach(() => {
     wizard = new SetupWizard(testConfigPath);
@@ -53,7 +53,7 @@ describe('SetupWizard', () => {
 
       expect(config.mode).toBe('local');
       expect(config.vectorStore.backend).toBe('chroma');
-      expect(config.vectorStore.config.path).toBe('./.lsp-mcp/chroma');
+      expect(config.vectorStore.config.path).toBe('./.context-mcp/chroma');
       expect(config.embedding.provider).toBe('transformers');
       expect(config.embedding.model).toBe('Xenova/all-MiniLM-L6-v2');
     });
@@ -309,7 +309,7 @@ describe('SetupWizard', () => {
         mode: 'local',
         vectorStore: {
           backend: 'chroma',
-          config: { path: './.lsp-mcp/chroma' },
+          config: { path: './.context-mcp/chroma' },
         },
         embedding: {
           provider: 'transformers',

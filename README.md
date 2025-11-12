@@ -1,10 +1,10 @@
-# LSP-MCP
+# Context-MCP
 
 Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。
 
 ## 概要
 
-LSP-MCPは、ソースコードとドキュメントを統合的に解析し、セマンティック検索を提供することで、Claude Codeのコンテキスト理解を大幅に向上させます。
+Context-MCPは、ソースコードとドキュメントを統合的に解析し、セマンティック検索を提供することで、Claude Codeのコンテキスト理解を大幅に向上させます。
 
 ### 主な特徴
 
@@ -17,7 +17,7 @@ LSP-MCPは、ソースコードとドキュメントを統合的に解析し、�
 
 ## 主要機能
 
-LSP-MCPは以下の6つのMCPツールを提供します:
+Context-MCPは以下の6つのMCPツールを提供します:
 
 ### 1. `index_project`
 プロジェクト全体をインデックス化します。
@@ -74,23 +74,23 @@ GitHubリポジトリから直接実行できます:
 
 ```bash
 # GitHubリポジトリから直接実行
-npx github:windschord/lsp-mcp --help
-npx github:windschord/lsp-mcp --version
-npx github:windschord/lsp-mcp
+npx github:windschord/context-mcp --help
+npx github:windschord/context-mcp --version
+npx github:windschord/context-mcp
 
 # または完全なURL形式
-npx git+https://github.com/windschord/lsp-mcp.git
+npx git+https://github.com/windschord/context-mcp.git
 
 # 特定のブランチ・タグから実行
-npx github:windschord/lsp-mcp#main
-npx github:windschord/lsp-mcp#v0.1.0
+npx github:windschord/context-mcp#main
+npx github:windschord/context-mcp#v0.1.0
 ```
 
 ### ローカルインストール（開発時）
 
 ```bash
-git clone https://github.com/windschord/lsp-mcp.git
-cd lsp-mcp
+git clone https://github.com/windschord/context-mcp.git
+cd context-mcp
 npm install
 npm run build
 ```
@@ -106,7 +106,7 @@ npm run build
 cd /path/to/your/project
 
 # docker-compose.ymlをダウンロード（初回のみ）
-curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/windschord/context-mcp/main/docker-compose.yml
 
 # Milvus standalone起動
 docker-compose up -d
@@ -120,11 +120,11 @@ docker ps
 #### 方法1: claude mcp addコマンドで追加（推奨）
 
 ```bash
-claude mcp add --transport stdio lsp-mcp \
-  --env LSP_MCP_MODE=local \
-  --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
+claude mcp add --transport stdio context-mcp \
+  --env CONTEXT_MCP_MODE=local \
+  --env CONTEXT_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- npx github:windschord/context-mcp
 ```
 
 設定後、Claude Codeを再起動してください。
@@ -136,12 +136,12 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -156,29 +156,29 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
 
 ```
-@lsp-mcp プロジェクトをインデックス化してください
+@context-mcp プロジェクトをインデックス化してください
 ```
 
 以降、セマンティック検索が利用可能になります:
 
 ```
-@lsp-mcp 「認証機能」に関連するコードを検索してください
+@context-mcp 「認証機能」に関連するコードを検索してください
 ```
 
 ```
-@lsp-mcp getUserById関数の定義と使用箇所を教えてください
+@context-mcp getUserById関数の定義と使用箇所を教えてください
 ```
 
 ### （オプション）設定ファイルによるカスタマイズ
 
-環境変数だけでなく、プロジェクトごとに設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します:
+環境変数だけでなく、プロジェクトごとに設定をカスタマイズしたい場合は、`.context-mcp.json`を作成します:
 
 ```bash
 # プロジェクトルートで設定ファイルを作成
 cd /path/to/your/project
 ```
 
-`.lsp-mcp.json`の例:
+`.context-mcp.json`の例:
 
 ```json
 {
@@ -218,23 +218,23 @@ Docker Composeで起動したMilvus standaloneを使用する最もシンプル�
 
 **claude mcp addコマンド**:
 ```bash
-claude mcp add --transport stdio lsp-mcp \
-  --env LSP_MCP_MODE=local \
-  --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
+claude mcp add --transport stdio context-mcp \
+  --env CONTEXT_MCP_MODE=local \
+  --env CONTEXT_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- npx github:windschord/context-mcp
 ```
 
 **JSONファイル編集**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -246,31 +246,31 @@ claude mcp add --transport stdio lsp-mcp \
 
 **claude mcp addコマンド**:
 ```bash
-claude mcp add --transport stdio lsp-mcp \
-  --env LSP_MCP_MODE=cloud \
-  --env LSP_MCP_VECTOR_BACKEND=zilliz \
-  --env LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530 \
-  --env LSP_MCP_VECTOR_TOKEN=your-zilliz-token \
-  --env LSP_MCP_EMBEDDING_PROVIDER=openai \
-  --env LSP_MCP_EMBEDDING_API_KEY=your-openai-api-key \
+claude mcp add --transport stdio context-mcp \
+  --env CONTEXT_MCP_MODE=cloud \
+  --env CONTEXT_MCP_VECTOR_BACKEND=zilliz \
+  --env CONTEXT_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530 \
+  --env CONTEXT_MCP_VECTOR_TOKEN=your-zilliz-token \
+  --env CONTEXT_MCP_EMBEDDING_PROVIDER=openai \
+  --env CONTEXT_MCP_EMBEDDING_API_KEY=your-openai-api-key \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- npx github:windschord/context-mcp
 ```
 
 **JSONファイル編集**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
-        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "your-openai-api-key",
+        "CONTEXT_MCP_MODE": "cloud",
+        "CONTEXT_MCP_VECTOR_BACKEND": "zilliz",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
+        "CONTEXT_MCP_VECTOR_TOKEN": "your-zilliz-token",
+        "CONTEXT_MCP_EMBEDDING_PROVIDER": "openai",
+        "CONTEXT_MCP_EMBEDDING_API_KEY": "your-openai-api-key",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -284,21 +284,21 @@ claude mcp add --transport stdio lsp-mcp \
 
 **claude mcp addコマンド**:
 ```bash
-claude mcp add --transport stdio lsp-mcp \
-  --env LSP_MCP_MODE=local \
+claude mcp add --transport stdio context-mcp \
+  --env CONTEXT_MCP_MODE=local \
   --env LOG_LEVEL=DEBUG \
-  -- node /path/to/lsp_mcp/bin/lsp-mcp.js
+  -- node /path/to/context-mcp/bin/context-mcp.js
 ```
 
 **JSONファイル編集**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "node",
-      "args": ["/path/to/lsp_mcp/bin/lsp-mcp.js"],
+      "args": ["/path/to/context-mcp/bin/context-mcp.js"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "DEBUG"
       }
     }
@@ -310,12 +310,12 @@ claude mcp add --transport stdio lsp-mcp \
 
 | 環境変数 | 説明 | デフォルト値 | 例 |
 |---------|------|------------|-----|
-| `LSP_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
-| `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
-| `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
-| `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
-| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
-| `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
+| `CONTEXT_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
+| `CONTEXT_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
+| `CONTEXT_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
+| `CONTEXT_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
+| `CONTEXT_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
+| `CONTEXT_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
 | `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
 
 詳細は[環境変数リファレンス](docs/ENVIRONMENT_VARIABLES.md)を参照してください。
@@ -327,7 +327,7 @@ claude mcp add --transport stdio lsp-mcp \
 claude mcp list
 
 # 特定のサーバーの詳細を確認
-claude mcp show lsp-mcp
+claude mcp show context-mcp
 
 # 設定ファイルを直接確認（macOS）
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
@@ -387,7 +387,7 @@ cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
 ### 開発フェーズ完了状況
 
-LSP-MCPは**フェーズ1〜7のすべてのタスクが完了**しており、本番利用可能な状態です。
+Context-MCPは**フェーズ1〜7のすべてのタスクが完了**しており、本番利用可能な状態です。
 
 - **フェーズ1**: プロジェクトセットアップとMCPサーバー基盤 (完了)
 - **フェーズ2**: AST解析とドキュメント解析 (完了)
@@ -547,7 +547,7 @@ npm run format:check
 
 ## プライバシー
 
-LSP-MCPはプライバシーファースト設計を採用しています:
+Context-MCPはプライバシーファースト設計を採用しています:
 
 - **デフォルトはローカル実行**: 外部通信なし
 - **センシティブファイル自動除外**: `.env`, `credentials.json`等
@@ -574,8 +574,8 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 ## サポート
 
-- [Issue Tracker](https://github.com/windschord/lsp-mcp/issues)
-- [ディスカッション](https://github.com/windschord/lsp-mcp/discussions)
+- [Issue Tracker](https://github.com/windschord/context-mcp/issues)
+- [ディスカッション](https://github.com/windschord/context-mcp/discussions)
 - [ドキュメント](docs/)
 
 ## リンク

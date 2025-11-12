@@ -50,8 +50,8 @@ tmp/
 .DS_Store
 Thumbs.db
 
-# LSP-MCP local data
-.lsp-mcp/
+# Context-MCP local data
+.context-mcp/
 *.db
 *.sqlite
 *.sqlite3

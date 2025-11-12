@@ -1,5 +1,5 @@
 # OpenTelemetry Collector Configuration
-# Receives OTLP data from LSP-MCP and exports to Jaeger/Prometheus
+# Receives OTLP data from Context-MCP and exports to Jaeger/Prometheus
 
 receivers:
   # OTLP receiver (gRPC and HTTP)
@@ -33,9 +33,9 @@ exporters:
   # Prometheus exporter for metrics
   prometheus:
     endpoint: "0.0.0.0:8889"
-    namespace: lsp_mcp
+    namespace: context_mcp
     const_labels:
-      service: lsp-mcp
+      service: context-mcp
 
   # Debug exporter for console output
   debug:

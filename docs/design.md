@@ -240,17 +240,17 @@ where α = 0.3 (デフォルト、設定可能)
 **サポート環境変数**:
 ```typescript
 // モード設定
-LSP_MCP_MODE: 'local' | 'cloud'
+CONTEXT_MCP_MODE: 'local' | 'cloud'
 
 // ベクターDB設定
-LSP_MCP_VECTOR_BACKEND: 'milvus' | 'zilliz'
-LSP_MCP_VECTOR_ADDRESS: string  // 例: 'localhost:19530'
-LSP_MCP_VECTOR_TOKEN: string    // Zilliz Cloud認証用
+CONTEXT_MCP_VECTOR_BACKEND: 'milvus' | 'zilliz'
+CONTEXT_MCP_VECTOR_ADDRESS: string  // 例: 'localhost:19530'
+CONTEXT_MCP_VECTOR_TOKEN: string    // Zilliz Cloud認証用
 
 // 埋め込み設定
-LSP_MCP_EMBEDDING_PROVIDER: 'transformers' | 'openai' | 'voyageai'
-LSP_MCP_EMBEDDING_API_KEY: string  // クラウドプロバイダー用
-LSP_MCP_EMBEDDING_MODEL: string    // モデル名（省略可）
+CONTEXT_MCP_EMBEDDING_PROVIDER: 'transformers' | 'openai' | 'voyageai'
+CONTEXT_MCP_EMBEDDING_API_KEY: string  // クラウドプロバイダー用
+CONTEXT_MCP_EMBEDDING_MODEL: string    // モデル名（省略可）
 
 // ログ設定
 LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
@@ -260,7 +260,7 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_MODE等）
+1. 環境変数（CONTEXT_MCP_MODE等）
   ↓
 2. ユーザー設定ファイル（.context-mcp.json）
   ↓
@@ -300,14 +300,14 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
    - ハイブリッド検索（query, search.type, search.duration）
 
 2. **メトリクス（Metrics）**:
-   - `lsp_mcp.requests.total`: リクエスト総数（Counter）
-   - `lsp_mcp.requests.duration`: リクエスト処理時間（Histogram）
-   - `lsp_mcp.requests.errors`: エラー発生回数（Counter）
-   - `lsp_mcp.index.files`: インデックス済みファイル数（Gauge）
-   - `lsp_mcp.index.symbols`: インデックス済みシンボル数（Gauge）
-   - `lsp_mcp.search.results`: 検索結果数（Histogram）
-   - `lsp_mcp.memory.usage`: メモリ使用量（Gauge）
-   - `lsp_mcp.vectordb.operations`: ベクターDB操作回数（Counter）
+   - `context_mcp.requests.total`: リクエスト総数（Counter）
+   - `context_mcp.requests.duration`: リクエスト処理時間（Histogram）
+   - `context_mcp.requests.errors`: エラー発生回数（Counter）
+   - `context_mcp.index.files`: インデックス済みファイル数（Gauge）
+   - `context_mcp.index.symbols`: インデックス済みシンボル数（Gauge）
+   - `context_mcp.search.results`: 検索結果数（Histogram）
+   - `context_mcp.memory.usage`: メモリ使用量（Gauge）
+   - `context_mcp.vectordb.operations`: ベクターDB操作回数（Counter）
 
 3. **ログ（Logs）**:
    - エラーログ（error level）: スタックトレース、エラーコンテキスト
@@ -340,8 +340,8 @@ OTEL_METRICS_EXPORTER: 'otlp' | 'console' | 'none'
 OTEL_LOGS_EXPORTER: 'otlp' | 'console' | 'none'
 
 // カスタム環境変数
-LSP_MCP_TELEMETRY_ENABLED: 'true' | 'false'  // テレメトリ有効化
-LSP_MCP_TELEMETRY_SAMPLE_RATE: number        // トレースサンプリングレート（0.0-1.0）
+CONTEXT_MCP_TELEMETRY_ENABLED: 'true' | 'false'  // テレメトリ有効化
+CONTEXT_MCP_TELEMETRY_SAMPLE_RATE: number        // トレースサンプリングレート（0.0-1.0）
 ```
 
 **パフォーマンス考慮事項**:
@@ -896,7 +896,7 @@ docker-compose up -d
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
       }
     }

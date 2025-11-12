@@ -1,7 +1,7 @@
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import {
-  LspMcpConfig,
+  ContextMcpConfig,
   DEFAULT_CONFIG,
   Mode,
   VectorStoreBackend,
@@ -12,22 +12,22 @@ import { logger } from '../utils/logger.js';
 
 /**
  * 設定ファイル管理クラス
- * .lsp-mcp.jsonの読み込み、バリデーション、デフォルト値の提供を行う
+ * .context-mcp.jsonの読み込み、バリデーション、デフォルト値の提供を行う
  */
 export class ConfigManager {
-  private config?: LspMcpConfig;
+  private config?: ContextMcpConfig;
   private readonly configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || path.join(process.cwd(), '.lsp-mcp.json');
+    this.configPath = configPath || path.join(process.cwd(), '.context-mcp.json');
   }
 
   /**
    * 設定ファイルを読み込み、バリデーションとマージを行う
    * @returns バリデーション済みの設定オブジェクト
    */
-  async loadConfig(): Promise<LspMcpConfig> {
-    let userConfig: Partial<LspMcpConfig> = {};
+  async loadConfig(): Promise<ContextMcpConfig> {
+    let userConfig: Partial<ContextMcpConfig> = {};
 
     // 設定ファイルが存在する場合は読み込む
     try {
@@ -68,7 +68,7 @@ export class ConfigManager {
    * @param config バリデーション対象の設定
    * @throws ConfigValidationError バリデーションエラー
    */
-  validateConfig(config: LspMcpConfig): void {
+  validateConfig(config: ContextMcpConfig): void {
     // 必須フィールドのチェック
     if (!config.mode) {
       throw new ConfigValidationError(
@@ -164,9 +164,9 @@ export class ConfigManager {
    * @returns マージされた設定
    */
   private mergeConfigs(
-    defaultConfig: LspMcpConfig,
-    userConfig: Partial<LspMcpConfig>
-  ): LspMcpConfig {
+    defaultConfig: ContextMcpConfig,
+    userConfig: Partial<ContextMcpConfig>
+  ): ContextMcpConfig {
     // ディープマージを実行（配列は上書き、オブジェクトは再帰的にマージ）
     const merged = { ...defaultConfig };
 
@@ -229,71 +229,71 @@ export class ConfigManager {
    * @param config 現在の設定
    * @returns オーバーライドされた設定
    */
-  private applyEnvironmentOverrides(config: LspMcpConfig): LspMcpConfig {
+  private applyEnvironmentOverrides(config: ContextMcpConfig): ContextMcpConfig {
     const overridden = { ...config };
 
-    // LSP_MCP_MODE
-    if (process.env['LSP_MCP_MODE']) {
-      const mode = process.env['LSP_MCP_MODE'] as Mode;
+    // CONTEXT_MCP_MODE
+    if (process.env['CONTEXT_MCP_MODE']) {
+      const mode = process.env['CONTEXT_MCP_MODE'] as Mode;
       overridden.mode = mode;
-      logger.info(`環境変数 LSP_MCP_MODE からモードをオーバーライド: ${mode}`);
+      logger.info(`環境変数 CONTEXT_MCP_MODE からモードをオーバーライド: ${mode}`);
     }
 
-    // LSP_MCP_VECTOR_BACKEND
-    if (process.env['LSP_MCP_VECTOR_BACKEND']) {
-      const backend = process.env['LSP_MCP_VECTOR_BACKEND'] as VectorStoreBackend;
+    // CONTEXT_MCP_VECTOR_BACKEND
+    if (process.env['CONTEXT_MCP_VECTOR_BACKEND']) {
+      const backend = process.env['CONTEXT_MCP_VECTOR_BACKEND'] as VectorStoreBackend;
       overridden.vectorStore = {
         ...overridden.vectorStore,
         backend,
       };
-      logger.info(`環境変数 LSP_MCP_VECTOR_BACKEND からベクターDBをオーバーライド: ${backend}`);
+      logger.info(`環境変数 CONTEXT_MCP_VECTOR_BACKEND からベクターDBをオーバーライド: ${backend}`);
     }
 
-    // LSP_MCP_EMBEDDING_PROVIDER
-    if (process.env['LSP_MCP_EMBEDDING_PROVIDER']) {
-      const provider = process.env['LSP_MCP_EMBEDDING_PROVIDER'] as EmbeddingProvider;
+    // CONTEXT_MCP_EMBEDDING_PROVIDER
+    if (process.env['CONTEXT_MCP_EMBEDDING_PROVIDER']) {
+      const provider = process.env['CONTEXT_MCP_EMBEDDING_PROVIDER'] as EmbeddingProvider;
       overridden.embedding = {
         ...overridden.embedding,
         provider,
       };
       logger.info(
-        `環境変数 LSP_MCP_EMBEDDING_PROVIDER から埋め込みプロバイダーをオーバーライド: ${provider}`
+        `環境変数 CONTEXT_MCP_EMBEDDING_PROVIDER から埋め込みプロバイダーをオーバーライド: ${provider}`
       );
     }
 
-    // LSP_MCP_EMBEDDING_API_KEY
-    if (process.env['LSP_MCP_EMBEDDING_API_KEY']) {
+    // CONTEXT_MCP_EMBEDDING_API_KEY
+    if (process.env['CONTEXT_MCP_EMBEDDING_API_KEY']) {
       overridden.embedding = {
         ...overridden.embedding,
-        apiKey: process.env['LSP_MCP_EMBEDDING_API_KEY'],
+        apiKey: process.env['CONTEXT_MCP_EMBEDDING_API_KEY'],
       };
-      logger.info('環境変数 LSP_MCP_EMBEDDING_API_KEY から埋め込みAPIキーをオーバーライド');
+      logger.info('環境変数 CONTEXT_MCP_EMBEDDING_API_KEY から埋め込みAPIキーをオーバーライド');
     }
 
-    // LSP_MCP_VECTOR_ADDRESS
-    if (process.env['LSP_MCP_VECTOR_ADDRESS']) {
+    // CONTEXT_MCP_VECTOR_ADDRESS
+    if (process.env['CONTEXT_MCP_VECTOR_ADDRESS']) {
       overridden.vectorStore = {
         ...overridden.vectorStore,
         config: {
           ...overridden.vectorStore.config,
-          address: process.env['LSP_MCP_VECTOR_ADDRESS'],
+          address: process.env['CONTEXT_MCP_VECTOR_ADDRESS'],
         },
       };
       logger.info(
-        `環境変数 LSP_MCP_VECTOR_ADDRESS からベクターDBアドレスをオーバーライド: ${process.env['LSP_MCP_VECTOR_ADDRESS']}`
+        `環境変数 CONTEXT_MCP_VECTOR_ADDRESS からベクターDBアドレスをオーバーライド: ${process.env['CONTEXT_MCP_VECTOR_ADDRESS']}`
       );
     }
 
-    // LSP_MCP_VECTOR_TOKEN
-    if (process.env['LSP_MCP_VECTOR_TOKEN']) {
+    // CONTEXT_MCP_VECTOR_TOKEN
+    if (process.env['CONTEXT_MCP_VECTOR_TOKEN']) {
       overridden.vectorStore = {
         ...overridden.vectorStore,
         config: {
           ...overridden.vectorStore.config,
-          token: process.env['LSP_MCP_VECTOR_TOKEN'],
+          token: process.env['CONTEXT_MCP_VECTOR_TOKEN'],
         },
       };
-      logger.info('環境変数 LSP_MCP_VECTOR_TOKEN からベクターDBトークンをオーバーライド');
+      logger.info('環境変数 CONTEXT_MCP_VECTOR_TOKEN からベクターDBトークンをオーバーライド');
     }
 
     return overridden;
@@ -304,7 +304,7 @@ export class ConfigManager {
    * @returns 現在の設定
    * @throws Error 設定が読み込まれていない場合
    */
-  getConfig(): LspMcpConfig {
+  getConfig(): ContextMcpConfig {
     if (!this.config) {
       throw new Error('設定がまだ読み込まれていません。先に loadConfig() を呼び出してください');
     }

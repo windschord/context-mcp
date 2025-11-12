@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * LSP-MCP CLI Entry Point
+ * Context-MCP CLI Entry Point
  *
- * This file is the executable entry point for running lsp-mcp via npx or globally installed package.
+ * This file is the executable entry point for running context-mcp via npx or globally installed package.
  */
 
 import { main, version } from '../dist/index.js';
@@ -13,19 +13,19 @@ const args = process.argv.slice(2);
 
 if (args.includes('--help') || args.includes('-h')) {
   console.log(`
-LSP-MCP v${version}
+Context-MCP v${version}
 Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing
 
 Usage:
-  npx lsp-mcp              Start the MCP server (for Claude Code integration)
-  npx lsp-mcp --help       Show this help message
-  npx lsp-mcp --version    Show version information
+  npx context-mcp              Start the MCP server (for Claude Code integration)
+  npx context-mcp --help       Show this help message
+  npx context-mcp --version    Show version information
 
 Environment Variables:
-  LOG_LEVEL                Set log level (DEBUG, INFO, WARN, ERROR)
-  LSP_MCP_MODE            Set mode (local or cloud)
+  LOG_LEVEL                    Set log level (DEBUG, INFO, WARN, ERROR)
+  CONTEXT_MCP_MODE             Set mode (local or cloud)
 
-For more information, visit: https://github.com/your-org/lsp-mcp
+For more information, visit: https://github.com/windschord/context-mcp
 `);
   process.exit(0);
 }

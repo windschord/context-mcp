@@ -4,7 +4,7 @@
 
 ## 概要
 
-LSP-MCPプロジェクトでは、複数のベクターDBバックエンド（Milvus, Chroma, Zilliz Cloud, Qdrant等）に対応するため、プラグイン可能なアーキテクチャを採用しています。
+Context-MCPプロジェクトでは、複数のベクターDBバックエンド（Milvus, Chroma, Zilliz Cloud, Qdrant等）に対応するため、プラグイン可能なアーキテクチャを採用しています。
 
 `VectorStorePlugin`インターフェースを実装することで、任意のベクターDBバックエンドを追加できます。
 
@@ -502,7 +502,7 @@ await milvus.disconnect();
 
 ```typescript
 // 設定に応じてプラグインを切り替え
-const config = loadConfig();  // .lsp-mcp.jsonから読み込み
+const config = loadConfig();  // .context-mcp.jsonから読み込み
 
 let plugin: VectorStorePlugin;
 if (config.vectorStore.backend === 'milvus') {

@@ -47,8 +47,8 @@ pids/
 *.njsproj
 *.sln
 
-# LSP-MCP specific
-.lsp-mcp/
+# Context-MCP specific
+.context-mcp/
 volumes/
 tmp/
 *.db

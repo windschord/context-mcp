@@ -42,7 +42,7 @@ let tracer: Tracer | null = null;
  */
 export function setTelemetryManager(manager: TelemetryManager): void {
   telemetryManager = manager;
-  tracer = manager.getTracer('lsp-mcp-instrumentation');
+  tracer = manager.getTracer('context-mcp-instrumentation');
 }
 
 /**

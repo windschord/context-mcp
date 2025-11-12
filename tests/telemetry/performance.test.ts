@@ -19,7 +19,7 @@ describe('Telemetry Performance', () => {
       const telemetryManager = new TelemetryManager();
       await telemetryManager.initialize({
         enabled: false,
-        serviceName: 'lsp-mcp-test',
+        serviceName: 'context-mcp-test',
         samplingRate: 0.1,
       });
       setTelemetryManager(telemetryManager);
@@ -70,7 +70,7 @@ describe('Telemetry Performance', () => {
       const telemetryManager = new TelemetryManager();
       await telemetryManager.initialize({
         enabled: true,
-        serviceName: 'lsp-mcp-test',
+        serviceName: 'context-mcp-test',
         samplingRate: 1.0, // 100%サンプリング
         exporters: {
           traces: 'console',
@@ -125,7 +125,7 @@ describe('Telemetry Performance', () => {
       const telemetryManager = new TelemetryManager();
       await telemetryManager.initialize({
         enabled: true,
-        serviceName: 'lsp-mcp-test',
+        serviceName: 'context-mcp-test',
         samplingRate: 0.1,
         exporters: {
           traces: 'console',
@@ -162,7 +162,7 @@ describe('Telemetry Performance', () => {
       telemetryManager = new TelemetryManager();
       await telemetryManager.initialize({
         enabled: true,
-        serviceName: 'lsp-mcp-test',
+        serviceName: 'context-mcp-test',
         samplingRate: 1.0,
         exporters: {
           traces: 'console',
@@ -231,7 +231,7 @@ describe('Telemetry Performance', () => {
       const telemetryManager = new TelemetryManager();
       await telemetryManager.initialize({
         enabled: true,
-        serviceName: 'lsp-mcp-test',
+        serviceName: 'context-mcp-test',
         samplingRate: 1.0,
         exporters: {
           traces: 'console',

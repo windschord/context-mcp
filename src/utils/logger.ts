@@ -57,7 +57,7 @@ export class Logger {
   constructor(options: LoggerOptions = {}) {
     this.level = options.level ?? LogLevel.INFO;
     this.logToFile = options.logToFile ?? false;
-    this.logDir = options.logDir ?? path.join(process.cwd(), '.lsp-mcp', 'logs');
+    this.logDir = options.logDir ?? path.join(process.cwd(), '.context-mcp', 'logs');
     this.maxFileSize = options.maxFileSize ?? 10 * 1024 * 1024; // 10MB
     this.maxFiles = options.maxFiles ?? 5;
 
@@ -121,7 +121,7 @@ export class Logger {
 
       // 現在のログファイル名を生成
       const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
-      this.currentLogFile = path.join(this.logDir, `lsp-mcp-${timestamp}.log`);
+      this.currentLogFile = path.join(this.logDir, `context-mcp-${timestamp}.log`);
       this.currentFileSize = 0;
 
       // 古いログファイルをクリーンアップ
@@ -146,7 +146,7 @@ export class Logger {
     try {
       const files = fs.readdirSync(this.logDir);
       const logFiles = files
-        .filter((f) => f.startsWith('lsp-mcp-') && f.endsWith('.log'))
+        .filter((f) => f.startsWith('context-mcp-') && f.endsWith('.log'))
         .map((f) => ({
           name: f,
           path: path.join(this.logDir, f),

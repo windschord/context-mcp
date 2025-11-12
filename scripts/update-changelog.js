@@ -83,7 +83,7 @@ let finalChangelog = updatedChangelog;
 const versionLinksMatch = finalChangelog.match(/\[Unreleased\]:.*?\n/);
 if (versionLinksMatch) {
   const currentLink = versionLinksMatch[0];
-  const repoUrl = packageJson.repository?.url?.replace(/\.git$/, '') || 'https://github.com/your-org/lsp-mcp';
+  const repoUrl = packageJson.repository?.url?.replace(/\.git$/, '') || 'https://github.com/your-org/context-mcp';
   const newVersionLink = `[${newVersion}]: ${repoUrl}/releases/tag/v${newVersion}\n`;
   finalChangelog = finalChangelog.replace(
     /---\n\n/,

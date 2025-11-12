@@ -1,4 +1,4 @@
-# LSP-MCP Observability Stack
+# Context-MCP Observability Stack
 # OpenTelemetry Collector + Jaeger + Prometheus + Grafana
 #
 # Usage:
@@ -17,7 +17,7 @@ services:
   # Receives OTLP data and exports to Jaeger/Prometheus
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.115.1
-    container_name: lsp-mcp-otel-collector
+    container_name: context-mcp-otel-collector
     command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
       - ./otel-collector-config.yml:/etc/otel-collector-config.yml:ro
@@ -34,7 +34,7 @@ services:
   # Distributed tracing backend and UI
   jaeger:
     image: jaegertracing/all-in-one:1.65.0
-    container_name: lsp-mcp-jaeger
+    container_name: context-mcp-jaeger
     environment:
       - COLLECTOR_OTLP_ENABLED=true
       - METRICS_STORAGE_TYPE=prometheus
@@ -50,7 +50,7 @@ services:
   # Metrics storage and query engine
   prometheus:
     image: prom/prometheus:v3.1.0
-    container_name: lsp-mcp-prometheus
+    container_name: context-mcp-prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -68,7 +68,7 @@ services:
   # Visualization and dashboarding
   grafana:
     image: grafana/grafana:11.4.0
-    container_name: lsp-mcp-grafana
+    container_name: context-mcp-grafana
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin

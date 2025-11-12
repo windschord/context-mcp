@@ -1,5 +1,5 @@
 # Milvus Standalone Docker Compose Configuration
-# for LSP-MCP Vector Database
+# for Context-MCP Vector Database
 #
 # Usage:
 #   docker-compose up -d    # Start Milvus in background

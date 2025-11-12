@@ -107,8 +107,8 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -405,7 +405,7 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_MODE等）
+1. 環境変数（CONTEXT_MCP_MODE等）
   ↓
 2. ユーザー設定ファイル（.context-mcp.json）
   ↓
@@ -420,13 +420,13 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 | 環境変数 | 説明 | デフォルト値 | 例 |
 |---------|------|------------|-----|
-| `LSP_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
-| `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
-| `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
-| `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
-| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
-| `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
-| `LSP_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `Xenova/all-MiniLM-L6-v2` |
+| `CONTEXT_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
+| `CONTEXT_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
+| `CONTEXT_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
+| `CONTEXT_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
+| `CONTEXT_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
+| `CONTEXT_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
+| `CONTEXT_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `Xenova/all-MiniLM-L6-v2` |
 | `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
 
 詳細は[環境変数リファレンス](ENVIRONMENT_VARIABLES.md)を参照してください。
@@ -442,7 +442,7 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -459,12 +459,12 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
-        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "CONTEXT_MCP_MODE": "cloud",
+        "CONTEXT_MCP_VECTOR_BACKEND": "zilliz",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
+        "CONTEXT_MCP_VECTOR_TOKEN": "your-zilliz-token",
+        "CONTEXT_MCP_EMBEDDING_PROVIDER": "openai",
+        "CONTEXT_MCP_EMBEDDING_API_KEY": "sk-proj-...",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -481,9 +481,9 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_EMBEDDING_PROVIDER": "openai",
+        "CONTEXT_MCP_EMBEDDING_API_KEY": "sk-proj-...",
         "LOG_LEVEL": "INFO"
       }
     }
