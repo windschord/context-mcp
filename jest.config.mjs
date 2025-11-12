@@ -68,7 +68,7 @@ export default {
     '!src/**/*.spec.ts',
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html'],
+  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
   // Coverage thresholds restored (Issue #4)
   // Current coverage: statements 64.81%, branches 52.33%, functions 72.83%, lines 66.09%
   coverageThreshold: {

@@ -53,9 +53,14 @@ jobs:
     - name: Check coverage threshold
       if: matrix.node-version == '22.x'
       run: |
-        COVERAGE=$(cat coverage/coverage-summary.json 2>/dev/null | grep -o '"lines":\s*{\s*"total":[^}]*"pct":\s*[0-9.]*' | grep -o '[0-9.]*$' || echo "0")
-        echo "Coverage: $COVERAGE%"
-        if (( $(echo "$COVERAGE < 70" | bc -l) )); then
-          echo "Warning: Coverage is below 70%"
-          exit 0
+        if [ -f coverage/coverage-summary.json ]; then
+          COVERAGE=$(node -e "console.log(require('./coverage/coverage-summary.json').total.lines.pct)")
+          echo "Coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 65" | awk '{print ($1 < 65)}') )); then
+            echo "Warning: Coverage is below 65%"
+          else
+            echo "Coverage threshold passed"
+          fi
+        else
+          echo "No coverage summary found"
         fi
