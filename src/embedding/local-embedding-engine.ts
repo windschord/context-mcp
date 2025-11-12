@@ -12,12 +12,11 @@
  */
 
 // Optional dependency - only imported at runtime
-// @ts-expect-error - @xenova/transformers is an optional dependency
 import type { Pipeline } from '@xenova/transformers';
 import * as fs from 'fs';
 import * as path from 'path';
-import { EmbeddingEngine, LocalEmbeddingOptions } from './types';
-import { logger } from '../utils/logger';
+import { EmbeddingEngine, LocalEmbeddingOptions } from './types.js';
+import { logger } from '../utils/logger.js';
 import { traceEmbedding } from '../telemetry/instrumentation.js';
 
 /**
@@ -79,7 +78,6 @@ export class LocalEmbeddingEngine implements EmbeddingEngine {
       // モデルのロード（feature-extractionパイプライン）
       // 初回はモデルをダウンロード、以降はキャッシュから読み込み
       // Dynamic import to avoid requiring @xenova/transformers at build time
-      // @ts-expect-error - @xenova/transformers is an optional dependency
       const { pipeline } = await import('@xenova/transformers');
       this.model = (await pipeline('feature-extraction', this.modelName, {
         cache_dir: this.cacheDir,

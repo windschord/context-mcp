@@ -11,8 +11,8 @@ import type {
   Vector,
   QueryResult,
   CollectionStats,
-} from './types';
-import { Logger } from '../utils/logger';
+} from './types.js';
+import { Logger } from '../utils/logger.js';
 import { traceVectorDBOperation } from '../telemetry/instrumentation.js';
 import { withTraceContext } from '../telemetry/context-propagation.js';
 
