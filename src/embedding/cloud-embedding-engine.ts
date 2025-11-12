@@ -6,8 +6,8 @@
  */
 
 import type { EmbeddingEngine, CloudEmbeddingOptions } from './types';
-import { traceEmbedding } from '../telemetry/instrumentation.js';
-import { propagateTraceContext, withTraceContext } from '../telemetry/context-propagation.js';
+import { traceEmbedding } from '../telemetry/instrumentation';
+import { propagateTraceContext, withTraceContext } from '../telemetry/context-propagation';
 
 /**
  * クラウド埋め込みエンジン

@@ -4,5 +4,5 @@
  * ヘルスチェック機能のエクスポート
  */
 
-export * from './types.js';
-export { HealthChecker } from './HealthChecker.js';
+export * from './types';
+export { HealthChecker } from './HealthChecker';

@@ -3,23 +3,23 @@
  * with Tree-sitter AST parsing and vector database
  */
 
-import { MCPServer } from './server/mcp-server.js';
-import { logger, LogLevel } from './utils/logger.js';
-import { ConfigManager } from './config/config-manager.js';
-import { LocalEmbeddingEngine } from './embedding/local-embedding-engine.js';
-import { CloudEmbeddingEngine } from './embedding/cloud-embedding-engine.js';
-import { MilvusPlugin } from './storage/milvus-plugin.js';
-import { BM25Engine } from './storage/bm25-engine.js';
-import { FileScanner } from './scanner/file-scanner.js';
-import { SymbolExtractor } from './parser/symbol-extractor.js';
-import { CommentExtractor } from './parser/comment-extractor.js';
-import { MarkdownParser } from './parser/markdown-parser.js';
-import { DocCodeLinker } from './parser/doc-code-linker.js';
-import { LanguageParser } from './parser/language-parser.js';
-import { IndexingService } from './services/indexing-service.js';
-import { HybridSearchEngine } from './services/hybrid-search-engine.js';
-import type { EmbeddingEngine } from './embedding/types.js';
-import type { VectorStorePlugin } from './storage/types.js';
+import { MCPServer } from './server/mcp-server';
+import { logger, LogLevel } from './utils/logger';
+import { ConfigManager } from './config/config-manager';
+import { LocalEmbeddingEngine } from './embedding/local-embedding-engine';
+import { CloudEmbeddingEngine } from './embedding/cloud-embedding-engine';
+import { MilvusPlugin } from './storage/milvus-plugin';
+import { BM25Engine } from './storage/bm25-engine';
+import { FileScanner } from './scanner/file-scanner';
+import { SymbolExtractor } from './parser/symbol-extractor';
+import { CommentExtractor } from './parser/comment-extractor';
+import { MarkdownParser } from './parser/markdown-parser';
+import { DocCodeLinker } from './parser/doc-code-linker';
+import { LanguageParser } from './parser/language-parser';
+import { IndexingService } from './services/indexing-service';
+import { HybridSearchEngine } from './services/hybrid-search-engine';
+import type { EmbeddingEngine } from './embedding/types';
+import type { VectorStorePlugin } from './storage/types';
 
 export const version = '0.1.0';
 
@@ -168,7 +168,7 @@ export async function main(): Promise<void> {
 }
 
 // スクリプトとして直接実行された場合
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch((error) => {
     logger.error('Unhandled error in main', error);
     process.exit(1);
@@ -176,6 +176,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 // エクスポート
-export { MCPServer } from './server/mcp-server.js';
-export { Logger, LogLevel } from './utils/logger.js';
-export * from './utils/errors.js';
+export { MCPServer } from './server/mcp-server';
+export { Logger, LogLevel } from './utils/logger';
+export * from './utils/errors';

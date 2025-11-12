@@ -5,8 +5,8 @@
  * Promise + setTimeoutによる非同期処理でCPU使用率を制限しながら更新を実行
  */
 
-import { IndexingService } from './indexing-service.js';
-import { logger } from '../utils/logger.js';
+import { IndexingService } from './indexing-service';
+import { logger } from '../utils/logger';
 
 /**
  * キューアイテム

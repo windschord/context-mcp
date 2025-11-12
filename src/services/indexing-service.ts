@@ -9,15 +9,15 @@ import { EventEmitter } from 'events';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-import { FileScanner } from '../scanner/file-scanner.js';
-import { SymbolExtractor } from '../parser/symbol-extractor.js';
-import { CommentExtractor } from '../parser/comment-extractor.js';
-import { MarkdownParser } from '../parser/markdown-parser.js';
-import { DocCodeLinker } from '../parser/doc-code-linker.js';
-import { Language } from '../parser/types.js';
-import type { EmbeddingEngine } from '../embedding/types.js';
-import type { VectorStorePlugin, Vector } from '../storage/types.js';
-import type { BM25Engine } from '../storage/bm25-engine.js';
+import { FileScanner } from '../scanner/file-scanner';
+import { SymbolExtractor } from '../parser/symbol-extractor';
+import { CommentExtractor } from '../parser/comment-extractor';
+import { MarkdownParser } from '../parser/markdown-parser';
+import { DocCodeLinker } from '../parser/doc-code-linker';
+import { Language } from '../parser/types';
+import type { EmbeddingEngine } from '../embedding/types';
+import type { VectorStorePlugin, Vector } from '../storage/types';
+import type { BM25Engine } from '../storage/bm25-engine';
 
 /**
  * インデックス化オプション

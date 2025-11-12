@@ -3,8 +3,8 @@
  */
 
 import Parser from 'tree-sitter';
-import { LanguageParser } from './language-parser.js';
-import { ASTEngine } from './ast-engine.js';
+import { LanguageParser } from './language-parser';
+import { ASTEngine } from './ast-engine';
 import {
   Language,
   SymbolInfo,
@@ -13,7 +13,7 @@ import {
   SymbolExtractionResult,
   ParameterInfo,
   ParserError,
-} from './types.js';
+} from './types';
 
 /**
  * SymbolExtractor: シンボル抽出を行うクラス

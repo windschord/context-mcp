@@ -4,7 +4,7 @@
  *
  * 使用例:
  * ```typescript
- * import { propagateTraceContext, withTraceContext } from './context-propagation.js';
+ * import { propagateTraceContext, withTraceContext } from './context-propagation';
  *
  * // HTTPヘッダーにトレースコンテキストを注入
  * const headers = propagateTraceContext();

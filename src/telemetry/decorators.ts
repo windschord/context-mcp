@@ -26,7 +26,7 @@ import {
   traceVectorDBOperation,
   traceASTParser,
   traceEmbedding,
-} from './instrumentation.js';
+} from './instrumentation';
 
 /**
  * MCPツール呼び出しをトレースするメソッドデコレーター

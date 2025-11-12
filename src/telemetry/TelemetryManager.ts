@@ -20,8 +20,8 @@ import {
 } from '@opentelemetry/sdk-logs';
 import { trace, Tracer, metrics, Meter } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
-import { TelemetryConfig, DEFAULT_TELEMETRY_CONFIG, ExporterType } from './types.js';
-import { logger } from '../utils/logger.js';
+import { TelemetryConfig, DEFAULT_TELEMETRY_CONFIG, ExporterType } from './types';
+import { logger } from '../utils/logger';
 import * as fs from 'fs';
 import * as path from 'path';
 

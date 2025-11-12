@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { IndexingService } from '../services/indexing-service.js';
+import { IndexingService } from '../services/indexing-service';
 
 /**
  * ツール名

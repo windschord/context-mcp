@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import { IndexingService } from '../services/indexing-service.js';
+import { IndexingService } from '../services/indexing-service';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 

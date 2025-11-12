@@ -4,9 +4,9 @@
  * LSP-MCPサーバーと依存サービスのヘルスチェックを実行するMCPツール
  */
 
-import type { HealthChecker } from '../health/HealthChecker.js';
-import type { HealthStatus } from '../health/types.js';
-import { logger } from '../utils/logger.js';
+import type { HealthChecker } from '../health/HealthChecker';
+import type { HealthStatus } from '../health/types';
+import { logger } from '../utils/logger';
 
 /**
  * ツール名

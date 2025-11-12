@@ -4,8 +4,8 @@
 
 import { EventEmitter } from 'events';
 import chokidar, { FSWatcher } from 'chokidar';
-import { FileWatcherEvent, FileWatcherOptions, IFileWatcher } from './types.js';
-import { logger } from '../utils/logger.js';
+import { FileWatcherEvent, FileWatcherOptions, IFileWatcher } from './types';
+import { logger } from '../utils/logger';
 
 /**
  * Default ignore patterns
