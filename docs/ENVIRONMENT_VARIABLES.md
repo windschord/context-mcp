@@ -11,7 +11,7 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_MODE等）
+1. 環境変数（CONTEXT_MCP_MODE等）
   ↓
 2. ユーザー設定ファイル（.context-mcp.json）
   ↓
@@ -26,7 +26,7 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 ### モード設定
 
-#### `LSP_MCP_MODE`
+#### `CONTEXT_MCP_MODE`
 
 動作モードを指定します。
 
@@ -35,13 +35,13 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 - **説明**: ローカルモード（プライバシー重視、外部通信なし）またはクラウドモード（外部API使用）を選択
 - **例**:
   ```bash
-  LSP_MCP_MODE=local
-  LSP_MCP_MODE=cloud
+  CONTEXT_MCP_MODE=local
+  CONTEXT_MCP_MODE=cloud
   ```
 
 ### ベクターDB設定
 
-#### `LSP_MCP_VECTOR_BACKEND`
+#### `CONTEXT_MCP_VECTOR_BACKEND`
 
 使用するベクターDBバックエンドを指定します。
 
@@ -52,11 +52,11 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
   - `zilliz`: Zilliz Cloud（Milvusマネージドサービス）
 - **例**:
   ```bash
-  LSP_MCP_VECTOR_BACKEND=milvus
-  LSP_MCP_VECTOR_BACKEND=zilliz
+  CONTEXT_MCP_VECTOR_BACKEND=milvus
+  CONTEXT_MCP_VECTOR_BACKEND=zilliz
   ```
 
-#### `LSP_MCP_VECTOR_ADDRESS`
+#### `CONTEXT_MCP_VECTOR_ADDRESS`
 
 ベクターDBの接続アドレスを指定します。
 
@@ -65,11 +65,11 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 - **説明**: ベクターDBサーバーのホスト名とポート番号
 - **例**:
   ```bash
-  LSP_MCP_VECTOR_ADDRESS=localhost:19530
-  LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
+  CONTEXT_MCP_VECTOR_ADDRESS=localhost:19530
+  CONTEXT_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
   ```
 
-#### `LSP_MCP_VECTOR_TOKEN`
+#### `CONTEXT_MCP_VECTOR_TOKEN`
 
 ベクターDB認証トークンを指定します（Zilliz Cloud使用時）。
 
@@ -78,12 +78,12 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 - **説明**: Zilliz Cloudへの接続に必要な認証トークン
 - **例**:
   ```bash
-  LSP_MCP_VECTOR_TOKEN=your-zilliz-cloud-token
+  CONTEXT_MCP_VECTOR_TOKEN=your-zilliz-cloud-token
   ```
 
 ### 埋め込み設定
 
-#### `LSP_MCP_EMBEDDING_PROVIDER`
+#### `CONTEXT_MCP_EMBEDDING_PROVIDER`
 
 埋め込みベクトル生成プロバイダーを指定します。
 
@@ -95,12 +95,12 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
   - `voyageai`: VoyageAI API（クラウド、APIキー必要）
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_PROVIDER=transformers
-  LSP_MCP_EMBEDDING_PROVIDER=openai
-  LSP_MCP_EMBEDDING_PROVIDER=voyageai
+  CONTEXT_MCP_EMBEDDING_PROVIDER=transformers
+  CONTEXT_MCP_EMBEDDING_PROVIDER=openai
+  CONTEXT_MCP_EMBEDDING_PROVIDER=voyageai
   ```
 
-#### `LSP_MCP_EMBEDDING_API_KEY`
+#### `CONTEXT_MCP_EMBEDDING_API_KEY`
 
 埋め込みAPIの認証キーを指定します（クラウドプロバイダー使用時）。
 
@@ -109,10 +109,10 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 - **説明**: OpenAI APIキーまたはVoyageAI APIキー
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
+  CONTEXT_MCP_EMBEDDING_API_KEY=sk-proj-...
   ```
 
-#### `LSP_MCP_EMBEDDING_MODEL`
+#### `CONTEXT_MCP_EMBEDDING_MODEL`
 
 埋め込みモデル名を指定します（オプション）。
 
@@ -124,8 +124,8 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 - **説明**: 使用する埋め込みモデルの名前
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_MODEL=Xenova/all-MiniLM-L6-v2
-  LSP_MCP_EMBEDDING_MODEL=text-embedding-3-large
+  CONTEXT_MCP_EMBEDDING_MODEL=Xenova/all-MiniLM-L6-v2
+  CONTEXT_MCP_EMBEDDING_MODEL=text-embedding-3-large
   ```
 
 ### ログ設定
@@ -161,7 +161,7 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -171,10 +171,10 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
 
 **環境変数**（省略可、デフォルト値が使用される）:
 ```bash
-LSP_MCP_MODE=local
-LSP_MCP_VECTOR_BACKEND=milvus
-LSP_MCP_VECTOR_ADDRESS=localhost:19530
-LSP_MCP_EMBEDDING_PROVIDER=transformers
+CONTEXT_MCP_MODE=local
+CONTEXT_MCP_VECTOR_BACKEND=milvus
+CONTEXT_MCP_VECTOR_ADDRESS=localhost:19530
+CONTEXT_MCP_EMBEDDING_PROVIDER=transformers
 LOG_LEVEL=INFO
 ```
 
@@ -190,12 +190,12 @@ LOG_LEVEL=INFO
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
-        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "CONTEXT_MCP_MODE": "cloud",
+        "CONTEXT_MCP_VECTOR_BACKEND": "zilliz",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
+        "CONTEXT_MCP_VECTOR_TOKEN": "your-zilliz-token",
+        "CONTEXT_MCP_EMBEDDING_PROVIDER": "openai",
+        "CONTEXT_MCP_EMBEDDING_API_KEY": "sk-proj-...",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -205,12 +205,12 @@ LOG_LEVEL=INFO
 
 **環境変数**:
 ```bash
-LSP_MCP_MODE=cloud
-LSP_MCP_VECTOR_BACKEND=zilliz
-LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
-LSP_MCP_VECTOR_TOKEN=your-zilliz-token
-LSP_MCP_EMBEDDING_PROVIDER=openai
-LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
+CONTEXT_MCP_MODE=cloud
+CONTEXT_MCP_VECTOR_BACKEND=zilliz
+CONTEXT_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
+CONTEXT_MCP_VECTOR_TOKEN=your-zilliz-token
+CONTEXT_MCP_EMBEDDING_PROVIDER=openai
+CONTEXT_MCP_EMBEDDING_API_KEY=sk-proj-...
 LOG_LEVEL=INFO
 ```
 
@@ -226,11 +226,11 @@ LOG_LEVEL=INFO
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_BACKEND": "milvus",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_VECTOR_BACKEND": "milvus",
+        "CONTEXT_MCP_VECTOR_ADDRESS": "localhost:19530",
+        "CONTEXT_MCP_EMBEDDING_PROVIDER": "openai",
+        "CONTEXT_MCP_EMBEDDING_API_KEY": "sk-proj-...",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -250,7 +250,7 @@ LOG_LEVEL=INFO
       "command": "npx",
       "args": ["github:windschord/context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "DEBUG"
       }
     }
@@ -287,8 +287,8 @@ LOG_LEVEL=INFO
 
 環境変数:
 ```bash
-LSP_MCP_EMBEDDING_PROVIDER=openai
-LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
+CONTEXT_MCP_EMBEDDING_PROVIDER=openai
+CONTEXT_MCP_EMBEDDING_API_KEY=sk-proj-...
 ```
 
 **最終的な設定**:
@@ -310,12 +310,12 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 
 **解決方法**:
 1. Claude Codeを再起動
-2. 環境変数名を確認（例: `LSP_MCP_MODE`、アンダースコアの位置に注意）
+2. 環境変数名を確認（例: `CONTEXT_MCP_MODE`、アンダースコアの位置に注意）
 3. ログを確認（`LOG_LEVEL=DEBUG`に設定して起動ログを確認）
 
 ### 問題2: APIキーが認識されない
 
-**症状**: `LSP_MCP_EMBEDDING_API_KEY`を設定したが、認証エラーが発生
+**症状**: `CONTEXT_MCP_EMBEDDING_API_KEY`を設定したが、認証エラーが発生
 
 **原因**:
 - APIキーの形式が不正
@@ -324,12 +324,12 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 
 **解決方法**:
 1. APIキーを再確認（先頭・末尾にスペースがないか）
-2. `LSP_MCP_EMBEDDING_PROVIDER`が正しく設定されているか確認
+2. `CONTEXT_MCP_EMBEDDING_PROVIDER`が正しく設定されているか確認
 3. ログでAPIキーの最初の数文字を確認（センシティブ情報は伏せられます）
 
 ### 問題3: ベクターDBに接続できない
 
-**症状**: `LSP_MCP_VECTOR_ADDRESS`を設定したが、接続エラーが発生
+**症状**: `CONTEXT_MCP_VECTOR_ADDRESS`を設定したが、接続エラーが発生
 
 **原因**:
 - Milvus standaloneが起動していない
@@ -351,7 +351,7 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 
 **解決方法**:
 1. Claude Codeを完全に再起動
-2. 環境変数名を確認（`LOG_LEVEL`、`LSP_MCP_LOG_LEVEL`ではない）
+2. 環境変数名を確認（`LOG_LEVEL`、`CONTEXT_MCP_LOG_LEVEL`ではない）
 
 ## デバッグ用コマンド
 
@@ -374,8 +374,8 @@ grep "設定ファイルを読み込みました\|環境変数.*からオーバ�
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
 # 特定の環境変数を確認（macOS/Linux）
-echo $LSP_MCP_MODE
-echo $LSP_MCP_VECTOR_ADDRESS
+echo $CONTEXT_MCP_MODE
+echo $CONTEXT_MCP_VECTOR_ADDRESS
 ```
 
 ## 関連ドキュメント

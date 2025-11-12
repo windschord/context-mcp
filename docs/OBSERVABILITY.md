@@ -33,9 +33,9 @@ OpenTelemetry (OTEL)は、ベンダー中立のオープンソース可観測性
   "mcpServers": {
     "context-mcp": {
       "command": "node",
-      "args": ["path/to/lsp_mcp/dist/index.js"],
+      "args": ["path/to/context_mcp/dist/index.js"],
       "env": {
-        "LSP_MCP_TELEMETRY_ENABLED": "true",
+        "CONTEXT_MCP_TELEMETRY_ENABLED": "true",
         "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
         "OTEL_SERVICE_NAME": "context-mcp"
       }
@@ -71,7 +71,7 @@ docker-compose -f docs/observability-stack.yml logs -f
 
 ```bash
 # 環境変数で設定
-export LSP_MCP_TELEMETRY_ENABLED=true
+export CONTEXT_MCP_TELEMETRY_ENABLED=true
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 
 # Context-MCP起動
@@ -133,7 +133,7 @@ node dist/index.js
 
 ```bash
 # テレメトリ有効化
-export LSP_MCP_TELEMETRY_ENABLED=true
+export CONTEXT_MCP_TELEMETRY_ENABLED=true
 
 # サービス名
 export OTEL_SERVICE_NAME=context-mcp
@@ -147,7 +147,7 @@ export OTEL_METRICS_EXPORTER=otlp
 export OTEL_LOGS_EXPORTER=otlp
 
 # サンプリングレート
-export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.1
+export CONTEXT_MCP_TELEMETRY_SAMPLE_RATE=0.1
 ```
 
 ### 設定の優先順位
@@ -155,7 +155,7 @@ export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.1
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_TELEMETRY_ENABLED、OTEL_*等）
+1. 環境変数（CONTEXT_MCP_TELEMETRY_ENABLED、OTEL_*等）
   ↓
 2. 設定ファイル（.context-mcp.json）
   ↓
@@ -183,8 +183,8 @@ export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.1
 
 | 環境変数 | 説明 | 例 |
 |---------|------|-----|
-| `LSP_MCP_TELEMETRY_ENABLED` | テレメトリの有効化（true/false） | `true` |
-| `LSP_MCP_TELEMETRY_SAMPLE_RATE` | サンプリングレート（0.0-1.0） | `0.1` (10%) |
+| `CONTEXT_MCP_TELEMETRY_ENABLED` | テレメトリの有効化（true/false） | `true` |
+| `CONTEXT_MCP_TELEMETRY_SAMPLE_RATE` | サンプリングレート（0.0-1.0） | `0.1` (10%) |
 
 ## Jaeger連携
 
@@ -305,24 +305,24 @@ scrape_configs:
 
 | メトリクス名 | 説明 | ラベル |
 |------------|------|--------|
-| `lsp_mcp.requests.total` | リクエスト総数 | `tool.name`: MCPツール名 |
-| `lsp_mcp.requests.errors` | エラー発生回数 | `tool.name`: MCPツール名, `error.type`: エラータイプ |
-| `lsp_mcp.vectordb.operations` | ベクターDB操作回数 | `operation.type`: 操作タイプ（insert, search, delete） |
+| `context_mcp.requests.total` | リクエスト総数 | `tool.name`: MCPツール名 |
+| `context_mcp.requests.errors` | エラー発生回数 | `tool.name`: MCPツール名, `error.type`: エラータイプ |
+| `context_mcp.vectordb.operations` | ベクターDB操作回数 | `operation.type`: 操作タイプ（insert, search, delete） |
 
 ### Histogram（分布記録）
 
 | メトリクス名 | 説明 | ラベル | 単位 |
 |------------|------|--------|------|
-| `lsp_mcp.requests.duration` | リクエスト処理時間の分布 | `tool.name`: MCPツール名 | ms |
-| `lsp_mcp.search.results` | 検索結果数の分布 | なし | 1 |
+| `context_mcp.requests.duration` | リクエスト処理時間の分布 | `tool.name`: MCPツール名 | ms |
+| `context_mcp.search.results` | 検索結果数の分布 | なし | 1 |
 
 ### Gauge（現在値）
 
 | メトリクス名 | 説明 | ラベル | 単位 |
 |------------|------|--------|------|
-| `lsp_mcp.index.files` | インデックス済みファイル数 | なし | 1 |
-| `lsp_mcp.index.symbols` | インデックス済みシンボル数 | なし | 1 |
-| `lsp_mcp.memory.usage` | メモリ使用量（ヒープ） | なし | MB |
+| `context_mcp.index.files` | インデックス済みファイル数 | なし | 1 |
+| `context_mcp.index.symbols` | インデックス済みシンボル数 | なし | 1 |
+| `context_mcp.memory.usage` | メモリ使用量（ヒープ） | なし | MB |
 
 ### メトリクスの利用例
 
@@ -330,18 +330,18 @@ scrape_configs:
 
 ```promql
 # リクエストレート（秒あたり）
-rate(lsp_mcp_requests_total[5m])
+rate(context_mcp_requests_total[5m])
 
 # エラー率
-rate(lsp_mcp_requests_errors[5m]) / rate(lsp_mcp_requests_total[5m])
+rate(context_mcp_requests_errors[5m]) / rate(context_mcp_requests_total[5m])
 
 # 平均リクエスト処理時間（P50, P95, P99）
-histogram_quantile(0.50, rate(lsp_mcp_requests_duration_bucket[5m]))
-histogram_quantile(0.95, rate(lsp_mcp_requests_duration_bucket[5m]))
-histogram_quantile(0.99, rate(lsp_mcp_requests_duration_bucket[5m]))
+histogram_quantile(0.50, rate(context_mcp_requests_duration_bucket[5m]))
+histogram_quantile(0.95, rate(context_mcp_requests_duration_bucket[5m]))
+histogram_quantile(0.99, rate(context_mcp_requests_duration_bucket[5m]))
 
 # メモリ使用量
-lsp_mcp_memory_usage
+context_mcp_memory_usage
 ```
 
 ## トレース情報
@@ -430,7 +430,7 @@ OpenTelemetryログには、トレースコンテキスト（Trace ID、Span ID�
 1. **テレメトリ有効化の確認**:
    ```bash
    # 環境変数またはログで確認
-   echo $LSP_MCP_TELEMETRY_ENABLED
+   echo $CONTEXT_MCP_TELEMETRY_ENABLED
    # ログ出力: "OpenTelemetryテレメトリを初期化しました"
    ```
 
@@ -495,10 +495,10 @@ Error: Failed to export spans: connect ECONNREFUSED 127.0.0.1:4317
 1. **サンプリングレートの調整**:
    ```bash
    # サンプリングを50%に減らす
-   export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.5
+   export CONTEXT_MCP_TELEMETRY_SAMPLE_RATE=0.5
 
    # サンプリングを1%に減らす（本番環境推奨）
-   export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.01
+   export CONTEXT_MCP_TELEMETRY_SAMPLE_RATE=0.01
    ```
 
 2. **エクスポーター選択の最適化**:
@@ -535,7 +535,7 @@ Error: Failed to export spans: connect ECONNREFUSED 127.0.0.1:4317
 ```bash
 # トレースをコンソール出力
 export OTEL_TRACES_EXPORTER=console
-export LSP_MCP_TELEMETRY_ENABLED=true
+export CONTEXT_MCP_TELEMETRY_ENABLED=true
 
 # Context-MCP起動
 node dist/index.js
@@ -550,7 +550,7 @@ node dist/index.js
 本番環境では、低サンプリングレート（1-5%）を推奨します。
 
 ```bash
-export LSP_MCP_TELEMETRY_SAMPLE_RATE=0.01  # 1%
+export CONTEXT_MCP_TELEMETRY_SAMPLE_RATE=0.01  # 1%
 ```
 
 トラブルシューティング時に一時的にサンプリングレートを上げることも可能です。
@@ -566,7 +566,7 @@ groups:
     interval: 30s
     rules:
       - alert: HighErrorRate
-        expr: rate(lsp_mcp_requests_errors[5m]) / rate(lsp_mcp_requests_total[5m]) > 0.05
+        expr: rate(context_mcp_requests_errors[5m]) / rate(context_mcp_requests_total[5m]) > 0.05
         for: 5m
         labels:
           severity: warning
@@ -574,7 +574,7 @@ groups:
           summary: "Context-MCPのエラー率が5%を超えています"
 
       - alert: HighLatency
-        expr: histogram_quantile(0.95, rate(lsp_mcp_requests_duration_bucket[5m])) > 2000
+        expr: histogram_quantile(0.95, rate(context_mcp_requests_duration_bucket[5m])) > 2000
         for: 5m
         labels:
           severity: warning
@@ -582,7 +582,7 @@ groups:
           summary: "Context-MCPのP95レイテンシーが2秒を超えています"
 
       - alert: HighMemoryUsage
-        expr: lsp_mcp_memory_usage > 1500
+        expr: context_mcp_memory_usage > 1500
         for: 10m
         labels:
           severity: critical
@@ -594,12 +594,12 @@ groups:
 
 Grafanaダッシュボードに以下のパネルを配置することを推奨します:
 
-1. **リクエストレート**: `rate(lsp_mcp_requests_total[5m])`
-2. **エラー率**: `rate(lsp_mcp_requests_errors[5m]) / rate(lsp_mcp_requests_total[5m])`
+1. **リクエストレート**: `rate(context_mcp_requests_total[5m])`
+2. **エラー率**: `rate(context_mcp_requests_errors[5m]) / rate(context_mcp_requests_total[5m])`
 3. **レイテンシー分布**: P50, P95, P99（Histogramクエリ）
-4. **メモリ使用量**: `lsp_mcp_memory_usage`
-5. **インデックス統計**: `lsp_mcp_index_files`, `lsp_mcp_index_symbols`
-6. **ベクターDB操作数**: `rate(lsp_mcp_vectordb_operations[5m])`
+4. **メモリ使用量**: `context_mcp_memory_usage`
+5. **インデックス統計**: `context_mcp_index_files`, `context_mcp_index_symbols`
+6. **ベクターDB操作数**: `rate(context_mcp_vectordb_operations[5m])`
 
 サンプルダッシュボード（`docs/grafana-dashboard-sample.json`）を参考にしてください。
 

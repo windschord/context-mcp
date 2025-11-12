@@ -1,9 +1,9 @@
 {
   "mode": "local",
   "vectorStore": {
-    "backend": "chroma",
+    "backend": "milvus",
     "config": {
-      "path": "./.lsp-mcp/chroma"
+      "address": "localhost:19530"
     }
   },
   "embedding": {
@@ -11,17 +11,12 @@
     "model": "Xenova/all-MiniLM-L6-v2",
     "local": true
   },
-  "privacy": {
-    "blockExternalCalls": true
-  },
   "indexing": {
-    "languages": ["typescript", "python", "go"],
+    "languages": ["typescript", "javascript", "python"],
     "excludePatterns": [
       "node_modules/**",
       "dist/**",
-      ".git/**",
-      "*.test.ts",
-      "*.test.py"
+      ".git/**"
     ],
     "includeDocuments": true
   }

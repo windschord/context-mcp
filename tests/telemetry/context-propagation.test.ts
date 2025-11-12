@@ -23,7 +23,7 @@ describe('Context Propagation', () => {
     telemetryManager = new TelemetryManager();
     await telemetryManager.initialize({
       enabled: true,
-      serviceName: 'lsp-mcp-test',
+      serviceName: 'context-mcp-test',
       samplingRate: 1.0,
       exporters: {
         traces: 'console',

@@ -35,47 +35,47 @@ class Metrics {
   private readonly MEMORY_CACHE_TTL = 5000; // 5秒間キャッシュ
 
   constructor(telemetryManager: TelemetryManager) {
-    this.meter = telemetryManager.getMeter('lsp-mcp-metrics');
+    this.meter = telemetryManager.getMeter('context-mcp-metrics');
 
     // Counter定義
-    this.requestsTotal = this.meter.createCounter('lsp_mcp.requests.total', {
+    this.requestsTotal = this.meter.createCounter('context_mcp.requests.total', {
       description: 'リクエスト総数',
       unit: '1',
     });
 
-    this.requestsErrors = this.meter.createCounter('lsp_mcp.requests.errors', {
+    this.requestsErrors = this.meter.createCounter('context_mcp.requests.errors', {
       description: 'エラー発生回数',
       unit: '1',
     });
 
-    this.vectordbOperations = this.meter.createCounter('lsp_mcp.vectordb.operations', {
+    this.vectordbOperations = this.meter.createCounter('context_mcp.vectordb.operations', {
       description: 'ベクターDB操作回数',
       unit: '1',
     });
 
     // Histogram定義
-    this.requestsDuration = this.meter.createHistogram('lsp_mcp.requests.duration', {
+    this.requestsDuration = this.meter.createHistogram('context_mcp.requests.duration', {
       description: 'リクエスト処理時間',
       unit: 'ms',
     });
 
-    this.searchResults = this.meter.createHistogram('lsp_mcp.search.results', {
+    this.searchResults = this.meter.createHistogram('context_mcp.search.results', {
       description: '検索結果数',
       unit: '1',
     });
 
     // ObservableGauge定義
-    this.indexFiles = this.meter.createObservableGauge('lsp_mcp.index.files', {
+    this.indexFiles = this.meter.createObservableGauge('context_mcp.index.files', {
       description: 'インデックス済みファイル数',
       unit: '1',
     });
 
-    this.indexSymbols = this.meter.createObservableGauge('lsp_mcp.index.symbols', {
+    this.indexSymbols = this.meter.createObservableGauge('context_mcp.index.symbols', {
       description: 'インデックス済みシンボル数',
       unit: '1',
     });
 
-    this.memoryUsage = this.meter.createObservableGauge('lsp_mcp.memory.usage', {
+    this.memoryUsage = this.meter.createObservableGauge('context_mcp.memory.usage', {
       description: 'メモリ使用量',
       unit: 'MB',
     });

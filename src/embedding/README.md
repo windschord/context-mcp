@@ -28,7 +28,7 @@ import { LocalEmbeddingEngine } from './src/embedding';
 // エンジンの作成
 const engine = new LocalEmbeddingEngine({
   modelName: 'Xenova/all-MiniLM-L6-v2',  // デフォルト
-  cacheDir: './.lsp-mcp/models',          // デフォルト
+  cacheDir: './.context-mcp/models',          // デフォルト
   batchSize: 32                            // デフォルト
 });
 
@@ -90,7 +90,7 @@ await engine.dispose();
 interface LocalEmbeddingOptions {
   /** モデル名（デフォルト: Xenova/all-MiniLM-L6-v2） */
   modelName?: string;
-  /** モデルキャッシュディレクトリ（デフォルト: ./.lsp-mcp/models） */
+  /** モデルキャッシュディレクトリ（デフォルト: ./.context-mcp/models） */
   cacheDir?: string;
   /** バッチサイズ（デフォルト: 32） */
   batchSize?: number;
@@ -105,7 +105,7 @@ interface LocalEmbeddingOptions {
 キャッシュディレクトリの構造:
 
 ```
-.lsp-mcp/models/
+.context-mcp/models/
 └── models--Xenova--all-MiniLM-L6-v2/
     ├── config.json
     ├── tokenizer.json

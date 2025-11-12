@@ -24,7 +24,7 @@ import { traceEmbedding } from '../telemetry/instrumentation.js';
  * デフォルト設定
  */
 const DEFAULT_MODEL = 'Xenova/all-MiniLM-L6-v2';
-const DEFAULT_CACHE_DIR = './.lsp-mcp/models';
+const DEFAULT_CACHE_DIR = './.context-mcp/models';
 const DEFAULT_BATCH_SIZE = 32;
 const MODEL_DIMENSION = 384; // all-MiniLM-L6-v2の次元数
 
@@ -35,7 +35,7 @@ const MODEL_DIMENSION = 384; // all-MiniLM-L6-v2の次元数
  * ```typescript
  * const engine = new LocalEmbeddingEngine({
  *   modelName: 'Xenova/all-MiniLM-L6-v2',
- *   cacheDir: './.lsp-mcp/models',
+ *   cacheDir: './.context-mcp/models',
  *   batchSize: 32
  * });
  *

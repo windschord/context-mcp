@@ -8,7 +8,7 @@
 import { promises as fsPromises } from 'fs';
 import * as path from 'path';
 import {
-  LspMcpConfig,
+  ContextMcpConfig,
   Mode,
   VectorStoreBackend,
   EmbeddingProvider,
@@ -52,7 +52,7 @@ export class SetupWizard {
   private configPath: string;
 
   constructor(configPath?: string) {
-    this.configPath = configPath || path.join(process.cwd(), '.lsp-mcp.json');
+    this.configPath = configPath || path.join(process.cwd(), '.context-mcp.json');
   }
 
   /**
@@ -61,12 +61,12 @@ export class SetupWizard {
    * @param options セットアップオプション
    * @returns 生成された設定
    */
-  generateConfig(options: SetupOptions): LspMcpConfig {
+  generateConfig(options: SetupOptions): ContextMcpConfig {
     // バリデーション
     this.validateOptions(options);
 
     // 基本設定
-    const config: LspMcpConfig = {
+    const config: ContextMcpConfig = {
       mode: options.mode,
       vectorStore: this.createVectorStoreConfig(options),
       embedding: this.createEmbeddingConfig(options),
@@ -212,7 +212,7 @@ export class SetupWizard {
   /**
    * モード整合性をチェックして警告
    */
-  private checkConsistency(config: LspMcpConfig): void {
+  private checkConsistency(config: ContextMcpConfig): void {
     if (config.mode === 'local') {
       if (config.embedding.provider !== 'transformers') {
         console.warn(
@@ -233,7 +233,7 @@ export class SetupWizard {
    * @param config 保存する設定
    * @param options 保存オプション
    */
-  async saveConfig(config: LspMcpConfig, options?: SaveOptions): Promise<void> {
+  async saveConfig(config: ContextMcpConfig, options?: SaveOptions): Promise<void> {
     const { overwrite = false } = options || {};
 
     // ファイルが既に存在する場合のチェック
@@ -267,7 +267,7 @@ export class SetupWizard {
    * @param cloudOptions クラウドプリセット用のオプション
    * @returns 生成された設定
    */
-  usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): LspMcpConfig {
+  usePreset(preset: PresetName, cloudOptions?: Partial<SetupOptions>): ContextMcpConfig {
     switch (preset) {
       case 'quickstart':
         // ローカルセットアップ（Milvus standaloneを使用）
@@ -316,7 +316,7 @@ export class SetupWizard {
    * @param userInput ユーザー入力
    * @returns 生成された設定
    */
-  runInteractive(userInput: SetupOptions): LspMcpConfig {
+  runInteractive(userInput: SetupOptions): ContextMcpConfig {
     return this.generateConfig(userInput);
   }
 
@@ -326,7 +326,7 @@ export class SetupWizard {
    * @param config 設定オブジェクト
    * @returns JSON文字列
    */
-  exportConfig(config: LspMcpConfig): string {
+  exportConfig(config: ContextMcpConfig): string {
     return JSON.stringify(config, null, 2);
   }
 
@@ -336,9 +336,9 @@ export class SetupWizard {
    * @param json JSON文字列
    * @returns 設定オブジェクト
    */
-  importConfig(json: string): LspMcpConfig {
+  importConfig(json: string): ContextMcpConfig {
     try {
-      const config = JSON.parse(json) as LspMcpConfig;
+      const config = JSON.parse(json) as ContextMcpConfig;
       return config;
     } catch (error) {
       throw new Error('無効なJSON形式です');

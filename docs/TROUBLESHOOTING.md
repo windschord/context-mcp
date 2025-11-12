@@ -547,7 +547,7 @@ context-mcp serve --debug
       "args": ["serve"],
       "env": {
         "NODE_OPTIONS": "--max-old-space-size=4096",
-        "LSP_MCP_LOG_LEVEL": "debug"
+        "CONTEXT_MCP_LOG_LEVEL": "debug"
       }
     }
   }
@@ -677,7 +677,7 @@ export NODE_EXTRA_CA_CERTS=/path/to/ca-certificate.crt
 
 ```bash
 # 1. 環境変数でログレベルを設定
-export LSP_MCP_LOG_LEVEL=debug
+export CONTEXT_MCP_LOG_LEVEL=debug
 
 # 2. または設定ファイルで指定（.context-mcp.json）
 {

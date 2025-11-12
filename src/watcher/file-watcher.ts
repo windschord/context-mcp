@@ -15,7 +15,7 @@ const DEFAULT_IGNORE_PATTERNS = [
   '.git/**',
   'dist/**',
   'build/**',
-  '.lsp-mcp/**',
+  '.context-mcp/**',
   '**/*.log',
 ];
 

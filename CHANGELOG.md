@@ -8,14 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- npx経由での実行サポート（`npx lsp-mcp`で直接実行可能）
+- npx経由での実行サポート（`npx context-mcp`で直接実行可能）
 - CLI用のヘルプメッセージ（`--help`, `--version`オプション）
-- `bin/lsp-mcp.js`エントリーポイント
+- `bin/context-mcp.js`エントリーポイント
 
 ### Changed
 - README.mdとCLAUDE_CODE_INTEGRATION.mdにnpx使用例を追加（推奨方法として）
 - package.jsonに`files`フィールドを追加（配布ファイルを明示化）
-- Claude Code設定例を`npx lsp-mcp`使用に更新
+- Claude Code設定例を`npx context-mcp`使用に更新
 
 ## [0.1.0] - 2025-01-03
 
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### MCP Server & Core Infrastructure
 - MCP server implementation with @modelcontextprotocol/sdk
-- Configuration file management system (.lsp-mcp.json)
+- Configuration file management system (.context-mcp.json)
 - File system scanner with .gitignore and .mcpignore support
 - Comprehensive logging system with rotation and sensitive data sanitization
 - Error handling with detailed error messages and suggestions
@@ -173,4 +173,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[0.1.0]: https://github.com/your-org/lsp-mcp/releases/tag/v0.1.0
+[0.1.0]: https://github.com/your-org/context-mcp/releases/tag/v0.1.0

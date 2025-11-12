@@ -5,7 +5,7 @@
  */
 
 import { ModeManager } from '../../src/config/mode-manager';
-import { LspMcpConfig } from '../../src/config/types';
+import { ContextMcpConfig } from '../../src/config/types';
 import { EmbeddingEngine } from '../../src/embedding/types';
 
 // モックの作成
@@ -39,7 +39,7 @@ const mockCloudEmbedding: EmbeddingEngine = {
 
 describe('ModeManager', () => {
   describe('ローカルモード', () => {
-    const localConfig: LspMcpConfig = {
+    const localConfig: ContextMcpConfig = {
       mode: 'local',
       vectorStore: {
         backend: 'milvus',
@@ -97,7 +97,7 @@ describe('ModeManager', () => {
     });
 
     it('ローカルモードでクラウドプロバイダーを使用した場合に警告を出す', () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         ...localConfig,
         embedding: {
           provider: 'openai',
@@ -116,7 +116,7 @@ describe('ModeManager', () => {
     });
 
     it('ローカルモードでクラウドベクターDBを使用した場合に警告を出す', () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         ...localConfig,
         vectorStore: {
           backend: 'zilliz',
@@ -137,7 +137,7 @@ describe('ModeManager', () => {
   });
 
   describe('クラウドモード', () => {
-    const cloudConfig: LspMcpConfig = {
+    const cloudConfig: ContextMcpConfig = {
       mode: 'cloud',
       vectorStore: {
         backend: 'zilliz',
@@ -197,7 +197,7 @@ describe('ModeManager', () => {
     });
 
     it('クラウドモードでローカルプロバイダーを使用した場合に警告を出す', () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         ...cloudConfig,
         embedding: {
           provider: 'transformers',
@@ -215,7 +215,7 @@ describe('ModeManager', () => {
     });
 
     it('クラウドモードで外部通信ブロックが有効な場合に警告を出す', () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         ...cloudConfig,
         privacy: {
           blockExternalCalls: true,
@@ -231,7 +231,7 @@ describe('ModeManager', () => {
     });
 
     it('クラウドモードでAPIキーが必要な場合にエラーを投げる', async () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         ...cloudConfig,
         embedding: {
           provider: 'openai',
@@ -253,7 +253,7 @@ describe('ModeManager', () => {
 
   describe('プロバイダー初期化', () => {
     it('埋め込みエンジンを取得できる', async () => {
-      const config: LspMcpConfig = {
+      const config: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',
@@ -284,7 +284,7 @@ describe('ModeManager', () => {
     });
 
     it('初期化前に埋め込みエンジンを取得しようとするとエラーを投げる', () => {
-      const config: LspMcpConfig = {
+      const config: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',
@@ -310,7 +310,7 @@ describe('ModeManager', () => {
     });
 
     it('リソースを適切に解放できる', async () => {
-      const config: LspMcpConfig = {
+      const config: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',
@@ -343,7 +343,7 @@ describe('ModeManager', () => {
 
   describe('モード不一致検証', () => {
     it('整合性のある設定では警告が出ない', () => {
-      const validLocalConfig: LspMcpConfig = {
+      const validLocalConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',
@@ -370,7 +370,7 @@ describe('ModeManager', () => {
     });
 
     it('複数の不一致がある場合、すべての警告を返す', () => {
-      const invalidConfig: LspMcpConfig = {
+      const invalidConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'zilliz',
@@ -406,7 +406,7 @@ describe('ModeManager', () => {
 
   describe('外部通信ブロック', () => {
     it('ローカルモードでデフォルトで外部通信がブロックされる', () => {
-      const config: LspMcpConfig = {
+      const config: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',
@@ -431,7 +431,7 @@ describe('ModeManager', () => {
     });
 
     it('明示的な設定で外部通信を制御できる', () => {
-      const configWithBlock: LspMcpConfig = {
+      const configWithBlock: ContextMcpConfig = {
         mode: 'local',
         vectorStore: {
           backend: 'milvus',

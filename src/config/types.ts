@@ -1,6 +1,6 @@
 /**
- * 設定ファイルのスキーマ定義
- * .lsp-mcp.jsonファイルの型定義
+ * Context-MCP設定ファイルのスキーマ定義
+ * .context-mcp.jsonファイルの型定義
  */
 
 /**
@@ -86,9 +86,9 @@ export interface TelemetryConfig {
 }
 
 /**
- * LSP-MCP設定の完全な型定義
+ * Context-MCP設定の完全な型定義
  */
-export interface LspMcpConfig {
+export interface ContextMcpConfig {
   mode: Mode;
   vectorStore: VectorStoreConfig;
   embedding: EmbeddingConfig;
@@ -101,7 +101,7 @@ export interface LspMcpConfig {
 /**
  * デフォルト設定
  */
-export const DEFAULT_CONFIG: LspMcpConfig = {
+export const DEFAULT_CONFIG: ContextMcpConfig = {
   mode: 'local',
   vectorStore: {
     backend: 'milvus',

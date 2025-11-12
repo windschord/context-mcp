@@ -49,7 +49,7 @@ export const DEFAULT_TELEMETRY_CONFIG: TelemetryConfig = {
     endpoint: 'http://localhost:4317',
     protocol: 'grpc',
   },
-  serviceName: 'lsp-mcp',
+  serviceName: 'context-mcp',
   samplingRate: 0.1,
   exporters: {
     traces: 'none',

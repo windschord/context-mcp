@@ -129,7 +129,7 @@ Context-MCPにOpenTelemetryによる監視・可観測性機能を実装しま�
 ### テレメトリ有効化
 環境変数で有効化:
 ```bash
-export LSP_MCP_TELEMETRY_ENABLED=true
+export CONTEXT_MCP_TELEMETRY_ENABLED=true
 export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
 export OTEL_SERVICE_NAME=context-mcp
 ```

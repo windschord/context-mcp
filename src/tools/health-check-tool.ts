@@ -1,7 +1,7 @@
 /**
  * Health Check Tool
  *
- * LSP-MCPサーバーと依存サービスのヘルスチェックを実行するMCPツール
+ * Context-MCPサーバーと依存サービスのヘルスチェックを実行するMCPツール
  */
 
 import type { HealthChecker } from '../health/HealthChecker.js';
@@ -17,7 +17,7 @@ export const TOOL_NAME = 'health_check';
  * ツールの説明
  */
 export const TOOL_DESCRIPTION =
-  'Check the health status of LSP-MCP server and its dependencies (VectorStore, EmbeddingEngine)';
+  'Check the health status of Context-MCP server and its dependencies (VectorStore, EmbeddingEngine)';
 
 /**
  * ツール入力スキーマ（空のオブジェクト）

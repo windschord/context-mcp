@@ -46,8 +46,8 @@ export class TelemetryManager {
     const config: TelemetryConfig = { ...DEFAULT_TELEMETRY_CONFIG };
 
     // 環境変数からの読み込み
-    if (process.env['LSP_MCP_TELEMETRY_ENABLED'] !== undefined) {
-      config.enabled = process.env['LSP_MCP_TELEMETRY_ENABLED']?.toLowerCase() === 'true';
+    if (process.env['CONTEXT_MCP_TELEMETRY_ENABLED'] !== undefined) {
+      config.enabled = process.env['CONTEXT_MCP_TELEMETRY_ENABLED']?.toLowerCase() === 'true';
     }
 
     if (process.env['OTEL_SERVICE_NAME']) {
@@ -61,8 +61,8 @@ export class TelemetryManager {
       };
     }
 
-    if (process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE']) {
-      const rate = parseFloat(process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE']);
+    if (process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE']) {
+      const rate = parseFloat(process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE']);
       if (!isNaN(rate) && rate >= 0 && rate <= 1) {
         config.samplingRate = rate;
       }
@@ -89,9 +89,9 @@ export class TelemetryManager {
       config.exporters.logs = process.env['OTEL_LOGS_EXPORTER'] as ExporterType;
     }
 
-    // 設定ファイルからの読み込み（.lsp-mcp.json）
+    // 設定ファイルからの読み込み（.context-mcp.json）
     try {
-      const configPath = process.env['LSP_MCP_CONFIG_PATH'] || '.lsp-mcp.json';
+      const configPath = process.env['CONTEXT_MCP_CONFIG_PATH'] || '.context-mcp.json';
       const fs = require('fs');
       const path = require('path');
 
@@ -104,7 +104,7 @@ export class TelemetryManager {
           // 設定ファイルの値で上書き（環境変数が優先）
           if (
             fileConfig.telemetry.enabled !== undefined &&
-            process.env['LSP_MCP_TELEMETRY_ENABLED'] === undefined
+            process.env['CONTEXT_MCP_TELEMETRY_ENABLED'] === undefined
           ) {
             config.enabled = fileConfig.telemetry.enabled;
           }
@@ -122,7 +122,7 @@ export class TelemetryManager {
 
           if (
             fileConfig.telemetry.samplingRate !== undefined &&
-            !process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE']
+            !process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE']
           ) {
             config.samplingRate = fileConfig.telemetry.samplingRate;
           }
@@ -177,7 +177,7 @@ export class TelemetryManager {
 
       // Resource設定
       const resource = new Resource({
-        [ATTR_SERVICE_NAME]: this.config.serviceName || 'lsp-mcp',
+        [ATTR_SERVICE_NAME]: this.config.serviceName || 'context-mcp',
         [ATTR_SERVICE_VERSION]: packageJson.version || '0.1.0',
       });
 
@@ -335,7 +335,7 @@ export class TelemetryManager {
       return trace.getTracer('noop');
     }
 
-    return trace.getTracer(name || 'lsp-mcp');
+    return trace.getTracer(name || 'context-mcp');
   }
 
   /**
@@ -347,7 +347,7 @@ export class TelemetryManager {
       return metrics.getMeter('noop');
     }
 
-    return metrics.getMeter(name || 'lsp-mcp');
+    return metrics.getMeter(name || 'context-mcp');
   }
 
   /**

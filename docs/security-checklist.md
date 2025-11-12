@@ -78,11 +78,11 @@ private static readonly DEFAULT_EXCLUSIONS = [
 
 1. **環境変数からの読み込み**（config-manager.ts）:
 ```typescript
-// LSP_MCP_EMBEDDING_API_KEY
-if (process.env['LSP_MCP_EMBEDDING_API_KEY']) {
+// CONTEXT_MCP_EMBEDDING_API_KEY
+if (process.env['CONTEXT_MCP_EMBEDDING_API_KEY']) {
   overridden.embedding = {
     ...overridden.embedding,
-    apiKey: process.env['LSP_MCP_EMBEDDING_API_KEY'],
+    apiKey: process.env['CONTEXT_MCP_EMBEDDING_API_KEY'],
   };
 }
 ```

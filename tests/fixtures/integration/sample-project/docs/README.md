@@ -1,6 +1,6 @@
 # Sample Project
 
-This is a sample project for testing LSP-MCP integration.
+This is a sample project for testing Context-MCP integration.
 
 ## Overview
 

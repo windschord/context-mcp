@@ -61,7 +61,7 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
       "command": "npx",
       "args": ["-y", "context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
+        "CONTEXT_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -78,8 +78,8 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
       "command": "npx",
       "args": ["-y", "context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_BACKEND": "chroma",
+        "CONTEXT_MCP_MODE": "local",
+        "CONTEXT_MCP_VECTOR_BACKEND": "chroma",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -96,8 +96,8 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
       "command": "npx",
       "args": ["-y", "context-mcp"],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
+        "CONTEXT_MCP_MODE": "cloud",
+        "CONTEXT_MCP_VECTOR_BACKEND": "zilliz",
         "OPENAI_API_KEY": "your-openai-api-key",
         "ZILLIZ_ENDPOINT": "your-instance.zilliz.com:19530",
         "ZILLIZ_TOKEN": "your-zilliz-token",
@@ -112,8 +112,8 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
 
 | 環境変数 | 説明 | デフォルト値 |
 |---------|-----|-------------|
-| `LSP_MCP_MODE` | 動作モード（`local` または `cloud`） | `local` |
-| `LSP_MCP_VECTOR_STORE` | ベクターDB（`milvus`, `chroma`, `zilliz`） | `milvus` |
+| `CONTEXT_MCP_MODE` | 動作モード（`local` または `cloud`） | `local` |
+| `CONTEXT_MCP_VECTOR_STORE` | ベクターDB（`milvus`, `chroma`, `zilliz`） | `milvus` |
 | `OPENAI_API_KEY` | OpenAI APIキー（クラウドモード時） | - |
 | `ZILLIZ_ENDPOINT` | Zilliz Cloudエンドポイント | - |
 | `ZILLIZ_TOKEN` | Zilliz Cloudトークン | - |
@@ -209,7 +209,7 @@ Context-MCPとClaude Codeの統合が正常に完了したかを確認するた�
 - [ ] **環境変数が設定されている**
   ```json
   "env": {
-    "LSP_MCP_VECTOR_STORE": "chroma"
+    "CONTEXT_MCP_VECTOR_STORE": "chroma"
   }
   ```
 
@@ -544,7 +544,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 2. Chromaを使用する（Docker不要）:
    ```bash
-   export LSP_MCP_VECTOR_STORE=chroma
+   export CONTEXT_MCP_VECTOR_STORE=chroma
    ```
 
 3. ログを確認:
@@ -593,7 +593,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 1. クラウドモードを使用（高速な埋め込み生成）:
    ```bash
-   export LSP_MCP_MODE=cloud
+   export CONTEXT_MCP_MODE=cloud
    export OPENAI_API_KEY=your-key
    ```
 
@@ -630,7 +630,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 
 4. Chromaに切り替え（Docker不要）:
    ```bash
-   export LSP_MCP_VECTOR_STORE=chroma
+   export CONTEXT_MCP_VECTOR_STORE=chroma
    ```
 
 ## サポート

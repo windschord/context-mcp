@@ -1,7 +1,7 @@
 /**
  * Health Checker
  *
- * LSP-MCPサーバーと依存サービスのヘルスチェックを実行
+ * Context-MCPサーバーと依存サービスのヘルスチェックを実行
  */
 
 import type { EmbeddingEngine } from '../embedding/types.js';

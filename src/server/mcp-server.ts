@@ -86,7 +86,7 @@ export class MCPServer {
   private healthChecker?: HealthChecker;
 
   constructor(
-    name = 'lsp-mcp',
+    name = 'context-mcp',
     version = '0.1.0',
     indexingService?: IndexingService,
     hybridSearchEngine?: HybridSearchEngine,

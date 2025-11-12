@@ -1,5 +1,5 @@
 /**
- * LSP-MCP: Model Context Protocol plugin for Claude Code
+ * Context-MCP: Model Context Protocol plugin for Claude Code
  * with Tree-sitter AST parsing and vector database
  */
 
@@ -32,7 +32,7 @@ export async function main(): Promise<void> {
   const logLevel = LogLevel[logLevelEnv as keyof typeof LogLevel] || LogLevel.INFO;
   logger.setLevel(logLevel);
 
-  logger.info('LSP-MCP server starting...', { version });
+  logger.info('Context-MCP server starting...', { version });
 
   let embeddingEngine: EmbeddingEngine | undefined;
   let vectorStore: VectorStorePlugin | undefined;
@@ -52,7 +52,7 @@ export async function main(): Promise<void> {
     if (config.embedding.provider === 'transformers') {
       embeddingEngine = new LocalEmbeddingEngine({
         modelName: config.embedding.model,
-        cacheDir: './.lsp-mcp/models',
+        cacheDir: './.context-mcp/models',
       });
     } else if (config.embedding.provider === 'openai' || config.embedding.provider === 'voyageai') {
       if (!config.embedding.apiKey) {
@@ -118,7 +118,7 @@ export async function main(): Promise<void> {
     // 8. MCPサーバーを起動
     logger.info('Starting MCP server...');
     const server = new MCPServer(
-      'lsp-mcp',
+      'context-mcp',
       version,
       indexingService,
       hybridSearchEngine,

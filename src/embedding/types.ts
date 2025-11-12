@@ -69,7 +69,7 @@ export interface EmbeddingEngine {
 export interface LocalEmbeddingOptions {
   /** モデル名（デフォルト: Xenova/all-MiniLM-L6-v2） */
   modelName?: string;
-  /** モデルキャッシュディレクトリ（デフォルト: ./.lsp-mcp/models） */
+  /** モデルキャッシュディレクトリ（デフォルト: ./.context-mcp/models） */
   cacheDir?: string;
   /** バッチサイズ（デフォルト: 32） */
   batchSize?: number;

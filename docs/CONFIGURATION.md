@@ -137,7 +137,7 @@
       "username": "",
       "password": "",
       "secure": false,
-      "collectionName": "lsp_mcp_vectors",
+      "collectionName": "context_mcp_vectors",
       "indexType": "IVF_FLAT",
       "metricType": "L2",
       "nlist": 128
@@ -156,7 +156,7 @@
 | `username` | string | `""` | 認証ユーザー名（オプション） |
 | `password` | string | `""` | 認証パスワード（オプション） |
 | `secure` | boolean | `false` | TLS/SSL接続を使用するか |
-| `collectionName` | string | `"lsp_mcp_vectors"` | コレクション名 |
+| `collectionName` | string | `"context_mcp_vectors"` | コレクション名 |
 | `indexType` | string | `"IVF_FLAT"` | インデックスタイプ（IVF_FLAT, HNSW等） |
 | `metricType` | string | `"L2"` | 距離計算方法（L2, IP, COSINE） |
 | `nlist` | number | `128` | IVF_FLATのクラスター数 |
@@ -169,7 +169,7 @@
     "backend": "chroma",
     "config": {
       "path": "./.context-mcp/chroma",
-      "collectionName": "lsp_mcp_vectors",
+      "collectionName": "context_mcp_vectors",
       "persistDirectory": true
     }
   }
@@ -181,7 +181,7 @@
 | オプション | 型 | デフォルト | 説明 |
 |-----------|-----|-----------|------|
 | `path` | string | `"./.context-mcp/chroma"` | データ保存パス |
-| `collectionName` | string | `"lsp_mcp_vectors"` | コレクション名 |
+| `collectionName` | string | `"context_mcp_vectors"` | コレクション名 |
 | `persistDirectory` | boolean | `true` | データを永続化するか |
 
 ### Zilliz Cloud設定
@@ -194,7 +194,7 @@
       "address": "xxx-xxx.vectordb.zillizcloud.com:19530",
       "token": "${ZILLIZ_TOKEN}",
       "secure": true,
-      "collectionName": "lsp_mcp_vectors"
+      "collectionName": "context_mcp_vectors"
     }
   }
 }
@@ -207,7 +207,7 @@
 | `address` | string | **必須** | Zillizクラスターのエンドポイント |
 | `token` | string | **必須** | APIトークン（環境変数推奨） |
 | `secure` | boolean | `true` | TLS/SSL接続（常にtrue推奨） |
-| `collectionName` | string | `"lsp_mcp_vectors"` | コレクション名 |
+| `collectionName` | string | `"context_mcp_vectors"` | コレクション名 |
 
 ### Qdrant Cloud設定
 
@@ -218,7 +218,7 @@
     "config": {
       "url": "https://xxx-xxx.qdrant.io",
       "apiKey": "${QDRANT_API_KEY}",
-      "collectionName": "lsp_mcp_vectors"
+      "collectionName": "context_mcp_vectors"
     }
   }
 }
@@ -565,8 +565,8 @@
 | `OPENAI_API_KEY` | OpenAI APIキー |
 | `VOYAGEAI_API_KEY` | VoyageAI APIキー |
 | `QDRANT_API_KEY` | Qdrant Cloud APIキー |
-| `LSP_MCP_LOG_LEVEL` | ログレベル（設定ファイルを上書き） |
-| `LSP_MCP_MODE` | 動作モード（設定ファイルを上書き） |
+| `CONTEXT_MCP_LOG_LEVEL` | ログレベル（設定ファイルを上書き） |
+| `CONTEXT_MCP_MODE` | 動作モード（設定ファイルを上書き） |
 
 ### 環境変数の設定方法
 

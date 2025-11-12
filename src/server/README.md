@@ -33,7 +33,7 @@ MCPサーバーの実装です。
 ```typescript
 import { MCPServer } from './server/mcp-server.js';
 
-const server = new MCPServer('lsp-mcp', '0.1.0');
+const server = new MCPServer('context-mcp', '0.1.0');
 await server.run();
 ```
 

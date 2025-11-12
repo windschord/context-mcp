@@ -105,7 +105,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(lsp_mcp_requests_total[5m])",
+          "expr": "rate(context_mcp_requests_total[5m])",
           "legendFormat": "{{tool_name}}",
           "refId": "A"
         }
@@ -174,7 +174,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(lsp_mcp_requests_errors[5m]) / rate(lsp_mcp_requests_total[5m])",
+          "expr": "rate(context_mcp_requests_errors[5m]) / rate(context_mcp_requests_total[5m])",
           "refId": "A"
         }
       ],
@@ -265,7 +265,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.50, rate(lsp_mcp_requests_duration_bucket[5m]))",
+          "expr": "histogram_quantile(0.50, rate(context_mcp_requests_duration_bucket[5m]))",
           "legendFormat": "P50",
           "refId": "A"
         },
@@ -274,7 +274,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.95, rate(lsp_mcp_requests_duration_bucket[5m]))",
+          "expr": "histogram_quantile(0.95, rate(context_mcp_requests_duration_bucket[5m]))",
           "legendFormat": "P95",
           "refId": "B"
         },
@@ -283,7 +283,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.99, rate(lsp_mcp_requests_duration_bucket[5m]))",
+          "expr": "histogram_quantile(0.99, rate(context_mcp_requests_duration_bucket[5m]))",
           "legendFormat": "P99",
           "refId": "C"
         }
@@ -350,7 +350,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "lsp_mcp_memory_usage",
+          "expr": "context_mcp_memory_usage",
           "refId": "A"
         }
       ],
@@ -409,7 +409,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "lsp_mcp_index_files",
+          "expr": "context_mcp_index_files",
           "refId": "A"
         }
       ],
@@ -468,7 +468,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "lsp_mcp_index_symbols",
+          "expr": "context_mcp_index_symbols",
           "refId": "A"
         }
       ],
@@ -555,7 +555,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(lsp_mcp_vectordb_operations[5m])",
+          "expr": "rate(context_mcp_vectordb_operations[5m])",
           "legendFormat": "{{operation_type}}",
           "refId": "A"
         }
@@ -566,7 +566,7 @@
   ],
   "refresh": "10s",
   "schemaVersion": 40,
-  "tags": ["lsp-mcp", "observability", "opentelemetry"],
+  "tags": ["context-mcp", "observability", "opentelemetry"],
   "templating": {
     "list": []
   },
@@ -576,8 +576,8 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "LSP-MCP Observability Dashboard",
-  "uid": "lsp-mcp-dashboard",
+  "title": "Context-MCP Observability Dashboard",
+  "uid": "context-mcp-dashboard",
   "version": 1,
   "weekStart": ""
 }

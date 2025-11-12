@@ -121,7 +121,7 @@ Claude Contextチームの素晴らしい貢献に深く感謝し、オープン
 
 - **REQ-030**: ユーザーが設定ファイルを作成していない時、システムはデフォルト設定（ローカルモード、Milvus standalone、Transformers.js）で起動しなければならない
 - **REQ-031**: ユーザーがClaude CodeのMCP設定で環境変数を指定した時、システムはその環境変数を優先して使用しなければならない
-- **REQ-032**: システムは以下の環境変数をサポートしなければならない：LSP_MCP_MODE、LSP_MCP_VECTOR_BACKEND、LSP_MCP_VECTOR_ADDRESS、LSP_MCP_VECTOR_TOKEN、LSP_MCP_EMBEDDING_PROVIDER、LSP_MCP_EMBEDDING_API_KEY
+- **REQ-032**: システムは以下の環境変数をサポートしなければならない：CONTEXT_MCP_MODE、CONTEXT_MCP_VECTOR_BACKEND、CONTEXT_MCP_VECTOR_ADDRESS、CONTEXT_MCP_VECTOR_TOKEN、CONTEXT_MCP_EMBEDDING_PROVIDER、CONTEXT_MCP_EMBEDDING_API_KEY
 - **REQ-033**: もし設定ファイルと環境変数の両方が存在する場合、システムは「環境変数 > 設定ファイル > デフォルト設定」の優先順位で設定を適用しなければならない
 - **REQ-034**: システムは起動時に適用された設定内容（モード、ベクターDB、埋め込みプロバイダー）をログに出力しなければならない
 
@@ -185,7 +185,7 @@ Claude Contextチームの素晴らしい貢献に深く感謝し、オープン
 - **NFR-023**: システムはエラー発生時に、原因と対処方法を含む分かりやすいメッセージを表示しなければならない
 - **NFR-024**: システムは初回セットアップ時に対話的な設定ウィザードを提供しなければならない
 - **NFR-025**: システムはローカルモードとクラウドモードの切り替えを、設定ファイルまたはCLIオプションで簡単に変更できなければならない
-- **NFR-029**: システムは環境変数から設定を読み込む機能を提供しなければならない（LSP_MCP_MODE、LSP_MCP_VECTOR_BACKEND、LSP_MCP_VECTOR_ADDRESS等）
+- **NFR-029**: システムは環境変数から設定を読み込む機能を提供しなければならない（CONTEXT_MCP_MODE、CONTEXT_MCP_VECTOR_BACKEND、CONTEXT_MCP_VECTOR_ADDRESS等）
 - **NFR-030**: システムは「環境変数 > ユーザー設定ファイル > デフォルト設定」の優先順位で設定を適用しなければならない
 - **NFR-031**: システムは設定ファイルなしでも、デフォルト設定（ローカルモード、Milvus localhost:19530、Transformers.js）で起動できなければならない
 

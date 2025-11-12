@@ -45,7 +45,7 @@ export class TelemetryLogger {
   private otelLogger: OTelLogger;
   private telemetryEnabled: boolean;
 
-  constructor(telemetryEnabled: boolean = false, loggerName: string = 'lsp-mcp') {
+  constructor(telemetryEnabled: boolean = false, loggerName: string = 'context-mcp') {
     this.telemetryEnabled = telemetryEnabled;
     this.otelLogger = logs.getLogger(loggerName, '0.1.0');
   }

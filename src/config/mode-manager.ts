@@ -5,7 +5,7 @@
  * プロバイダー初期化、モード不一致の検証を管理
  */
 
-import { LspMcpConfig, Mode } from './types.js';
+import { ContextMcpConfig, Mode } from './types.js';
 import {
   EmbeddingEngine,
   LocalEmbeddingOptions,
@@ -26,10 +26,10 @@ export type CloudEmbeddingFactory = (options: CloudEmbeddingOptions) => Embeddin
  * 適切なプロバイダーの初期化、モード不一致の警告を提供します。
  */
 export class ModeManager {
-  private config: LspMcpConfig;
+  private config: ContextMcpConfig;
   private embeddingEngine?: EmbeddingEngine;
 
-  constructor(config: LspMcpConfig) {
+  constructor(config: ContextMcpConfig) {
     this.config = config;
   }
 
@@ -146,7 +146,7 @@ export class ModeManager {
       // ローカル埋め込み
       const options: LocalEmbeddingOptions = {
         modelName: this.config.embedding.model,
-        cacheDir: './.lsp-mcp/models',
+        cacheDir: './.context-mcp/models',
       };
 
       this.embeddingEngine = localFactory(options);
@@ -211,7 +211,7 @@ export class ModeManager {
   /**
    * 設定を取得
    */
-  getConfig(): LspMcpConfig {
+  getConfig(): ContextMcpConfig {
     return this.config;
   }
 }

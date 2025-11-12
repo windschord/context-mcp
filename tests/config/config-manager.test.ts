@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigManager } from '../../src/config/config-manager.js';
-import { LspMcpConfig, DEFAULT_CONFIG } from '../../src/config/types.js';
+import { ContextMcpConfig, DEFAULT_CONFIG } from '../../src/config/types.js';
 import { ConfigValidationError } from '../../src/utils/errors.js';
 
 describe('ConfigManager', () => {
@@ -15,7 +15,7 @@ describe('ConfigManager', () => {
     originalEnv = { ...process.env };
 
     // テスト用の設定ファイルパス
-    testConfigPath = path.join(process.cwd(), 'tmp', '.lsp-mcp.test.json');
+    testConfigPath = path.join(process.cwd(), 'tmp', '.context-mcp.test.json');
 
     // tmpディレクトリを作成
     const tmpDir = path.join(process.cwd(), 'tmp');
@@ -43,7 +43,7 @@ describe('ConfigManager', () => {
     });
 
     it('有効な設定ファイルを読み込める', async () => {
-      const testConfig: LspMcpConfig = {
+      const testConfig: ContextMcpConfig = {
         mode: 'cloud',
         vectorStore: {
           backend: 'zilliz',
@@ -142,70 +142,70 @@ describe('ConfigManager', () => {
   });
 
   describe('環境変数オーバーライド', () => {
-    it('LSP_MCP_MODE環境変数でモードをオーバーライドできる', async () => {
-      const testConfig: LspMcpConfig = {
+    it('CONTEXT_MCP_MODE環境変数でモードをオーバーライドできる', async () => {
+      const testConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: DEFAULT_CONFIG.vectorStore,
         embedding: DEFAULT_CONFIG.embedding,
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
-      process.env.LSP_MCP_MODE = 'cloud';
+      process.env.CONTEXT_MCP_MODE = 'cloud';
 
       const config = await configManager.loadConfig();
       expect(config.mode).toBe('cloud');
     });
 
-    it('LSP_MCP_VECTOR_BACKEND環境変数でベクターDBをオーバーライドできる', async () => {
-      const testConfig: LspMcpConfig = {
+    it('CONTEXT_MCP_VECTOR_BACKEND環境変数でベクターDBをオーバーライドできる', async () => {
+      const testConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: DEFAULT_CONFIG.vectorStore,
         embedding: DEFAULT_CONFIG.embedding,
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
-      process.env.LSP_MCP_VECTOR_BACKEND = 'chroma';
+      process.env.CONTEXT_MCP_VECTOR_BACKEND = 'chroma';
 
       const config = await configManager.loadConfig();
       expect(config.vectorStore.backend).toBe('chroma');
     });
 
-    it('LSP_MCP_EMBEDDING_PROVIDER環境変数で埋め込みプロバイダーをオーバーライドできる', async () => {
-      const testConfig: LspMcpConfig = {
+    it('CONTEXT_MCP_EMBEDDING_PROVIDER環境変数で埋め込みプロバイダーをオーバーライドできる', async () => {
+      const testConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: DEFAULT_CONFIG.vectorStore,
         embedding: DEFAULT_CONFIG.embedding,
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
-      process.env.LSP_MCP_EMBEDDING_PROVIDER = 'openai';
+      process.env.CONTEXT_MCP_EMBEDDING_PROVIDER = 'openai';
 
       const config = await configManager.loadConfig();
       expect(config.embedding.provider).toBe('openai');
     });
 
     it('複数の環境変数を同時にオーバーライドできる', async () => {
-      const testConfig: LspMcpConfig = {
+      const testConfig: ContextMcpConfig = {
         mode: 'local',
         vectorStore: DEFAULT_CONFIG.vectorStore,
         embedding: DEFAULT_CONFIG.embedding,
       };
 
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
-      process.env.LSP_MCP_MODE = 'cloud';
-      process.env.LSP_MCP_VECTOR_BACKEND = 'zilliz';
-      process.env.LSP_MCP_EMBEDDING_PROVIDER = 'openai';
+      process.env.CONTEXT_MCP_MODE = 'cloud';
+      process.env.CONTEXT_MCP_VECTOR_BACKEND = 'zilliz';
+      process.env.CONTEXT_MCP_EMBEDDING_PROVIDER = 'openai';
 
       const config = await configManager.loadConfig();
       expect(config.mode).toBe('cloud');
-      expect(config.vectorStore.backend).toBe('zilliz');
+      expect(config.vectorStore.backend).toBe('zilliz';
       expect(config.embedding.provider).toBe('openai');
     });
 
     it('環境変数に無効な値が設定されている場合、エラーをスローする', async () => {
-      const testConfig: LspMcpConfig = DEFAULT_CONFIG;
+      const testConfig: ContextMcpConfig = DEFAULT_CONFIG;
       fs.writeFileSync(testConfigPath, JSON.stringify(testConfig));
-      process.env.LSP_MCP_MODE = 'invalid-mode';
+      process.env.CONTEXT_MCP_MODE = 'invalid-mode';
 
       await expect(configManager.loadConfig()).rejects.toThrow(ConfigValidationError);
     });

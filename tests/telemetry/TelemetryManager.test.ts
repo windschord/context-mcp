@@ -10,10 +10,10 @@ describe('TelemetryManager', () => {
 
   beforeEach(() => {
     // 環境変数をクリア
-    delete process.env['LSP_MCP_TELEMETRY_ENABLED'];
+    delete process.env['CONTEXT_MCP_TELEMETRY_ENABLED'];
     delete process.env['OTEL_SERVICE_NAME'];
     delete process.env['OTEL_EXPORTER_OTLP_ENDPOINT'];
-    delete process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE'];
+    delete process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE'];
     delete process.env['OTEL_TRACES_EXPORTER'];
     delete process.env['OTEL_METRICS_EXPORTER'];
     delete process.env['OTEL_LOGS_EXPORTER'];
@@ -81,7 +81,7 @@ describe('TelemetryManager', () => {
 
   describe('設定読み込みテスト', () => {
     it('環境変数からテレメトリ有効フラグを読み込む', async () => {
-      process.env['LSP_MCP_TELEMETRY_ENABLED'] = 'true';
+      process.env['CONTEXT_MCP_TELEMETRY_ENABLED'] = 'true';
       const manager = new TelemetryManager();
 
       await manager.initialize();
@@ -104,7 +104,7 @@ describe('TelemetryManager', () => {
     });
 
     it('環境変数からサンプリング率を読み込む', async () => {
-      process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE'] = '0.8';
+      process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE'] = '0.8';
       const manager = new TelemetryManager();
 
       await manager.initialize({ enabled: false });
@@ -116,7 +116,7 @@ describe('TelemetryManager', () => {
     });
 
     it('無効なサンプリング率は無視される', async () => {
-      process.env['LSP_MCP_TELEMETRY_SAMPLE_RATE'] = 'invalid';
+      process.env['CONTEXT_MCP_TELEMETRY_SAMPLE_RATE'] = 'invalid';
       const manager = new TelemetryManager();
 
       await manager.initialize({ enabled: false });
