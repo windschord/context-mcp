@@ -15,9 +15,9 @@
 import type { Pipeline } from '@xenova/transformers';
 import * as fs from 'fs';
 import * as path from 'path';
-import { EmbeddingEngine, LocalEmbeddingOptions } from './types.js';
-import { logger } from '../utils/logger.js';
-import { traceEmbedding } from '../telemetry/instrumentation.js';
+import { EmbeddingEngine, LocalEmbeddingOptions } from './types';
+import { logger } from '../utils/logger';
+import { traceEmbedding } from '../telemetry/instrumentation';
 
 /**
  * デフォルト設定
@@ -79,9 +79,9 @@ export class LocalEmbeddingEngine implements EmbeddingEngine {
       // 初回はモデルをダウンロード、以降はキャッシュから読み込み
       // Dynamic import to avoid requiring @xenova/transformers at build time
       const { pipeline } = await import('@xenova/transformers');
-      this.model = (await pipeline('feature-extraction', this.modelName, {
+      this.model = await pipeline('feature-extraction', this.modelName, {
         cache_dir: this.cacheDir,
-      })) as any;
+      }) as Pipeline;
 
       this.initialized = true;
       logger.info('LocalEmbeddingEngine initialized successfully');

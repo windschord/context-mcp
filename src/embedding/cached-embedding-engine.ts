@@ -6,9 +6,9 @@
  * 検索のレスポンス時間を改善します。
  */
 
-import { EmbeddingEngine } from './types.js';
-import { QueryCache, QueryCacheOptions, CacheStats } from '../services/query-cache.js';
-import { Logger } from '../utils/logger.js';
+import { EmbeddingEngine } from './types';
+import { QueryCache, QueryCacheOptions, CacheStats } from '../services/query-cache';
+import { Logger } from '../utils/logger';
 
 /**
  * CachedEmbeddingEngineのオプション
