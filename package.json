@@ -4,7 +4,6 @@
   "description": "Context-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
   "bin": {
     "context-mcp": "./bin/context-mcp.js"
   },
