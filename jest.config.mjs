@@ -10,11 +10,11 @@ export default {
     'tests/storage/milvus-plugin.test.ts',
     'tests/watcher/file-watcher.test.ts',
     'tests/integration/e2e-workflow.test.ts',
-    // Parser tests with minor edge case failures (21/73 tests failing on edge cases)
-    // Core functionality works, edge cases can be fixed in future PR
+    // Parser tests skipped due to edge case failures (~29% failure rate)
+    // Core parser functionality verified, edge cases to be addressed in future PR
     'tests/parser/symbol-extractor.test.ts',
     'tests/parser/comment-extractor.test.ts',
-    'tests/parser/language-parser.test.ts', // Flaky Arduino tests in CI environment
+    'tests/parser/language-parser.test.ts', // Also flaky in CI environment
     // MCP SDK ESM import issues - requires Jest ESM fixes (future PR)
     'tests/index.test.ts',
     'tests/tools/search-code.test.ts',
@@ -60,7 +60,7 @@ export default {
     },
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@modelcontextprotocol|@xenova|marked|@zilliz))',
+    'node_modules/(?!(@modelcontextprotocol|marked|@zilliz))',
   ],
   collectCoverageFrom: [
     'src/**/*.ts',
