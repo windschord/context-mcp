@@ -11,10 +11,10 @@ import type {
   Vector,
   QueryResult,
   CollectionStats,
-} from './types.js';
-import { Logger } from '../utils/logger.js';
-import { traceVectorDBOperation } from '../telemetry/instrumentation.js';
-import { withTraceContext } from '../telemetry/context-propagation.js';
+} from './types';
+import { Logger } from '../utils/logger';
+import { traceVectorDBOperation } from '../telemetry/instrumentation';
+import { withTraceContext } from '../telemetry/context-propagation';
 
 /**
  * リトライ設定

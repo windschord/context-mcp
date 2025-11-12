@@ -6,7 +6,7 @@
  */
 
 import { LRUCache } from 'lru-cache';
-import { Logger } from '../utils/logger.js';
+import { Logger } from '../utils/logger';
 
 export interface QueryCacheOptions {
   maxSize?: number;
