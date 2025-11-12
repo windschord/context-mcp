@@ -5,9 +5,9 @@
  * Claude Context（Zilliz）のアプローチを参考に実装
  */
 
-import type { BM25Engine, SearchResult } from '../storage/bm25-engine.js';
-import type { VectorStorePlugin, QueryResult } from '../storage/types.js';
-import { Logger } from '../utils/logger.js';
+import type { BM25Engine, SearchResult } from '../storage/bm25-engine';
+import type { VectorStorePlugin, QueryResult } from '../storage/types';
+import { Logger } from '../utils/logger';
 
 /**
  * ハイブリッド検索結果

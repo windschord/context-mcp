@@ -168,7 +168,7 @@ export async function main(): Promise<void> {
 }
 
 // スクリプトとして直接実行された場合
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   main().catch((error) => {
     logger.error('Unhandled error in main', error);
     process.exit(1);
@@ -176,6 +176,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 
 // エクスポート
-export { MCPServer } from './server/mcp-server.js';
-export { Logger, LogLevel } from './utils/logger.js';
-export * from './utils/errors.js';
+export { MCPServer } from './server/mcp-server';
+export { Logger, LogLevel } from './utils/logger';
+export * from './utils/errors';
