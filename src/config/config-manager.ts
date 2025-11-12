@@ -6,9 +6,9 @@ import {
   Mode,
   VectorStoreBackend,
   EmbeddingProvider,
-} from './types.js';
-import { ConfigValidationError } from '../utils/errors.js';
-import { logger } from '../utils/logger.js';
+} from './types';
+import { ConfigValidationError } from '../utils/errors';
+import { logger } from '../utils/logger';
 
 /**
  * 設定ファイル管理クラス

@@ -31,7 +31,7 @@ MCPサーバーの実装です。
 ## 使用方法
 
 ```typescript
-import { MCPServer } from './server/mcp-server.js';
+import { MCPServer } from './server/mcp-server';
 
 const server = new MCPServer('lsp-mcp', '0.1.0');
 await server.run();

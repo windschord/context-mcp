@@ -2,9 +2,7 @@
  * Mock Embedding Engine for Testing
  */
 
-import type { EmbeddingEngine } from '../../src/embedding/types';
-
-export class MockEmbeddingEngine implements EmbeddingEngine {
+export class MockEmbeddingEngine {
   private dimension = 384;
   private initialized = false;
 

@@ -13,8 +13,8 @@ import type {
   CollectionStats,
 } from './types';
 import { Logger } from '../utils/logger';
-import { traceVectorDBOperation } from '../telemetry/instrumentation.js';
-import { withTraceContext } from '../telemetry/context-propagation.js';
+import { traceVectorDBOperation } from '../telemetry/instrumentation';
+import { withTraceContext } from '../telemetry/context-propagation';
 
 /**
  * リトライ設定

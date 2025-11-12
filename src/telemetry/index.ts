@@ -3,17 +3,17 @@
  * OpenTelemetryによる監視・可観測性機能を提供
  */
 
-export { TelemetryManager } from './TelemetryManager.js';
+export { TelemetryManager } from './TelemetryManager';
 export type {
   TelemetryConfig,
   OTLPConfig,
   OTLPProtocol,
   ExporterType,
   ExportersConfig,
-} from './types.js';
-export { DEFAULT_TELEMETRY_CONFIG } from './types.js';
-export { TelemetryLogger, telemetryLogger } from './logger.js';
-export type { LogLevel, LogContext } from './logger.js';
+} from './types';
+export { DEFAULT_TELEMETRY_CONFIG } from './types';
+export { TelemetryLogger, telemetryLogger } from './logger';
+export type { LogLevel, LogContext } from './logger';
 export {
   initializeMetrics,
   incrementRequestCounter,
@@ -24,7 +24,7 @@ export {
   updateIndexFilesGauge,
   updateIndexSymbolsGauge,
   updateMemoryUsageGauge,
-} from './metrics.js';
+} from './metrics';
 export {
   setTelemetryManager,
   traceToolCall,
@@ -33,8 +33,8 @@ export {
   traceEmbedding,
   traceToolCallSync,
   traceASTParserSync,
-} from './instrumentation.js';
-export { TraceToolCall, TraceVectorDB, TraceAST, TraceEmbedding, Trace } from './decorators.js';
+} from './instrumentation';
+export { TraceToolCall, TraceVectorDB, TraceAST, TraceEmbedding, Trace } from './decorators';
 export {
   propagateTraceContext,
   extractTraceContext,
@@ -42,4 +42,4 @@ export {
   addTraceContextAttributes,
   getCurrentTraceId,
   getCurrentSpanId,
-} from './context-propagation.js';
+} from './context-propagation';

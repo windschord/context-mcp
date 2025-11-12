@@ -5,13 +5,13 @@
  * プロバイダー初期化、モード不一致の検証を管理
  */
 
-import { LspMcpConfig, Mode } from './types.js';
+import { LspMcpConfig, Mode } from './types';
 import {
   EmbeddingEngine,
   LocalEmbeddingOptions,
   CloudEmbeddingOptions,
-} from '../embedding/types.js';
-import { logger } from '../utils/logger.js';
+} from '../embedding/types';
+import { logger } from '../utils/logger';
 
 /**
  * 埋め込みエンジンのファクトリー関数型

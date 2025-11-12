@@ -8,8 +8,8 @@
  */
 
 import { z } from 'zod';
-import { DocCodeLinker, type CodeFileInfo } from '../parser/doc-code-linker.js';
-import type { VectorStorePlugin } from '../storage/types.js';
+import { DocCodeLinker, type CodeFileInfo } from '../parser/doc-code-linker';
+import type { VectorStorePlugin } from '../storage/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

@@ -1,5 +1,5 @@
-import { Language, ParseResult, ExtensionMapping } from './types.js';
-import { ParserPool } from './parser-pool.js';
+import { Language, ParseResult, ExtensionMapping } from './types';
+import { ParserPool } from './parser-pool';
 
 /**
  * LanguageParser: Tree-sitterを使用してソースコードをパースするクラス

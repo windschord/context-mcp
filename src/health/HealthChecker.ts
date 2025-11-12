@@ -4,10 +4,10 @@
  * LSP-MCPサーバーと依存サービスのヘルスチェックを実行
  */
 
-import type { EmbeddingEngine } from '../embedding/types.js';
-import type { VectorStorePlugin } from '../storage/types.js';
-import { Logger } from '../utils/logger.js';
-import type { HealthStatus, DependencyStatus, HealthCheckCacheEntry } from './types.js';
+import type { EmbeddingEngine } from '../embedding/types';
+import type { VectorStorePlugin } from '../storage/types';
+import { Logger } from '../utils/logger';
+import type { HealthStatus, DependencyStatus, HealthCheckCacheEntry } from './types';
 
 /**
  * ヘルスチェッククラス

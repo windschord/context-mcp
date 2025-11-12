@@ -32,7 +32,7 @@
  */
 
 import { Tracer, SpanStatusCode, context, trace } from '@opentelemetry/api';
-import { TelemetryManager } from './TelemetryManager.js';
+import { TelemetryManager } from './TelemetryManager';
 
 let telemetryManager: TelemetryManager | null = null;
 let tracer: Tracer | null = null;
