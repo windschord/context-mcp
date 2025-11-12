@@ -22,6 +22,8 @@ import { trace, Tracer, metrics, Meter } from '@opentelemetry/api';
 import { logs } from '@opentelemetry/api-logs';
 import { TelemetryConfig, DEFAULT_TELEMETRY_CONFIG, ExporterType } from './types.js';
 import { logger } from '../utils/logger.js';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * OpenTelemetryテレメトリ管理クラス
@@ -92,9 +94,6 @@ export class TelemetryManager {
     // 設定ファイルからの読み込み（.lsp-mcp.json）
     try {
       const configPath = process.env['LSP_MCP_CONFIG_PATH'] || '.lsp-mcp.json';
-      const fs = require('fs');
-      const path = require('path');
-
       const fullPath = path.resolve(process.cwd(), configPath);
       if (fs.existsSync(fullPath)) {
         const fileContent = fs.readFileSync(fullPath, 'utf-8');
@@ -311,8 +310,6 @@ export class TelemetryManager {
    */
   private getPackageVersion(): { version: string } {
     try {
-      const fs = require('fs');
-      const path = require('path');
       const packagePath = path.resolve(process.cwd(), 'package.json');
 
       if (fs.existsSync(packagePath)) {

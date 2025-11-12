@@ -8,6 +8,7 @@
 import { EventEmitter } from 'events';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import { FileScanner } from '../scanner/file-scanner.js';
 import { SymbolExtractor } from '../parser/symbol-extractor.js';
 import { CommentExtractor } from '../parser/comment-extractor.js';
@@ -758,7 +759,7 @@ export class IndexingService extends EventEmitter {
     }
 
     // デフォルト: CPUコア数-1、最小1、最大4
-    const cpus = require('os').cpus().length;
+    const cpus = os.cpus().length;
     return Math.max(1, Math.min(cpus - 1, 4));
   }
 
