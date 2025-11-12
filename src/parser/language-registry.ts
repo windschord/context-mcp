@@ -11,7 +11,7 @@ import Go from 'tree-sitter-go';
 import Rust from 'tree-sitter-rust';
 import Java from 'tree-sitter-java';
 import Cpp from 'tree-sitter-cpp';
-import { Language } from './types.js';
+import { Language } from './types';
 
 /**
  * LanguageRegistry singleton class

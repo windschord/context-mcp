@@ -7,8 +7,8 @@
  */
 
 import { z } from 'zod';
-import { HybridSearchEngine } from '../services/hybrid-search-engine.js';
-import type { EmbeddingEngine } from '../embedding/types.js';
+import { HybridSearchEngine } from '../services/hybrid-search-engine';
+import type { EmbeddingEngine } from '../embedding/types';
 import * as fs from 'fs/promises';
 
 /**

@@ -2,14 +2,14 @@
  * AST Engine: Tree-sitterを使用してASTの解析と走査を行うエンジン
  */
 
-import { LanguageParser } from './language-parser.js';
+import { LanguageParser } from './language-parser';
 import {
   Language,
   ASTParseResult,
   NodePosition,
   TraversalCallback,
   TraversalOptions,
-} from './types.js';
+} from './types';
 
 /**
  * ASTEngine: ASTの解析と走査を行うクラス

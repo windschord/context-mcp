@@ -1,4 +1,4 @@
-import { ParserError } from './types.js';
+import { ParserError } from './types';
 
 /**
  * PlatformIO環境設定

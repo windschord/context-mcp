@@ -2,8 +2,8 @@
  * Comment Extractor: ソースコードからコメントとdocstringを抽出
  */
 
-import { LanguageParser } from './language-parser.js';
-import { ASTEngine } from './ast-engine.js';
+import { LanguageParser } from './language-parser';
+import { ASTEngine } from './ast-engine';
 import {
   Language,
   CommentType,
@@ -12,7 +12,7 @@ import {
   CommentTag,
   CommentExtractionResult,
   ParserError,
-} from './types.js';
+} from './types';
 
 /**
  * CommentExtractor: コメント抽出クラス

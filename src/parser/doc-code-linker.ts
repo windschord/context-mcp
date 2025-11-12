@@ -3,9 +3,9 @@
  */
 
 import * as path from 'path';
-import { SymbolExtractor } from './symbol-extractor.js';
-import { MarkdownParser, FilePathReference } from './markdown-parser.js';
-import { Language, SymbolInfo } from './types.js';
+import { SymbolExtractor } from './symbol-extractor';
+import { MarkdownParser, FilePathReference } from './markdown-parser';
+import { Language, SymbolInfo } from './types';
 
 /**
  * ファイルパス参照の解決結果

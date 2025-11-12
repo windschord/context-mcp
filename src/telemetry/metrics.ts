@@ -4,7 +4,7 @@
  */
 
 import { Meter, Counter, Histogram, ObservableGauge } from '@opentelemetry/api';
-import { TelemetryManager } from './TelemetryManager.js';
+import { TelemetryManager } from './TelemetryManager';
 
 /**
  * メトリクスインスタンス

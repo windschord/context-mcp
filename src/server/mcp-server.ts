@@ -3,74 +3,74 @@
  * Model Context Protocol サーバーの実装
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio';
 import {
   InitializeRequestSchema,
   InitializeResult,
   CallToolRequestSchema,
   ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { logger } from '../utils/logger.js';
-import { toMCPError } from '../utils/errors.js';
-import { IndexingService } from '../services/indexing-service.js';
-import { HybridSearchEngine } from '../services/hybrid-search-engine.js';
-import type { EmbeddingEngine } from '../embedding/types.js';
-import type { VectorStorePlugin } from '../storage/types.js';
+} from '@modelcontextprotocol/sdk/types';
+import { logger } from '../utils/logger';
+import { toMCPError } from '../utils/errors';
+import { IndexingService } from '../services/indexing-service';
+import { HybridSearchEngine } from '../services/hybrid-search-engine';
+import type { EmbeddingEngine } from '../embedding/types';
+import type { VectorStorePlugin } from '../storage/types';
 import {
   TOOL_NAME as INDEX_PROJECT_TOOL_NAME,
   TOOL_DESCRIPTION as INDEX_PROJECT_TOOL_DESCRIPTION,
   getInputSchemaJSON as getIndexProjectInputSchema,
   handleIndexProject,
   type IndexProjectInput,
-} from '../tools/index-project-tool.js';
+} from '../tools/index-project-tool';
 import {
   TOOL_NAME as SEARCH_CODE_TOOL_NAME,
   TOOL_DESCRIPTION as SEARCH_CODE_TOOL_DESCRIPTION,
   getInputSchemaJSON as getSearchCodeInputSchema,
   handleSearchCode,
   type SearchCodeInput,
-} from '../tools/search-code-tool.js';
+} from '../tools/search-code-tool';
 import {
   TOOL_NAME as GET_SYMBOL_TOOL_NAME,
   TOOL_DESCRIPTION as GET_SYMBOL_TOOL_DESCRIPTION,
   getInputSchemaJSON as getGetSymbolInputSchema,
   handleGetSymbol,
   type GetSymbolInput,
-} from '../tools/get-symbol-tool.js';
+} from '../tools/get-symbol-tool';
 import {
   TOOL_NAME as FIND_RELATED_DOCS_TOOL_NAME,
   TOOL_DESCRIPTION as FIND_RELATED_DOCS_TOOL_DESCRIPTION,
   getInputSchemaJSON as getFindRelatedDocsInputSchema,
   handleFindRelatedDocs,
   type FindRelatedDocsInput,
-} from '../tools/find-related-docs-tool.js';
+} from '../tools/find-related-docs-tool';
 import {
   TOOL_NAME as GET_INDEX_STATUS_TOOL_NAME,
   TOOL_DESCRIPTION as GET_INDEX_STATUS_TOOL_DESCRIPTION,
   getInputSchemaJSON as getGetIndexStatusInputSchema,
   handleGetIndexStatus,
   type GetIndexStatusInput,
-} from '../tools/get-index-status-tool.js';
+} from '../tools/get-index-status-tool';
 import {
   TOOL_NAME as CLEAR_INDEX_TOOL_NAME,
   TOOL_DESCRIPTION as CLEAR_INDEX_TOOL_DESCRIPTION,
   getInputSchemaJSON as getClearIndexInputSchema,
   handleClearIndex,
   type ClearIndexInput,
-} from '../tools/clear-index-tool.js';
-import { DocCodeLinker } from '../parser/doc-code-linker.js';
-import { SymbolExtractor } from '../parser/symbol-extractor.js';
-import { MarkdownParser } from '../parser/markdown-parser.js';
-import { LanguageParser } from '../parser/language-parser.js';
+} from '../tools/clear-index-tool';
+import { DocCodeLinker } from '../parser/doc-code-linker';
+import { SymbolExtractor } from '../parser/symbol-extractor';
+import { MarkdownParser } from '../parser/markdown-parser';
+import { LanguageParser } from '../parser/language-parser';
 import {
   TOOL_NAME as HEALTH_CHECK_TOOL_NAME,
   TOOL_DESCRIPTION as HEALTH_CHECK_TOOL_DESCRIPTION,
   getInputSchemaJSON as getHealthCheckInputSchema,
   handleHealthCheck,
   type HealthCheckInput,
-} from '../tools/health-check-tool.js';
-import { HealthChecker } from '../health/HealthChecker.js';
+} from '../tools/health-check-tool';
+import { HealthChecker } from '../health/HealthChecker';
 
 export class MCPServer {
   private server: Server;

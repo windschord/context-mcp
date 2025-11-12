@@ -7,7 +7,7 @@
  */
 
 import { z } from 'zod';
-import type { VectorStorePlugin } from '../storage/types.js';
+import type { VectorStorePlugin } from '../storage/types';
 import * as fs from 'fs/promises';
 
 /**

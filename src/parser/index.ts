@@ -1,12 +1,12 @@
-export { LanguageParser } from './language-parser.js';
-export { PlatformIOParser } from './platformio-parser.js';
-export type { PlatformIOEnvironment, PlatformIOConfig } from './platformio-parser.js';
-export { ASTEngine } from './ast-engine.js';
-export { SymbolExtractor } from './symbol-extractor.js';
-export { CommentExtractor } from './comment-extractor.js';
-export { MarkdownParser } from './markdown-parser.js';
-export { DocCodeLinker } from './doc-code-linker.js';
-export { Language, SymbolType, SymbolScope, CommentType, CommentMarker } from './types.js';
+export { LanguageParser } from './language-parser';
+export { PlatformIOParser } from './platformio-parser';
+export type { PlatformIOEnvironment, PlatformIOConfig } from './platformio-parser';
+export { ASTEngine } from './ast-engine';
+export { SymbolExtractor } from './symbol-extractor';
+export { CommentExtractor } from './comment-extractor';
+export { MarkdownParser } from './markdown-parser';
+export { DocCodeLinker } from './doc-code-linker';
+export { Language, SymbolType, SymbolScope, CommentType, CommentMarker } from './types';
 export type {
   ParseResult,
   ExtensionMapping,
@@ -21,7 +21,7 @@ export type {
   CommentInfo,
   CommentTag,
   CommentExtractionResult,
-} from './types.js';
+} from './types';
 export type {
   HeadingNode,
   CodeBlockNode,
@@ -29,11 +29,11 @@ export type {
   FilePathReference,
   ImageNode,
   MarkdownDocument,
-} from './markdown-parser.js';
+} from './markdown-parser';
 export type {
   ResolvedFilePathReference,
   SymbolReference,
   SimilarCodeMatch,
   RelatedScoreResult,
   CodeFileInfo,
-} from './doc-code-linker.js';
+} from './doc-code-linker';
