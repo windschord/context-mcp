@@ -4,6 +4,7 @@
 
 pub mod embedding;
 pub mod error;
+pub mod indexing;
 pub mod parser;
 pub mod search;
 pub mod server;

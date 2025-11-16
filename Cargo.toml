@@ -80,6 +80,7 @@ walkdir = "2.5"
 ignore = "0.4"
 rayon = "1.10"
 parking_lot = "0.12"
+num_cpus = "1.16"
 
 [dev-dependencies]
 tokio-test = "0.4"
