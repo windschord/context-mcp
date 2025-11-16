@@ -59,7 +59,7 @@ pub type Result<T> = std::result::Result<T, ContextMcpError>;
 /// Convert ContextMcpError to MCP protocol error
 impl From<ContextMcpError> for rmcp::ErrorData {
     fn from(err: ContextMcpError) -> Self {
-        use rmcp::{ErrorCode, ErrorData};
+        use rmcp::model::{ErrorCode, ErrorData};
         use std::borrow::Cow;
 
         match err {

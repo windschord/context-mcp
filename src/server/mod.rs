@@ -2,7 +2,7 @@ use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
 use rmcp::service::{RequestContext, RoleServer};
-use rmcp::{schemars, tool, tool_router, ErrorData as McpError, ServerHandler};
+use rmcp::{schemars, tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -920,6 +920,7 @@ impl Default for ContextMcpServer {
 }
 
 /// ServerHandler implementation for MCP protocol
+#[tool_handler(router = self.tool_router)]
 impl ServerHandler for ContextMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
@@ -941,22 +942,6 @@ impl ServerHandler for ContextMcpServer {
             capabilities: ServerCapabilities::builder().enable_tools().build(),
             ..Default::default()
         }
-    }
-
-    async fn call_tool(
-        &self,
-        request: CallToolRequestParam,
-        _context: RequestContext<RoleServer>,
-    ) -> Result<CallToolResult, McpError> {
-        self.tool_router.call_tool(self, request).await
-    }
-
-    async fn list_tools(
-        &self,
-        _request: Option<PaginatedRequestParam>,
-        _context: RequestContext<RoleServer>,
-    ) -> Result<ListToolsResult, McpError> {
-        Ok(self.tool_router.list_tools())
     }
 }
 
