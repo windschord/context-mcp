@@ -380,7 +380,7 @@ impl ContextMcpServer {
                     status: format!("Indexing failed: {}", e),
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+                    .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -415,7 +415,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
 
         info!("index_project completed: {}", result.summary());
 
@@ -497,7 +497,7 @@ impl ContextMcpServer {
                     search_time_ms: start_time.elapsed().as_millis() as u64,
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+                    .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -546,7 +546,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
 
         info!(
             "search_code completed: {} results in {}ms",
@@ -590,7 +590,7 @@ impl ContextMcpServer {
 
         let results = bm25
             .search(&symbol_name, 100)
-            .map_err(|e| ContextMcpError::Search(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Search(e.to_string())))?;
 
         // Convert to symbol locations (simplified implementation)
         let mut definitions = Vec::new();
@@ -651,7 +651,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
@@ -716,7 +716,7 @@ impl ContextMcpServer {
                     total_found: 0,
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+                    .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -743,7 +743,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
@@ -812,7 +812,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
+            .map_err(|e| McpError::from(ContextMcpError::Parse(e.to_string())))?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
