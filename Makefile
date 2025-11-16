@@ -108,12 +108,12 @@ install-deps: ## Install system dependencies (Ubuntu/Debian)
 	@echo "Installing system dependencies..."
 	@echo "This requires sudo privileges..."
 	sudo apt-get update
-	sudo apt-get install -y pkg-config libssl-dev
+	sudo apt-get install -y pkg-config libssl-dev protobuf-compiler build-essential
 
 install-deps-fedora: ## Install system dependencies (Fedora/RHEL)
 	@echo "Installing system dependencies..."
 	@echo "This requires sudo privileges..."
-	sudo yum install -y pkgconfig openssl-devel
+	sudo yum install -y pkgconfig openssl-devel protobuf-compiler gcc gcc-c++ make
 
 setup-milvus: ## Start Milvus using Docker Compose
 	@echo "Starting Milvus..."
