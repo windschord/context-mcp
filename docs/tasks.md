@@ -87,7 +87,7 @@
 
 ### フェーズ10: Rust移行実装 (推定期間: 10-15日)
 
-- タスク10.1: Rustプロジェクト初期化とCargo設定 | Cargo.tomlセットアップ、ワークスペース構成、依存クレート追加（rmcp, tokio, tree-sitter, ort, milvus-sdk-rust等） (依存: なし | 工数: 3h | ステータス: TODO)
+- タスク10.1: Rustプロジェクト初期化とCargo設定 | Cargo.tomlセットアップ、ワークスペース構成、依存クレート追加（rmcp, tokio, tree-sitter, ort, milvus-sdk-rust等） (依存: なし | 工数: 3h | ステータス: DONE)
 - タスク10.2: MCP Rust SDKの統合 | rmcp crateを使用したMCPサーバー基盤実装、ツールハンドラー登録、エラーハンドリング (依存: 10.1 | 工数: 6h | ステータス: TODO)
 - タスク10.3: Tree-sitter統合とAST解析 | tree-sitter Rustクレート統合、各言語パーサー（TS/JS, Python, Go, Rust, Java, C/C++）の設定、シンボル抽出機能 (依存: 10.1 | 工数: 10h | ステータス: TODO)
 - タスク10.4: ONNX Runtime統合とEmbedding Engine実装 | ort crateまたはtract crate統合、all-MiniLM-L6-v2.onnxモデルロード、tokenizerクレート統合、埋め込み生成機能 (依存: 10.1 | 工数: 8h | ステータス: TODO)
