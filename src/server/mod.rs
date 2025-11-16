@@ -287,7 +287,7 @@ impl ContextMcpServer {
 
         if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);
-            let mut collection_config = CollectionConfig::code_vectors(state.config.indexing.dimension);
+            let mut collection_config = CollectionConfig::code_vectors(state.config.indexing.dimension as i32);
             collection_config.name = collection_name.clone();
             collection_config.description = "Code vectors for semantic search".to_string();
             collection_config.shard_num = Some(state.config.milvus.shard_num);
@@ -357,7 +357,21 @@ impl ContextMcpServer {
         // Build index config
         let mut config = IndexConfig::new(PathBuf::from(&root_path));
         config.project_id = project_id.clone();
-        config.languages = languages.unwrap_or_default();
+        config.languages = languages
+            .unwrap_or_default()
+            .iter()
+            .filter_map(|lang| match lang.to_lowercase().as_str() {
+                "typescript" => Some(crate::parser::Language::TypeScript),
+                "javascript" => Some(crate::parser::Language::JavaScript),
+                "python" => Some(crate::parser::Language::Python),
+                "go" => Some(crate::parser::Language::Go),
+                "rust" => Some(crate::parser::Language::Rust),
+                "java" => Some(crate::parser::Language::Java),
+                "c" => Some(crate::parser::Language::C),
+                "cpp" | "c++" => Some(crate::parser::Language::Cpp),
+                _ => None,
+            })
+            .collect();
         config.exclude_patterns = exclude_patterns.unwrap_or_default();
         config.include_documents = include_documents.unwrap_or(true);
         config.batch_size = state.config.indexing.batch_size;
