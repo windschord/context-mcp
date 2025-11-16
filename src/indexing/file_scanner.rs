@@ -9,7 +9,7 @@
 use crate::error::{ContextMcpError, Result};
 use crate::indexing::types::ScanConfig;
 use crate::parser::Language;
-use ignore::WalkBuilder;
+use ignore::{overrides::OverrideBuilder, WalkBuilder};
 use std::path::{Path, PathBuf};
 use tracing::{debug, warn};
 
@@ -55,11 +55,15 @@ impl FileScanner {
             .follow_links(false); // Don't follow symlinks to avoid cycles
 
         // Add custom ignore patterns
-        for pattern in &config.exclude_patterns {
-            if let Some(mut override_builder) = builder.overrides() {
+        if !config.exclude_patterns.is_empty() {
+            let mut override_builder = OverrideBuilder::new(&config.root_path);
+            for pattern in &config.exclude_patterns {
                 if let Err(e) = override_builder.add(&format!("!{}", pattern)) {
                     warn!("Failed to add exclude pattern '{}': {}", pattern, e);
                 }
+            }
+            if let Ok(overrides) = override_builder.build() {
+                builder.overrides(overrides);
             }
         }
 

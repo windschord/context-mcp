@@ -34,7 +34,7 @@ struct CodeVectorEntity {
 impl schema::Entity for CodeVectorEntity {
     const NAME: &'static str = "code_vectors";
     const SCHEMA: &'static [schema::FieldSchema<'static>] = &[
-        FieldSchema::new_primary_varchar("id", Some("Unique identifier (file_path:line_start)"), 256),
+        FieldSchema::new_primary_varchar("id", Some("Unique identifier (file_path:line_start)"), false, 256),
         FieldSchema::new_float_vector("vector", Some("Embedding vector"), DIMENSION),
         FieldSchema::new_varchar("project_id", Some("Project identifier"), 128),
         FieldSchema::new_varchar("file_path", Some("Source file path"), 512),
@@ -550,7 +550,7 @@ impl MilvusClient {
         );
 
         // Dimension validation
-        if config.dimension != DIMENSION {
+        if config.dimension as i64 != DIMENSION {
             warn!(
                 "Requested dimension {} does not match DIMENSION constant {}. Using {}",
                 config.dimension, DIMENSION, DIMENSION
