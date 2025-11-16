@@ -453,6 +453,7 @@ dependencies = [
  "ignore",
  "milvus",
  "mockall",
+ "ndarray",
  "notify",
  "ort",
  "parking_lot",

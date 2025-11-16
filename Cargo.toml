@@ -45,6 +45,9 @@ ort = { version = "2.0.0-rc.10", features = ["load-dynamic"] }
 # Tokenizer
 tokenizers = "0.20"
 
+# Numerical computing for tensor operations
+ndarray = "0.16"
+
 # Vector database
 # Using milvus crate (unofficial but more actively maintained)
 milvus = "0.2"
