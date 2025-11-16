@@ -91,7 +91,7 @@
 - タスク10.2: MCP Rust SDKの統合 | rmcp crateを使用したMCPサーバー基盤実装、ツールハンドラー登録、エラーハンドリング (依存: 10.1 | 工数: 6h | ステータス: DONE)
 - タスク10.3: Tree-sitter統合とAST解析 | tree-sitter Rustクレート統合、各言語パーサー（TS/JS, Python, Go, Rust, Java, C/C++）の設定、シンボル抽出機能 (依存: 10.1 | 工数: 10h | ステータス: DONE)
 - タスク10.4: ONNX Runtime統合とEmbedding Engine実装 | ort crateまたはtract crate統合、all-MiniLM-L6-v2.onnxモデルロード、tokenizerクレート統合、埋め込み生成機能 (依存: 10.1 | 工数: 8h | ステータス: DONE)
-- タスク10.5: Milvus Rust SDK統合 | milvus-sdk-rust統合、コレクション管理、ベクトル挿入・検索機能、エラーハンドリング (依存: 10.1 | 工数: 7h | ステータス: TODO)
+- タスク10.5: Milvus Rust SDK統合 | milvus-sdk-rust統合、コレクション管理、ベクトル挿入・検索機能、エラーハンドリング (依存: 10.1 | 工数: 7h | ステータス: DONE)
 - タスク10.6: BM25全文検索エンジン実装 | rusqliteまたはsledを使用した転置インデックス、BM25スコアリング、検索機能 (依存: 10.1 | 工数: 6h | ステータス: TODO)
 - タスク10.7: ハイブリッド検索エンジン実装 | BM25とベクトル検索の統合、スコア正規化、重み付けパラメータ (依存: 10.5, 10.6 | 工数: 5h | ステータス: TODO)
 - タスク10.8: Indexing Service実装 | ファイルスキャン、並列処理（tokio::spawn）、進捗追跡、エラー収集 (依存: 10.3, 10.4, 10.5 | 工数: 8h | ステータス: TODO)
