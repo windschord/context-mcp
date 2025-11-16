@@ -1,0 +1,30 @@
+{
+  "milvus": {
+    "address": "localhost:19530",
+    "token": null,
+    "shardNum": 2
+  },
+  "embedding": {
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "tokenizerPath": "./models/tokenizer.json",
+    "maxLength": 256,
+    "batchSize": 32
+  },
+  "bm25": {
+    "dbPath": "./data/bm25_index.db",
+    "k1": 1.5,
+    "b": 0.75
+  },
+  "indexing": {
+    "batchSize": 32,
+    "maxParallel": 8,
+    "collectionName": "code_vectors",
+    "dimension": 384
+  },
+  "hybrid": {
+    "alpha": 0.3,
+    "normalization": "MinMax",
+    "bm25TopK": 20,
+    "vectorTopK": 20
+  }
+}
