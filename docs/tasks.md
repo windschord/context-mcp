@@ -102,6 +102,114 @@
 - タスク10.13: リリースビルド最適化 | cargo build --release最適化、バイナリサイズ削減（strip, LTO）、クロスコンパイル設定（macOS, Linux, Windows） (依存: 10.12 | 工数: 4h | ステータス: TODO)
 - タスク10.14: ドキュメント更新 | README.md、SETUP.md、Rustビルド手順、実行方法の更新 (依存: 10.13 | 工数: 3h | ステータス: TODO)
 
+### フェーズ11: コンパイルエラー修正とAPI更新 (推定期間: 3-4日)
+
+> **背景**: Task 10.1-10.9で実装完了したが、依存crateのAPI変更により136個のコンパイルエラーが発生。
+> 根本原因: (1) rusqliteのSend/Sync問題、(2) rmcp v0.8構文変更、(3) Milvus/ort API変更
+> 詳細: COMPILATION_ISSUES_ANALYSIS.md参照
+
+#### フェーズ11.1: ブロッカー解決（優先度: 最高）
+
+- タスク11.1: rusqlite Send/Sync問題の解決 | BM25EngineのConnectionをArc<Mutex<Connection>>に変更、全メソッドでロック取得、HybridSearchEngineとContextMcpServerへの影響修正 (依存: 10.6, 10.7, 10.9 | 工数: 4h | ステータス: TODO)
+  - **根本原因**: rusqliteのConnectionが`RefCell`使用のため`Sync`未実装
+  - **影響範囲**: BM25Engine、HybridSearchEngine、ContextMcpServer
+  - **受入基準**:
+    - [ ] BM25EngineがSend + Syncを実装
+    - [ ] HybridSearchEngineがSend + Syncを実装
+    - [ ] ContextMcpServerがServerHandlerを実装可能
+  - **技術詳細**:
+    - src/search/bm25_engine.rs: Connection → Arc<Mutex<Connection>>
+    - src/search/hybrid_engine.rs: BM25Engineの変更に対応
+    - src/server/mod.rs: ServerStateの変更に対応
+
+- タスク11.2: rmcp toolマクロ構文の修正 | rmcp v0.8の正しい構文に19箇所のパラメータアノテーションを修正、ドキュメント調査 (依存: 10.2, 10.9 | 工数: 2h | ステータス: TODO)
+  - **根本原因**: rmcp v0.8が`#[tool(schema(...))]`構文をサポートしていない
+  - **影響箇所**: src/server/mod.rs の全6ツール（19パラメータ）
+  - **受入基準**:
+    - [ ] 全toolマクロがコンパイル可能
+    - [ ] パラメータのdescriptionが正しく設定される
+  - **調査事項**:
+    - rmcp v0.8のドキュメント確認
+    - 正しいパラメータスキーマ定義方法
+    - 他のrmcp使用例の調査
+
+- タスク11.3: エラー型の統一 | ContextMcpErrorからErrorDataへの変換実装、From traitの実装 (依存: 10.2 | 工数: 2h | ステータス: TODO)
+  - **根本原因**: rmcp v0.8は`McpError`（= `ErrorData`）を期待、`ContextMcpError`との型不一致
+  - **影響箇所**: src/error.rs、src/server/mod.rs
+  - **受入基準**:
+    - [ ] `From<ContextMcpError> for ErrorData`実装
+    - [ ] ServerHandlerの型制約を満たす
+    - [ ] エラーメッセージが適切に変換される
+  - **技術詳細**:
+    - src/error.rs: From trait実装追加
+    - src/server/mod.rs: エラーハンドリング修正
+
+#### フェーズ11.2: API更新（優先度: 高）
+
+- タスク11.4: Milvus API更新 | パッチ版milvusの実際のAPIに合わせてFieldColumn、Client、Collectionの使用方法を修正（12箇所以上） (依存: 10.5 | 工数: 6h | ステータス: TODO)
+  - **根本原因**: ローカルパッチしたmilvus v0.2.0のAPIが期待されるAPIと異なる
+  - **影響箇所**: src/storage/milvus_client.rs 全体
+  - **受入基準**:
+    - [ ] 全Milvus操作がコンパイル可能
+    - [ ] insert、search、deleteが動作
+    - [ ] FieldColumnの正しいコンストラクタを使用
+    - [ ] Clientメソッドが正しく呼び出せる
+  - **調査事項**:
+    - vendor/milvus-patched/のソースコードを確認
+    - FieldColumnの実際のAPI
+    - Clientの実際のメソッドシグネチャ
+    - Collectionのジェネリクス要件
+  - **変更内容**:
+    - FieldColumn::new_varchar → 実際のコンストラクタ
+    - FieldColumn::new_float_vector → 実際のコンストラクタ
+    - FieldColumn::new_int64 → 実際のコンストラクタ
+    - Client::insert → 正しいシグネチャ
+    - Collection<C>のジェネリクス指定
+
+- タスク11.5: ort API更新 | ort v2.0.0-rc.10の正しいAPIに修正（Value import、try_extract_map使用、SessionOutputs::get修正） (依存: 10.4 | 工数: 1h | ステータス: TODO)
+  - **根本原因**: ort v2.0.0-rc.10のAPI変更
+  - **影響箇所**: src/embedding/engine.rs
+  - **受入基準**:
+    - [ ] 埋め込み生成が正常に動作
+    - [ ] Valueのインポートが正しい
+    - [ ] 出力テンソルの抽出が成功
+  - **技術詳細**:
+    - `use ort::value::Value;`を追加
+    - `try_extract()` → `try_extract_map()`
+    - `outputs.get(0)` → `outputs.get("output_name")`
+
+#### フェーズ11.3: 細部修正（優先度: 中）
+
+- タスク11.6: 型不一致の修正 | ジェネリクス引数、関数引数の型、モジュール可視性の修正（23箇所） (依存: 11.1-11.5 | 工数: 3h | ステータス: TODO)
+  - **内容**:
+    - ジェネリクス引数の追加/削除
+    - 関数引数の型修正
+    - プライベートモジュールのpub化
+  - **受入基準**:
+    - [ ] 全型不一致エラーが解消
+    - [ ] cargo checkがエラーなしで完了
+
+- タスク11.7: 警告の修正 | 未使用インポート、未使用コード、不要な括弧の削除（12箇所） (依存: 11.6 | 工数: 1h | ステータス: TODO)
+  - **内容**:
+    - 未使用インポートの削除
+    - 未使用コードの削除
+    - 不要な括弧の削除
+  - **受入基準**:
+    - [ ] cargo check --all-targetsが警告なしで完了
+
+#### フェーズ11.4: 検証とテスト（優先度: 高）
+
+- タスク11.8: コンパイル検証とユニットテスト | 全モジュールのコンパイル確認、既存ユニットテストの実行、統合テストの基本動作確認 (依存: 11.1-11.7 | 工数: 3h | ステータス: TODO)
+  - **受入基準**:
+    - [ ] `cargo check`がエラー0、警告0で完了
+    - [ ] `cargo test --lib`で既存テストが通過
+    - [ ] 基本的な統合テストが動作
+  - **検証項目**:
+    - Parser単体テスト
+    - Tokenizer単体テスト
+    - BM25Engine単体テスト
+    - 基本的なMCPサーバー起動
+
 ## タスクステータスの凡例
 - `TODO` - 未着手
 - `IN_PROGRESS` - 作業中
@@ -123,6 +231,7 @@
 | M8: ゼロコンフィグ対応完了 | フェーズ8完了 | 開始+27日 |
 | M9: 監視機能完成 | フェーズ9完了 | 開始+30日 |
 | M10: Rust移行完成 | フェーズ10完了 | 開始+15日（新ブランチ基準） |
+| M11: コンパイルエラー解決 | フェーズ11完了 | 開始+19日（新ブランチ基準） |
 
 ## リスクと軽減策
 
