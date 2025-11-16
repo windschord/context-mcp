@@ -1,0 +1,26 @@
+[package]
+name = "milvus"
+version = "0.2.0"
+edition = "2021"
+keywords = ["vector", "database", "sdk"] 
+description = "Unofficial milvus SDK"
+license = "Apache-2.0"
+
+[lib]
+name = "milvus"
+
+[dependencies]
+tonic = "0.8"
+prost = "0.11"
+tokio = { version = "1" }
+thiserror = "1.0"
+futures = "0.3"
+
+[build-dependencies]
+tonic-build = "0.8"
+
+[dev-dependencies]
+rand = "0.8"
+tokio = { version = "1", features = ["full"] }
+
+

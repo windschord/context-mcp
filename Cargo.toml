@@ -50,7 +50,8 @@ ndarray = "0.16"
 
 # Vector database
 # Using milvus crate (unofficial but more actively maintained)
-milvus = "0.2"
+# NOTE: Using patched local version to fix lifetime bug in v0.2.0
+milvus = { path = "vendor/milvus-patched", optional = true }
 
 # Local database for BM25 search
 rusqlite = { version = "0.32", features = ["bundled"] }
@@ -89,9 +90,10 @@ criterion = "0.5"
 mockall = "0.13"
 
 [features]
-default = ["cli"]
+default = ["cli", "vector-db"]
 cli = ["dep:clap"]
 cloud = ["dep:reqwest"]
+vector-db = ["dep:milvus"]
 
 [[bin]]
 name = "context-mcp"
