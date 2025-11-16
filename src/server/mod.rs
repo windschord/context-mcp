@@ -1,6 +1,7 @@
 use rmcp::handler::server::router::tool::ToolRouter;
+use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
-use rmcp::{tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
+use rmcp::{schemars, tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -20,6 +21,94 @@ use crate::search::types::NormalizationType;
 use crate::storage::milvus_client::MilvusClient;
 use crate::storage::types::CollectionConfig;
 use crate::tools::*;
+
+// ========================================================================
+// Tool Parameter Structs
+// ========================================================================
+
+/// Parameters for index_project tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct IndexProjectParams {
+    #[schemars(description = "Root path of the project to index")]
+    root_path: String,
+
+    #[schemars(description = "Programming languages to parse (e.g., ['typescript', 'python'])")]
+    languages: Option<Vec<String>>,
+
+    #[schemars(description = "Patterns to exclude (e.g., ['node_modules/**', '.git/**'])")]
+    exclude_patterns: Option<Vec<String>>,
+
+    #[schemars(description = "Whether to include document files (*.md, *.txt)")]
+    include_documents: Option<bool>,
+
+    #[schemars(description = "Project ID (defaults to directory name)")]
+    project_id: Option<String>,
+}
+
+/// Parameters for search_code tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct SearchCodeParams {
+    #[schemars(description = "Natural language search query")]
+    query: String,
+
+    #[schemars(description = "Project ID to search within (optional)")]
+    project_id: Option<String>,
+
+    #[schemars(description = "Milvus collection name (default: 'code_vectors')")]
+    collection_name: Option<String>,
+
+    #[schemars(description = "File types to filter (e.g., ['ts', 'py'])")]
+    file_types: Option<Vec<String>>,
+
+    #[schemars(description = "Maximum number of results (default: 10)")]
+    top_k: Option<usize>,
+
+    #[schemars(description = "Minimum similarity score threshold (0.0-1.0, default: 0.5)")]
+    min_score: Option<f32>,
+}
+
+/// Parameters for get_symbol tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetSymbolParams {
+    #[schemars(description = "Symbol name to search for (function, class, variable, etc.)")]
+    symbol_name: String,
+
+    #[schemars(description = "Symbol type filter (e.g., 'function', 'class', 'variable')")]
+    symbol_type: Option<String>,
+
+    #[schemars(description = "Project ID to search within (optional)")]
+    project_id: Option<String>,
+}
+
+/// Parameters for find_related_docs tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct FindRelatedDocsParams {
+    #[schemars(description = "File path of the code file (optional)")]
+    file_path: Option<String>,
+
+    #[schemars(description = "Symbol name to find related documentation for (optional)")]
+    symbol_name: Option<String>,
+
+    #[schemars(description = "Maximum number of related documents (default: 5)")]
+    top_k: Option<usize>,
+}
+
+/// Parameters for get_index_status tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct GetIndexStatusParams {
+    #[schemars(description = "Project ID to get status for (optional, returns all if not specified)")]
+    project_id: Option<String>,
+}
+
+/// Parameters for clear_index tool
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+struct ClearIndexParams {
+    #[schemars(description = "Project ID to clear (optional, clears all if not specified)")]
+    project_id: Option<String>,
+
+    #[schemars(description = "Confirm deletion (required safety flag)")]
+    confirm: Option<bool>,
+}
 
 /// MCP Server state
 #[derive(Clone)]
@@ -226,19 +315,19 @@ impl ContextMcpServer {
     )]
     async fn index_project(
         &self,
-        #[tool(schema(description = "Root path of the project to index"))] root_path: String,
-        #[tool(schema(description = "Programming languages to parse (e.g., ['typescript', 'python'])"))]
-        languages: Option<Vec<String>>,
-        #[tool(schema(description = "Patterns to exclude (e.g., ['node_modules/**', '.git/**'])"))]
-        exclude_patterns: Option<Vec<String>>,
-        #[tool(schema(description = "Whether to include document files (*.md, *.txt)"))]
-        include_documents: Option<bool>,
-        #[tool(schema(description = "Project ID (defaults to directory name)"))] project_id: Option<
-            String,
-        >,
+        Parameters(params): Parameters<IndexProjectParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
         let start_time = Instant::now();
-        info!("index_project: root_path={}", root_path);
+        info!("index_project: root_path={}", params.root_path);
+
+        // Destructure parameters
+        let IndexProjectParams {
+            root_path,
+            languages,
+            exclude_patterns,
+            include_documents,
+            project_id,
+        } = params;
 
         let state = self.state.read().await;
         if !state.initialized {
@@ -340,21 +429,20 @@ impl ContextMcpServer {
     )]
     async fn search_code(
         &self,
-        #[tool(schema(description = "Natural language search query"))] query: String,
-        #[tool(schema(description = "Project ID to search within (optional)"))] project_id: Option<
-            String,
-        >,
-        #[tool(schema(description = "File types to filter (e.g., ['ts', 'py'])"))] file_types: Option<
-            Vec<String>,
-        >,
-        #[tool(schema(description = "Maximum number of results (default: 10)"))] top_k: Option<
-            usize,
-        >,
-        #[tool(schema(description = "Minimum similarity score threshold (0.0-1.0, default: 0.5)"))]
-        score_threshold: Option<f32>,
+        Parameters(params): Parameters<SearchCodeParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
         let start_time = Instant::now();
-        info!("search_code: query='{}'", query);
+        info!("search_code: query='{}'", params.query);
+
+        // Destructure parameters
+        let SearchCodeParams {
+            query,
+            project_id,
+            collection_name,
+            file_types,
+            top_k,
+            min_score: score_threshold,
+        } = params;
 
         let state = self.state.read().await;
         if !state.initialized {
@@ -372,7 +460,11 @@ impl ContextMcpServer {
             }
         };
 
-        let collection_name = &state.config.indexing.collection_name;
+        // Use provided collection_name or default from config
+        let collection_name = collection_name
+            .as_ref()
+            .map(|s| s.as_str())
+            .unwrap_or(&state.config.indexing.collection_name);
         let top_k = top_k.unwrap_or(10);
         let threshold = score_threshold.unwrap_or(0.5);
 
@@ -469,13 +561,16 @@ impl ContextMcpServer {
     #[tool(description = "Find definitions and references of a symbol (function, class, variable, etc.) across the codebase.")]
     async fn get_symbol(
         &self,
-        #[tool(schema(description = "Symbol name to search for"))] symbol_name: String,
-        #[tool(schema(description = "Symbol type filter (function, class, etc.)"))] symbol_type: Option<
-            String,
-        >,
-        #[tool(schema(description = "Project ID to search within"))] project_id: Option<String>,
+        Parameters(params): Parameters<GetSymbolParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        info!("get_symbol: symbol_name='{}'", symbol_name);
+        info!("get_symbol: symbol_name='{}'", params.symbol_name);
+
+        // Destructure parameters
+        let GetSymbolParams {
+            symbol_name,
+            symbol_type,
+            project_id,
+        } = params;
 
         let state = self.state.read().await;
         if !state.initialized {
@@ -566,16 +661,19 @@ impl ContextMcpServer {
     #[tool(description = "Find documentation files related to specific code files or symbols using semantic search.")]
     async fn find_related_docs(
         &self,
-        #[tool(schema(description = "File path to find docs for"))] file_path: Option<String>,
-        #[tool(schema(description = "Symbol name to find docs for"))] symbol_name: Option<String>,
-        #[tool(schema(description = "Maximum number of documents (default: 10)"))] top_k: Option<
-            usize,
-        >,
+        Parameters(params): Parameters<FindRelatedDocsParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
         info!(
             "find_related_docs: file_path={:?}, symbol_name={:?}",
-            file_path, symbol_name
+            params.file_path, params.symbol_name
         );
+
+        // Destructure parameters
+        let FindRelatedDocsParams {
+            file_path,
+            symbol_name,
+            top_k,
+        } = params;
 
         // Build search query from inputs
         let query = if let Some(ref name) = symbol_name {
@@ -655,11 +753,12 @@ impl ContextMcpServer {
     #[tool(description = "Get the current indexing status and statistics for all or specific projects.")]
     async fn get_index_status(
         &self,
-        #[tool(schema(description = "Project ID to get status for (optional)"))] project_id: Option<
-            String,
-        >,
+        Parameters(params): Parameters<GetIndexStatusParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        info!("get_index_status: project_id={:?}", project_id);
+        info!("get_index_status: project_id={:?}", params.project_id);
+
+        // Destructure parameters
+        let GetIndexStatusParams { project_id } = params;
 
         let state = self.state.read().await;
 
@@ -723,13 +822,15 @@ impl ContextMcpServer {
     #[tool(description = "Clear the index for specific or all projects. Requires confirmation to prevent accidental deletion.")]
     async fn clear_index(
         &self,
-        #[tool(schema(description = "Project ID to clear (clears all if not specified)"))]
-        project_id: Option<String>,
-        #[tool(schema(description = "Confirm deletion (required safety flag)"))] confirm: Option<
-            bool,
-        >,
+        Parameters(params): Parameters<ClearIndexParams>,
     ) -> std::result::Result<CallToolResult, McpError> {
-        info!("clear_index: project_id={:?}", project_id);
+        info!("clear_index: project_id={:?}", params.project_id);
+
+        // Destructure parameters
+        let ClearIndexParams {
+            project_id,
+            confirm,
+        } = params;
 
         let confirm = confirm.unwrap_or(false);
         if !confirm {
