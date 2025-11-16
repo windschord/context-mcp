@@ -59,59 +59,60 @@ pub type Result<T> = std::result::Result<T, ContextMcpError>;
 /// Convert ContextMcpError to MCP protocol error
 impl From<ContextMcpError> for rmcp::ErrorData {
     fn from(err: ContextMcpError) -> Self {
-        use rmcp::ErrorData;
+        use rmcp::{ErrorCode, ErrorData};
+        use std::borrow::Cow;
 
         match err {
             ContextMcpError::Config(msg) => ErrorData {
-                code: -32602, // Invalid params
-                message: format!("Configuration error: {}", msg),
+                code: ErrorCode::INVALID_PARAMS,
+                message: Cow::Owned(format!("Configuration error: {}", msg)),
                 data: None,
             },
             ContextMcpError::Mcp(msg) => ErrorData {
-                code: -32000, // Server error
-                message: msg,
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(msg),
                 data: None,
             },
             ContextMcpError::Parse(msg) => ErrorData {
-                code: -32700, // Parse error
-                message: format!("Parse error: {}", msg),
+                code: ErrorCode::PARSE_ERROR,
+                message: Cow::Owned(format!("Parse error: {}", msg)),
                 data: None,
             },
             ContextMcpError::Database(msg) => ErrorData {
-                code: -32000, // Server error
-                message: format!("Database error: {}", msg),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("Database error: {}", msg)),
                 data: None,
             },
             ContextMcpError::Indexing(msg) |
             ContextMcpError::Search(msg) |
             ContextMcpError::Embedding(msg) => ErrorData {
-                code: -32000, // Server error
-                message: msg,
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(msg),
                 data: None,
             },
             ContextMcpError::TreeSitter(msg) => ErrorData {
-                code: -32000, // Server error
-                message: format!("Tree-sitter error: {}", msg),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("Tree-sitter error: {}", msg)),
                 data: None,
             },
             ContextMcpError::FileSystem(msg) => ErrorData {
-                code: -32000, // Server error
-                message: format!("File system error: {}", msg),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("File system error: {}", msg)),
                 data: None,
             },
             ContextMcpError::Io(err) => ErrorData {
-                code: -32000, // Server error
-                message: format!("I/O error: {}", err),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("I/O error: {}", err)),
                 data: None,
             },
             ContextMcpError::Internal(msg) => ErrorData {
-                code: -32603, // Internal error
-                message: format!("Internal error: {}", msg),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("Internal error: {}", msg)),
                 data: None,
             },
             ContextMcpError::Other(err) => ErrorData {
-                code: -32603, // Internal error
-                message: format!("Error: {}", err),
+                code: ErrorCode::INTERNAL_ERROR,
+                message: Cow::Owned(format!("Error: {}", err)),
                 data: None,
             },
         }

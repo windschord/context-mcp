@@ -1,7 +1,8 @@
 use rmcp::handler::server::router::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::*;
-use rmcp::{schemars, tool, tool_handler, tool_router, ErrorData as McpError, ServerHandler};
+use rmcp::service::{RequestContext, RoleServer};
+use rmcp::{schemars, tool, tool_router, ErrorData as McpError, ServerHandler};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -381,7 +382,7 @@ impl ContextMcpServer {
                     status: format!("Indexing failed: {}", e),
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -416,7 +417,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
 
         info!("index_project completed: {}", result.summary());
 
@@ -498,7 +499,7 @@ impl ContextMcpServer {
                     search_time_ms: start_time.elapsed().as_millis() as u64,
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -547,7 +548,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
 
         info!(
             "search_code completed: {} results in {}ms",
@@ -591,7 +592,7 @@ impl ContextMcpServer {
 
         let results = bm25
             .search(&symbol_name, 100)
-            .map_err(|e| ContextMcpError::Search(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Search(e.to_string()).into())?;
 
         // Convert to symbol locations (simplified implementation)
         let mut definitions = Vec::new();
@@ -652,7 +653,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
@@ -717,7 +718,7 @@ impl ContextMcpServer {
                     total_found: 0,
                 };
                 let json = serde_json::to_string_pretty(&response)
-                    .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+                    .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
                 return Ok(CallToolResult::success(vec![Content::text(json)]));
             }
         };
@@ -744,7 +745,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
@@ -813,7 +814,7 @@ impl ContextMcpServer {
         };
 
         let json = serde_json::to_string_pretty(&response)
-            .map_err(|e| ContextMcpError::Parse(e.to_string()))?;
+            .map_err(|e| ContextMcpError::Parse(e.to_string()).into())?;
 
         Ok(CallToolResult::success(vec![Content::text(json)]))
     }
@@ -919,7 +920,6 @@ impl Default for ContextMcpServer {
 }
 
 /// ServerHandler implementation for MCP protocol
-#[tool_handler]
 impl ServerHandler for ContextMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
@@ -941,6 +941,22 @@ impl ServerHandler for ContextMcpServer {
             capabilities: ServerCapabilities::builder().enable_tools().build(),
             ..Default::default()
         }
+    }
+
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParam,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResult, McpError> {
+        self.tool_router.call_tool(self, request).await
+    }
+
+    async fn list_tools(
+        &self,
+        _request: Option<PaginatedRequestParam>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListToolsResult, McpError> {
+        Ok(self.tool_router.list_tools())
     }
 }
 
