@@ -963,6 +963,7 @@ impl ServerHandler for ContextMcpServer {
     ) -> std::result::Result<ListToolsResult, McpError> {
         Ok(ListToolsResult {
             tools: self.tool_router.list_all(),
+            next_cursor: None,
         })
     }
 }
