@@ -1,5 +1,8 @@
 use anyhow::Result;
-use tracing::{info, Level};
+use context_mcp::ContextMcpServer;
+use rmcp::ServiceExt;
+use tokio::io::{stdin, stdout};
+use tracing::{error, info, Level};
 use tracing_subscriber::FmtSubscriber;
 
 #[tokio::main]
@@ -14,10 +17,31 @@ async fn main() -> Result<()> {
     info!("Version: {}", env!("CARGO_PKG_VERSION"));
     info!("Rust implementation with MCP protocol support");
 
-    // TODO: Initialize MCP server
-    // TODO: Load configuration
-    // TODO: Setup indexing service
-    // TODO: Start server loop
+    // Create MCP server instance
+    let server = ContextMcpServer::new();
+
+    // Initialize server state
+    if let Err(e) = server.initialize().await {
+        error!("Failed to initialize server: {}", e);
+        return Err(e.into());
+    }
+
+    info!("MCP server initialized successfully");
+
+    // Create stdio transport (standard MCP communication channel)
+    let transport = (stdin(), stdout());
+
+    info!("Starting MCP server on stdio...");
+
+    // Start MCP server with stdio transport
+    let service = server.serve(transport).await?;
+
+    info!("MCP server running. Waiting for requests...");
+
+    // Wait for server shutdown
+    service.wait().await?;
+
+    info!("MCP server shutdown complete");
 
     Ok(())
 }
