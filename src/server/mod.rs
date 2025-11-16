@@ -285,14 +285,12 @@ impl ContextMcpServer {
         let collection_name = &state.config.indexing.collection_name;
         let storage = state.storage.as_ref().unwrap();
 
-        if !storage.has_collection(collection_name).await? {
+        if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);
-            let collection_config = CollectionConfig::new(
-                collection_name.clone(),
-                state.config.indexing.dimension,
-            )
-            .with_description("Code vectors for semantic search")
-            .with_shard_num(state.config.milvus.shard_num);
+            let mut collection_config = CollectionConfig::code_vectors(state.config.indexing.dimension);
+            collection_config.name = collection_name.clone();
+            collection_config.description = "Code vectors for semantic search".to_string();
+            collection_config.shard_num = Some(state.config.milvus.shard_num);
 
             storage.create_collection(collection_config).await?;
             info!("Collection created successfully");

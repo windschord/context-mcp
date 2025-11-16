@@ -386,7 +386,7 @@ impl IndexingService {
 
     /// Get indexing statistics
     pub async fn get_stats(&self) -> Result<IndexStats> {
-        let collection_stats = self.storage.get_stats(&self.collection_name).await?;
+        let collection_stats = self.storage.get_collection_stats(&self.collection_name).await?;
         let bm25_stats = self.bm25.lock().get_stats()?;
 
         Ok(IndexStats {
@@ -402,7 +402,7 @@ impl IndexingService {
         info!("Clearing index data");
 
         // Clear vector database
-        if self.storage.has_collection(&self.collection_name).await? {
+        if self.storage.collection_exists(&self.collection_name).await? {
             self.storage.drop_collection(&self.collection_name).await?;
         }
 

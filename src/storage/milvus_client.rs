@@ -5,7 +5,7 @@ use crate::storage::types::{
 use milvus::client::Client;
 use milvus::collection::{Collection, MetricType, SearchParams};
 use milvus::data::{FromField, SearchResults};
-use milvus::schema::{self, Entity, FieldSchema};
+use milvus::schema::{self, Collection as _, Entity, FieldSchema};
 use milvus::value::Value;
 use std::collections::HashMap;
 use std::sync::Arc;
