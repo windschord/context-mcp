@@ -69,3 +69,10 @@ Thumbs.db
 
 # Husky
 .husky/_
+
+# Rust
+target/
+# Note: Cargo.lock should be committed for binary projects
+# Cargo.lock
+**/*.rs.bk
+*.pdb

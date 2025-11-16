@@ -1,0 +1,106 @@
+[package]
+name = "context-mcp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Context-MCP Contributors"]
+description = "Context-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database"
+license = "MIT"
+repository = "https://github.com/windschord/context-mcp.git"
+homepage = "https://github.com/windschord/context-mcp#readme"
+keywords = ["mcp", "claude", "tree-sitter", "ast", "vector-database"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+# MCP Rust SDK
+rmcp = "0.8"
+
+# Async runtime
+tokio = { version = "1.41", features = ["full"] }
+async-trait = "0.1"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Tree-sitter and language parsers
+tree-sitter = "0.24"
+tree-sitter-typescript = "0.23.2"
+tree-sitter-javascript = "0.25"
+tree-sitter-python = "0.25"
+tree-sitter-go = "0.23"
+tree-sitter-rust = "0.23"
+tree-sitter-java = "0.23"
+tree-sitter-c = "0.23"
+tree-sitter-cpp = "0.23"
+
+# ONNX Runtime for local embeddings
+ort = { version = "2.0.0-rc.10", features = ["load-dynamic"] }
+# Alternative: tract = { version = "0.21", features = ["onnx"] }
+
+# Tokenizer
+tokenizers = "0.20"
+
+# Vector database
+# Using milvus crate (unofficial but more actively maintained)
+milvus = "0.2"
+
+# Local database for BM25 search
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# File watching
+notify = "6.1"
+
+# Logging and tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Configuration management
+config = "0.14"
+dotenv = "0.15"
+
+# CLI argument parsing (optional, for standalone binary)
+clap = { version = "4.5", features = ["derive"], optional = true }
+
+# HTTP client for cloud APIs (optional)
+reqwest = { version = "0.12", features = ["json"], optional = true }
+
+# Additional utilities
+uuid = { version = "1.11", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1.11"
+walkdir = "2.5"
+ignore = "0.4"
+rayon = "1.10"
+parking_lot = "0.12"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.13"
+criterion = "0.5"
+mockall = "0.13"
+
+[features]
+default = ["cli"]
+cli = ["dep:clap"]
+cloud = ["dep:reqwest"]
+
+[[bin]]
+name = "context-mcp"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = true
+
+[profile.dev]
+opt-level = 0
+
+[profile.test]
+opt-level = 0
