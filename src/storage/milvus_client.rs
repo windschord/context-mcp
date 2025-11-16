@@ -460,7 +460,7 @@ impl MilvusClient {
     pub async fn new(address: &str) -> Result<Self> {
         info!("Connecting to Milvus at {}", address);
 
-        let client = Client::new(address)
+        let client = Client::new(address.to_string())
             .await
             .map_err(|e| ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e)))?;
 
@@ -481,7 +481,7 @@ impl MilvusClient {
     pub async fn new_with_token(address: &str, _token: &str) -> Result<Self> {
         info!("Connecting to Milvus/Zilliz Cloud at {}", address);
 
-        let client = Client::new(address)
+        let client = Client::new(address.to_string())
             .await
             .map_err(|e| ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e)))?;
 
@@ -730,33 +730,36 @@ impl MilvusClient {
         let mut search_results = Vec::new();
 
         for result_set in results.into_iter() {
-            for (idx, item) in result_set.iter().enumerate() {
-                if let Some(entity) = item {
-                    // Parse metadata JSON
-                    let metadata: HashMap<String, serde_json::Value> =
-                        serde_json::from_str(&entity.metadata).unwrap_or_default();
+            for (idx, entry) in result_set.iter().enumerate() {
+                // Parse metadata JSON and convert to HashMap<String, String>
+                let metadata_json: HashMap<String, serde_json::Value> =
+                    serde_json::from_str(&entry.inner.metadata).unwrap_or_default();
 
-                    let record = VectorRecord {
-                        id: entity.id.clone(),
-                        vector: Vec::new(), // Vector not returned in search results
-                        project_id: entity.project_id.clone(),
-                        file_path: entity.file_path.clone(),
-                        language: entity.language.clone(),
-                        symbol_type: entity.symbol_type.clone(),
-                        symbol_name: entity.symbol_name.clone(),
-                        line_start: entity.line_start,
-                        line_end: entity.line_end,
-                        snippet: entity.snippet.clone(),
-                        docstring: entity.docstring.clone(),
-                        metadata,
-                    };
+                let metadata: HashMap<String, String> = metadata_json
+                    .into_iter()
+                    .map(|(k, v)| (k, v.to_string()))
+                    .collect();
 
-                    search_results.push(SearchResult {
-                        id: entity.id.clone(),
-                        score: 0.0, // TODO: Extract score from search results
-                        record,
-                    });
-                }
+                let record = VectorRecord {
+                    id: entry.inner.id.clone(),
+                    vector: Vec::new(), // Vector not returned in search results
+                    project_id: entry.inner.project_id.clone(),
+                    file_path: entry.inner.file_path.clone(),
+                    language: entry.inner.language.clone(),
+                    symbol_type: entry.inner.symbol_type.clone(),
+                    symbol_name: entry.inner.symbol_name.clone(),
+                    line_start: entry.inner.line_start,
+                    line_end: entry.inner.line_end,
+                    snippet: entry.inner.snippet.clone(),
+                    docstring: entry.inner.docstring.clone(),
+                    metadata,
+                };
+
+                search_results.push(SearchResult {
+                    id: entry.inner.id.clone(),
+                    score: entry.score,
+                    record,
+                });
             }
         }
 

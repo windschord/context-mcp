@@ -1,5 +1,6 @@
 use std::time::Instant;
 use tree_sitter::{Node, Parser, Query, QueryCursor, Tree};
+use streaming_iterator::StreamingIterator;
 
 use crate::error::{ContextMcpError, Result};
 use super::types::{Language, ParseResult, Position, Range, Symbol, SymbolKind};
@@ -119,11 +120,11 @@ impl AstParser {
             .map_err(|e| ContextMcpError::TreeSitter(format!("Invalid query: {}", e)))?;
 
         let mut cursor = QueryCursor::new();
-        let matches = cursor.matches(&query, tree.root_node(), source_code.as_bytes());
+        let mut matches = cursor.matches(&query, tree.root_node(), source_code.as_bytes());
 
         let mut symbols = Vec::new();
 
-        for match_ in matches {
+        while let Some(match_) = matches.next() {
             if let Some(symbol) = self.extract_symbol_from_match(&match_, &query, source_code, language) {
                 symbols.push(symbol);
             }
@@ -154,7 +155,7 @@ impl AstParser {
             let capture_name = &capture_names[capture.index as usize];
             let node = capture.node;
 
-            match capture_name.as_str() {
+            match capture_name.as_ref() {
                 "function.name" | "method.name" | "class.name" | "struct.name"
                 | "enum.name" | "interface.name" | "trait.name" | "type.name"
                 | "variable.name" | "constant.name" => {
@@ -275,7 +276,7 @@ fn extract_parameters(node: Node, source_code: &str) -> Vec<String> {
 /// Infer symbol kind from language and capture names
 fn infer_kind_from_language(
     language: Language,
-    capture_names: &[String],
+    capture_names: &[&str],
     match_: &tree_sitter::QueryMatch,
 ) -> Option<SymbolKind> {
     // Look at the first capture to infer kind

@@ -46,18 +46,19 @@ use crate::search::types::{HybridConfig, HybridResult, NormalizationType};
 use crate::storage::types::{SearchQuery, VectorRecord};
 use crate::storage::MilvusClient;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::{debug, info, warn};
 
 /// Hybrid search engine combining BM25 and vector search
 pub struct HybridSearchEngine {
     /// BM25 engine for keyword search
-    bm25: BM25Engine,
+    bm25: Arc<BM25Engine>,
 
     /// Milvus client for vector search
-    milvus: MilvusClient,
+    milvus: Arc<MilvusClient>,
 
     /// Embedding engine for query vectorization
-    embedding: EmbeddingEngine,
+    embedding: Arc<EmbeddingEngine>,
 }
 
 impl HybridSearchEngine {
@@ -84,7 +85,7 @@ impl HybridSearchEngine {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new(bm25: BM25Engine, milvus: MilvusClient, embedding: EmbeddingEngine) -> Self {
+    pub fn new(bm25: Arc<BM25Engine>, milvus: Arc<MilvusClient>, embedding: Arc<EmbeddingEngine>) -> Self {
         info!("Creating HybridSearchEngine");
         Self {
             bm25,

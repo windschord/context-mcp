@@ -43,7 +43,7 @@ pub struct IndexingService {
     storage: Arc<MilvusClient>,
 
     /// BM25 engine for full-text search
-    bm25: Arc<parking_lot::Mutex<BM25Engine>>,
+    bm25: Arc<BM25Engine>,
 
     /// Collection name for vector storage
     collection_name: String,
@@ -58,16 +58,16 @@ impl IndexingService {
     /// - `storage`: Milvus client for vector storage
     /// - `bm25`: BM25 engine for full-text indexing
     pub fn new(
-        parser: SymbolExtractor,
-        embedding: EmbeddingEngine,
-        storage: MilvusClient,
-        bm25: BM25Engine,
+        parser: Arc<SymbolExtractor>,
+        embedding: Arc<EmbeddingEngine>,
+        storage: Arc<MilvusClient>,
+        bm25: Arc<BM25Engine>,
     ) -> Self {
         Self {
-            parser: Arc::new(parser),
-            embedding: Arc::new(embedding),
-            storage: Arc::new(storage),
-            bm25: Arc::new(parking_lot::Mutex::new(bm25)),
+            parser,
+            embedding,
+            storage,
+            bm25,
             collection_name: "code_vectors".to_string(),
         }
     }
@@ -255,7 +255,7 @@ impl IndexingService {
         }
 
         // Index in BM25
-        if let Err(e) = self.bm25.lock().index_documents_batch(bm25_documents) {
+        if let Err(e) = self.bm25.index_documents_batch(bm25_documents) {
             let error = IndexError::storage(file_path.clone(), e.to_string());
             return Ok(FileIndexResult::error(
                 file_path,
@@ -387,7 +387,7 @@ impl IndexingService {
     /// Get indexing statistics
     pub async fn get_stats(&self) -> Result<IndexStats> {
         let collection_stats = self.storage.get_collection_stats(&self.collection_name).await?;
-        let bm25_stats = self.bm25.lock().get_stats()?;
+        let bm25_stats = self.bm25.get_stats()?;
 
         Ok(IndexStats {
             vector_count: collection_stats.entity_count as usize,
@@ -407,7 +407,7 @@ impl IndexingService {
         }
 
         // Clear BM25 index
-        self.bm25.lock().clear()?;
+        self.bm25.clear()?;
 
         info!("Index cleared successfully");
         Ok(())

@@ -1,6 +1,7 @@
 use crate::error::{ContextMcpError, Result};
 use super::types::{Embedding, EmbeddingConfig, ModelInfo};
 use ort::session::{builder::GraphOptimizationLevel, Session};
+use ort::value::Tensor;
 use parking_lot::Mutex;
 use std::path::Path;
 use std::sync::Arc;
@@ -35,7 +36,7 @@ use tracing::{debug, info, warn};
 /// ```
 pub struct EmbeddingEngine {
     /// ONNX Runtime session
-    session: Session,
+    session: Mutex<Session>,
 
     /// Tokenizer for text preprocessing
     tokenizer: Arc<Mutex<Tokenizer>>,
@@ -98,7 +99,7 @@ impl EmbeddingEngine {
         info!("Embedding dimension: {}", model_info.dimension);
 
         Ok(Self {
-            session,
+            session: Mutex::new(session),
             tokenizer: Arc::new(Mutex::new(tokenizer)),
             config,
             model_info,
@@ -218,39 +219,45 @@ impl EmbeddingEngine {
         )
         .map_err(|e| ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e)))?;
 
+        // Create input tensors
+        let input_ids_tensor = Tensor::from_array(input_ids_array)
+            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create input_ids tensor: {}", e)))?;
+        let attention_mask_tensor = Tensor::from_array(attention_mask_array)
+            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create attention_mask tensor: {}", e)))?;
+        let token_type_ids_tensor = Tensor::from_array(token_type_ids_array)
+            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e)))?;
+
         // Run inference
-        let outputs = self
-            .session
-            .run(vec![
-                Value::from_array(self.session.allocator(), &input_ids_array)
-                    .map_err(|e| ContextMcpError::Embedding(format!("Failed to create input_ids value: {}", e)))?,
-                Value::from_array(self.session.allocator(), &attention_mask_array)
-                    .map_err(|e| ContextMcpError::Embedding(format!("Failed to create attention_mask value: {}", e)))?,
-                Value::from_array(self.session.allocator(), &token_type_ids_array)
-                    .map_err(|e| ContextMcpError::Embedding(format!("Failed to create token_type_ids value: {}", e)))?,
+        let mut session = self.session.lock();
+        let outputs = session
+            .run(ort::inputs![
+                "input_ids" => input_ids_tensor,
+                "attention_mask" => attention_mask_tensor,
+                "token_type_ids" => token_type_ids_tensor
             ])
             .map_err(|e| ContextMcpError::Embedding(format!("ONNX inference failed: {}", e)))?;
 
         // Extract embeddings from output
         let output_tensor = outputs
-            .get(0)
+            .get("last_hidden_state")
+            .or_else(|| outputs.get("output"))
+            .or_else(|| outputs.get("logits"))
             .ok_or_else(|| ContextMcpError::Embedding("No output from model".to_string()))?;
 
         let embeddings_data = output_tensor
-            .try_extract::<f32>()
+            .try_extract_tensor::<f32>()
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to extract output tensor: {}", e)))?;
 
-        let embeddings_view = embeddings_data.view();
-        let shape = embeddings_view.shape();
+        let (shape, data) = embeddings_data;
 
-        if shape.len() != 2 || shape[0] != batch_size {
+        if shape.len() != 2 || shape[0] as usize != batch_size {
             return Err(ContextMcpError::Embedding(format!(
                 "Unexpected output shape: {:?}, expected [{}, {}]",
                 shape, batch_size, self.model_info.dimension
             )));
         }
 
-        let embedding_dim = shape[1];
+        let embedding_dim = shape[1] as usize;
 
         // Extract and normalize embeddings
         let mut results = Vec::with_capacity(batch_size);
@@ -259,9 +266,7 @@ impl EmbeddingEngine {
             let start_idx = i * embedding_dim;
             let end_idx = start_idx + embedding_dim;
 
-            let raw_embedding = embeddings_view
-                .as_slice()
-                .ok_or_else(|| ContextMcpError::Embedding("Failed to get embedding slice".to_string()))?
+            let raw_embedding = data
                 .get(start_idx..end_idx)
                 .ok_or_else(|| ContextMcpError::Embedding(format!("Invalid embedding range: {}..{}", start_idx, end_idx)))?;
 

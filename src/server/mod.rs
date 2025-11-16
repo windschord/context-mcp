@@ -221,7 +221,7 @@ impl ContextMcpServer {
 
         // Initialize embedding engine
         info!("Initializing embedding engine");
-        let embedding_config = crate::embedding::types::EmbeddingConfig {
+        let embedding_config = crate::embedding::EmbeddingConfig {
             model_path: state.config.embedding.model_path.clone(),
             tokenizer_path: state.config.embedding.tokenizer_path.clone(),
             max_length: state.config.embedding.max_length,
@@ -264,19 +264,19 @@ impl ContextMcpServer {
         // Initialize hybrid search engine
         info!("Initializing hybrid search engine");
         let hybrid = HybridSearchEngine::new(
-            (*state.bm25.as_ref().unwrap()).clone(),
-            (*state.storage.as_ref().unwrap()).clone(),
-            (*state.embedding.as_ref().unwrap()).clone(),
+            Arc::clone(state.bm25.as_ref().unwrap()),
+            Arc::clone(state.storage.as_ref().unwrap()),
+            Arc::clone(state.embedding.as_ref().unwrap()),
         );
         state.hybrid = Some(Arc::new(hybrid));
 
         // Initialize indexing service
         info!("Initializing indexing service");
         let indexing = IndexingService::new(
-            (*state.parser.as_ref().unwrap()).clone(),
-            (*state.embedding.as_ref().unwrap()).clone(),
-            (*state.storage.as_ref().unwrap()).clone(),
-            (*state.bm25.as_ref().unwrap()).clone(),
+            Arc::clone(state.parser.as_ref().unwrap()),
+            Arc::clone(state.embedding.as_ref().unwrap()),
+            Arc::clone(state.storage.as_ref().unwrap()),
+            Arc::clone(state.bm25.as_ref().unwrap()),
         )
         .with_collection_name(state.config.indexing.collection_name.clone());
         state.indexing = Some(Arc::new(indexing));
@@ -328,21 +328,25 @@ impl ContextMcpServer {
             project_id,
         } = params;
 
-        let state = self.state.read().await;
-        if !state.initialized {
-            return Ok(CallToolResult::success(vec![Content::text(
-                "Error: Server not initialized. Please wait for initialization to complete."
-                    .to_string(),
-            )]));
-        }
-
-        let indexing_service = match &state.indexing {
-            Some(service) => service,
-            None => {
+        let (indexing_service, batch_size, max_parallel) = {
+            let state = self.state.read().await;
+            if !state.initialized {
                 return Ok(CallToolResult::success(vec![Content::text(
-                    "Error: Indexing service not available".to_string(),
+                    "Error: Server not initialized. Please wait for initialization to complete."
+                        .to_string(),
                 )]));
             }
+
+            let indexing_service = match &state.indexing {
+                Some(service) => Arc::clone(service),
+                None => {
+                    return Ok(CallToolResult::success(vec![Content::text(
+                        "Error: Indexing service not available".to_string(),
+                    )]));
+                }
+            };
+
+            (indexing_service, state.config.indexing.batch_size, state.config.indexing.max_parallel)
         };
 
         // Determine project ID
@@ -374,10 +378,8 @@ impl ContextMcpServer {
             .collect();
         config.exclude_patterns = exclude_patterns.unwrap_or_default();
         config.include_documents = include_documents.unwrap_or(true);
-        config.batch_size = state.config.indexing.batch_size;
-        config.max_parallel = state.config.indexing.max_parallel;
-
-        drop(state); // Release read lock before long operation
+        config.batch_size = batch_size;
+        config.max_parallel = max_parallel;
 
         // Perform indexing
         let result = match indexing_service.index_project(config).await {
@@ -457,49 +459,51 @@ impl ContextMcpServer {
             min_score: score_threshold,
         } = params;
 
-        let state = self.state.read().await;
-        if !state.initialized {
-            return Ok(CallToolResult::success(vec![Content::text(
-                "Error: Server not initialized".to_string(),
-            )]));
-        }
-
-        let hybrid_engine = match &state.hybrid {
-            Some(engine) => engine,
-            None => {
+        let (hybrid_engine, collection_name, hybrid_config) = {
+            let state = self.state.read().await;
+            if !state.initialized {
                 return Ok(CallToolResult::success(vec![Content::text(
-                    "Error: Search engine not available".to_string(),
+                    "Error: Server not initialized".to_string(),
                 )]));
             }
+
+            let hybrid_engine = match &state.hybrid {
+                Some(engine) => Arc::clone(engine),
+                None => {
+                    return Ok(CallToolResult::success(vec![Content::text(
+                        "Error: Search engine not available".to_string(),
+                    )]));
+                }
+            };
+
+            // Use provided collection_name or default from config
+            let collection_name = collection_name
+                .as_ref()
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| state.config.indexing.collection_name.clone());
+            let top_k_value = top_k.unwrap_or(10);
+            let threshold = score_threshold.unwrap_or(0.5);
+
+            // Build hybrid config
+            let hybrid_config = crate::search::types::HybridConfig {
+                alpha: state.config.hybrid.alpha,
+                normalization: match state.config.hybrid.normalization.as_str() {
+                    "MinMax" => NormalizationType::MinMax,
+                    "ZScore" => NormalizationType::ZScore,
+                    "None" => NormalizationType::None,
+                    _ => NormalizationType::MinMax,
+                },
+                bm25_top_k: state.config.hybrid.bm25_top_k,
+                vector_top_k: state.config.hybrid.vector_top_k,
+                top_k: top_k_value,
+            };
+
+            (hybrid_engine, collection_name, hybrid_config)
         };
-
-        // Use provided collection_name or default from config
-        let collection_name = collection_name
-            .as_ref()
-            .map(|s| s.as_str())
-            .unwrap_or(&state.config.indexing.collection_name);
-        let top_k = top_k.unwrap_or(10);
-        let threshold = score_threshold.unwrap_or(0.5);
-
-        // Build hybrid config
-        let hybrid_config = crate::search::types::HybridConfig {
-            alpha: state.config.hybrid.alpha,
-            normalization: match state.config.hybrid.normalization.as_str() {
-                "MinMax" => NormalizationType::MinMax,
-                "ZScore" => NormalizationType::ZScore,
-                "None" => NormalizationType::None,
-                _ => NormalizationType::MinMax,
-            },
-            bm25_top_k: state.config.hybrid.bm25_top_k,
-            vector_top_k: state.config.hybrid.vector_top_k,
-            top_k,
-        };
-
-        drop(state); // Release lock before search
 
         // Perform hybrid search
         let results = match hybrid_engine
-            .search_with_config(&query, collection_name, hybrid_config)
+            .search_with_config(&query, &collection_name, hybrid_config)
             .await
         {
             Ok(results) => results,
@@ -700,28 +704,30 @@ impl ContextMcpServer {
         };
 
         // Use hybrid search to find related documents
-        let state = self.state.read().await;
-        if !state.initialized {
-            return Ok(CallToolResult::success(vec![Content::text(
-                "Error: Server not initialized".to_string(),
-            )]));
-        }
-
-        let hybrid_engine = match &state.hybrid {
-            Some(engine) => engine,
-            None => {
+        let (hybrid_engine, collection_name, top_k_value) = {
+            let state = self.state.read().await;
+            if !state.initialized {
                 return Ok(CallToolResult::success(vec![Content::text(
-                    "Error: Search engine not available".to_string(),
+                    "Error: Server not initialized".to_string(),
                 )]));
             }
+
+            let hybrid_engine = match &state.hybrid {
+                Some(engine) => Arc::clone(engine),
+                None => {
+                    return Ok(CallToolResult::success(vec![Content::text(
+                        "Error: Search engine not available".to_string(),
+                    )]));
+                }
+            };
+
+            let collection_name = state.config.indexing.collection_name.clone();
+            let top_k_value = top_k.unwrap_or(10);
+
+            (hybrid_engine, collection_name, top_k_value)
         };
 
-        let collection_name = &state.config.indexing.collection_name;
-        let top_k = top_k.unwrap_or(10);
-
-        drop(state);
-
-        let results = match hybrid_engine.search(&query, collection_name, top_k).await {
+        let results = match hybrid_engine.search(&query, &collection_name, top_k_value).await {
             Ok(results) => results,
             Err(e) => {
                 error!("Document search failed: {}", e);
@@ -853,26 +859,28 @@ impl ContextMcpServer {
             )]));
         }
 
-        let mut state = self.state.write().await;
-
-        if !state.initialized {
-            return Ok(CallToolResult::success(vec![Content::text(
-                "Error: Server not initialized".to_string(),
-            )]));
-        }
-
-        let indexing_service = match &state.indexing {
-            Some(service) => service,
-            None => {
+        let indexing_service = {
+            let state = self.state.read().await;
+            if !state.initialized {
                 return Ok(CallToolResult::success(vec![Content::text(
-                    "Error: Indexing service not available".to_string(),
+                    "Error: Server not initialized".to_string(),
                 )]));
+            }
+
+            match &state.indexing {
+                Some(service) => Arc::clone(service),
+                None => {
+                    return Ok(CallToolResult::success(vec![Content::text(
+                        "Error: Indexing service not available".to_string(),
+                    )]));
+                }
             }
         };
 
         // Clear the index
         let result = if let Some(ref pid) = project_id {
             // Clear specific project
+            let mut state = self.state.write().await;
             let count = if state.indexed_projects.contains_key(pid) {
                 state.indexed_projects.remove(pid);
                 1
@@ -896,8 +904,12 @@ impl ContextMcpServer {
             }
         } else {
             // Clear all
-            let project_count = state.indexed_projects.len();
-            state.indexed_projects.clear();
+            let project_count = {
+                let mut state = self.state.write().await;
+                let count = state.indexed_projects.len();
+                state.indexed_projects.clear();
+                count
+            };
 
             match indexing_service.clear_index().await {
                 Ok(()) => ClearIndexResponse {
