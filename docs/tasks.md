@@ -95,9 +95,9 @@
 - タスク10.6: BM25全文検索エンジン実装 | rusqliteまたはsledを使用した転置インデックス、BM25スコアリング、検索機能 (依存: 10.1 | 工数: 6h | ステータス: DONE)
 - タスク10.7: ハイブリッド検索エンジン実装 | BM25とベクトル検索の統合、スコア正規化、重み付けパラメータ (依存: 10.5, 10.6 | 工数: 5h | ステータス: DONE)
 - タスク10.8: Indexing Service実装 | ファイルスキャン、並列処理（tokio::spawn）、進捗追跡、エラー収集 (依存: 10.3, 10.4, 10.5 | 工数: 8h | ステータス: DONE)
-- タスク10.9: MCPツール実装 | index_project, search_code, get_symbol, find_related_docs, get_index_status, clear_indexのRust実装 (依存: 10.2, 10.7, 10.8 | 工数: 10h | ステータス: TODO)
+- タスク10.9: MCPツール実装 | index_project, search_code, get_symbol, find_related_docs, get_index_status, clear_indexのRust実装 (依存: 10.2, 10.7, 10.8 | 工数: 10h | ステータス: DONE)
 - タスク10.10: ファイル監視とインクリメンタル更新 | notify crateを使用したファイル監視、デバウンス処理、差分更新 (依存: 10.8 | 工数: 5h | ステータス: TODO)
-- タスク10.11: 設定管理システム実装 | 環境変数読み込み、.context-mcp.json解析、設定マージ、バリデーション (依存: 10.1 | 工数: 4h | ステータス: TODO)
+- タスク10.11: 設定管理システム実装 | 環境変数読み込み、.context-mcp.json解析、設定マージ、バリデーション (依存: 10.1 | 工数: 4h | ステータス: DONE) ※Task 10.9の一部として実装完了
 - タスク10.12: テストスイート実装 | cargo testでのユニットテスト、統合テスト、カバレッジ測定 (依存: フェーズ10全体 | 工数: 12h | ステータス: TODO)
 - タスク10.13: リリースビルド最適化 | cargo build --release最適化、バイナリサイズ削減（strip, LTO）、クロスコンパイル設定（macOS, Linux, Windows） (依存: 10.12 | 工数: 4h | ステータス: TODO)
 - タスク10.14: ドキュメント更新 | README.md、SETUP.md、Rustビルド手順、実行方法の更新 (依存: 10.13 | 工数: 3h | ステータス: TODO)
