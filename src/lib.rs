@@ -6,6 +6,7 @@ pub mod embedding;
 pub mod error;
 pub mod parser;
 pub mod server;
+pub mod storage;
 pub mod tools;
 
 pub use error::{ContextMcpError, Result};
