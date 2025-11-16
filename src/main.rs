@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
     info!("MCP server running. Processing client requests...");
 
     // Wait for server shutdown
-    service.wait().await?;
+    service.waiting().await?;
 
     info!("MCP server shutdown complete");
 
