@@ -275,7 +275,7 @@ fn extract_parameters(node: Node, source_code: &str) -> Vec<String> {
 
 /// Infer symbol kind from language and capture names
 fn infer_kind_from_language(
-    language: Language,
+    _language: Language,
     capture_names: &[&str],
     match_: &tree_sitter::QueryMatch,
 ) -> Option<SymbolKind> {

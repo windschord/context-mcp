@@ -139,6 +139,7 @@ impl BM25Config {
 
 /// Statistics about a term in the corpus
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct TermStats {
     /// Document frequency: number of documents containing this term
     pub doc_freq: usize,
@@ -149,6 +150,7 @@ pub(crate) struct TermStats {
 
 /// Document statistics
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub(crate) struct DocStats {
     /// Document length (number of terms)
     pub length: usize,

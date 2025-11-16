@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 use crate::config::ServerConfig;
 use crate::embedding::EmbeddingEngine;
@@ -482,7 +482,7 @@ impl ContextMcpServer {
                 .map(|s| s.to_string())
                 .unwrap_or_else(|| state.config.indexing.collection_name.clone());
             let top_k_value = top_k.unwrap_or(10);
-            let threshold = score_threshold.unwrap_or(0.5);
+            let _threshold = score_threshold.unwrap_or(0.5);
 
             // Build hybrid config
             let hybrid_config = crate::search::types::HybridConfig {
@@ -612,7 +612,7 @@ impl ContextMcpServer {
 
         // Convert to symbol locations (simplified implementation)
         let mut definitions = Vec::new();
-        let mut references = Vec::new();
+        let references = Vec::new();
 
         for result in results {
             let parts: Vec<&str> = result.id.split(':').collect();
@@ -636,7 +636,7 @@ impl ContextMcpServer {
             }
 
             // Check project ID filter
-            if let Some(ref pid) = project_id {
+            if let Some(ref _pid) = project_id {
                 // Would need to track project_id in BM25 metadata
                 // For now, skip this filter
             }
@@ -991,24 +991,5 @@ impl ServerHandler for ContextMcpServer {
             tools: self.tool_router.list_all(),
             next_cursor: None,
         })
-    }
-}
-
-// Helper trait for BM25Engine cloning
-trait BM25Clone {
-    fn clone_for_hybrid(&self) -> BM25Engine;
-    fn clone_for_indexing(&self) -> BM25Engine;
-}
-
-impl BM25Clone for BM25Engine {
-    fn clone_for_hybrid(&self) -> BM25Engine {
-        // BM25Engine can't be cloned directly, so we create a new in-memory instance
-        // In a real implementation, you'd want to share the same SQLite connection
-        BM25Engine::new_in_memory().expect("Failed to create BM25 engine")
-    }
-
-    fn clone_for_indexing(&self) -> BM25Engine {
-        // Same as above - this is a limitation we'd need to address
-        BM25Engine::new_in_memory().expect("Failed to create BM25 engine")
     }
 }

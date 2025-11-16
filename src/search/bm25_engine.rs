@@ -27,7 +27,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 /// BM25 search engine with SQLite-backed inverted index
 #[derive(Clone)]

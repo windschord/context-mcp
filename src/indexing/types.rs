@@ -279,7 +279,7 @@ impl IndexProgress {
         let errors = self.error_count();
         let elapsed = self.elapsed();
         let percentage = if total > 0 {
-            (processed as f64 / total as f64 * 100.0)
+            processed as f64 / total as f64 * 100.0
         } else {
             0.0
         };

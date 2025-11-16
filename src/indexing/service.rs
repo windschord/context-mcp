@@ -13,7 +13,7 @@
 /// - Batch operations for efficient database writes
 
 use crate::embedding::EmbeddingEngine;
-use crate::error::{ContextMcpError, Result};
+use crate::error::Result;
 use crate::indexing::file_scanner::FileScanner;
 use crate::indexing::types::{
     ErrorKind, FileIndexResult, IndexConfig, IndexError, IndexProgress, IndexResult, ScanConfig,
@@ -29,7 +29,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::fs;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info};
 
 /// Indexing service that coordinates file scanning, parsing, embedding, and storage
 pub struct IndexingService {

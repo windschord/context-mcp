@@ -8,7 +8,6 @@ use milvus::data::{FromField, SearchResults};
 use milvus::schema::{self, Collection as _, Entity, FieldSchema};
 use milvus::value::Value;
 use std::collections::HashMap;
-use std::sync::Arc;
 use tracing::{debug, info, warn};
 
 // デフォルトのベクトル次元数（FieldSchemaはconst contextで使用するため固定値が必要）
@@ -439,7 +438,9 @@ impl<'a> schema::Collection<'a> for CodeVectorSearchResult {
 /// Milvus client for vector storage and retrieval
 pub struct MilvusClient {
     client: Client,
+    #[allow(dead_code)]
     collection_name: String,
+    #[allow(dead_code)]
     dimension: i64,
 }
 
@@ -730,7 +731,7 @@ impl MilvusClient {
         let mut search_results = Vec::new();
 
         for result_set in results.into_iter() {
-            for (idx, entry) in result_set.iter().enumerate() {
+            for (_idx, entry) in result_set.iter().enumerate() {
                 // Parse metadata JSON and convert to HashMap<String, String>
                 let metadata_json: HashMap<String, serde_json::Value> =
                     serde_json::from_str(&entry.inner.metadata).unwrap_or_default();
@@ -786,9 +787,9 @@ impl MilvusClient {
             .map(|id| format!("\"{}\"", id))
             .collect::<Vec<_>>()
             .join(", ");
-        let expr = format!("id in [{}]", ids_str);
+        let _expr = format!("id in [{}]", ids_str);
 
-        let collection: Collection<CodeVectorEntity> = self.get_collection().await?;
+        let _collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
         // Note: The delete API might not be available in the current milvus crate
         // This is a placeholder implementation

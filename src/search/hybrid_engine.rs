@@ -47,7 +47,7 @@ use crate::storage::types::{SearchQuery, VectorRecord};
 use crate::storage::MilvusClient;
 use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 /// Hybrid search engine combining BM25 and vector search
 pub struct HybridSearchEngine {
