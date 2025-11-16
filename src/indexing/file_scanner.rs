@@ -56,7 +56,7 @@ impl FileScanner {
 
         // Add custom ignore patterns
         if !config.exclude_patterns.is_empty() {
-            let mut override_builder = OverrideBuilder::new(&config.root_path);
+            let mut override_builder = OverrideBuilder::new(root);
             for pattern in &config.exclude_patterns {
                 if let Err(e) = override_builder.add(&format!("!{}", pattern)) {
                     warn!("Failed to add exclude pattern '{}': {}", pattern, e);
