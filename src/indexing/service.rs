@@ -446,10 +446,7 @@ impl IndexStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::embedding::types::EmbeddingConfig;
-    use crate::search::types::BM25Config;
-    use crate::storage::types::CollectionConfig;
-    use std::path::PathBuf;
+    use crate::embedding::EmbeddingConfig;
     use tempfile::TempDir;
 
     // Note: These tests require ONNX model files and Milvus connection
