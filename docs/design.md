@@ -163,29 +163,32 @@ where α = 0.3 (デフォルト、設定可能)
 ```
 
 ### コンポーネント6: Embedding Engine
-**目的**: テキストの埋め込みベクトル生成（ローカル/クラウド対応）
+**目的**: テキストの埋め込みベクトル生成（ローカルONNXモデル）
 **責務**:
-- 埋め込みプロバイダーの管理（ローカル/クラウド）
-- テキストのベクトル化
+- ONNXモデルのロード・初期化
+- テキストのトークナイズとベクトル化
 - バッチ処理とキャッシング
-- モデルのロード・初期化
+- モデル推論の実行
 
 **インターフェース**:
-- `initialize(provider, config)`: プロバイダー初期化
-- `embed(text)`: 単一テキストの埋め込み
-- `embedBatch(texts[])`: 複数テキストの一括埋め込み
-- `getModelInfo()`: 使用中のモデル情報取得
+```rust
+pub struct EmbeddingEngine {
+    session: ort::Session,
+    tokenizer: Tokenizer,
+}
 
-**サポートプロバイダー**:
-```typescript
-// ローカルプロバイダー（デフォルト）
-- TransformersJsProvider: Transformers.js (all-MiniLM-L6-v2等)
-- ONNXProvider: ONNX Runtime (軽量モデル)
-
-// クラウドプロバイダー（オプション）
-- OpenAIProvider: text-embedding-3-small/large
-- VoyageAIProvider: voyage-code-2
+impl EmbeddingEngine {
+    pub async fn new(model_path: &Path) -> Result<Self>;
+    pub async fn embed(&self, text: &str) -> Result<Vec<f32>>;
+    pub async fn embed_batch(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>>;
+    pub fn model_info(&self) -> ModelInfo;
+}
 ```
+
+**使用ライブラリ**:
+- `ort`: ONNX Runtime Rustバインディング（ONNXモデル推論）
+- `tokenizers`: HuggingFace tokenizerのRustバインディング（テキストトークナイズ）
+- デフォルトモデル: `all-MiniLM-L6-v2.onnx`（384次元埋め込み）
 
 ### コンポーネント7: Vector Store
 **目的**: ベクトルデータの管理（ローカル/クラウド対応）
@@ -225,35 +228,38 @@ where α = 0.3 (デフォルト、設定可能)
 ### コンポーネント9: Environment-based Configuration System
 **目的**: 環境変数のみで動作可能なゼロコンフィグ設定システム
 **責務**:
-- デフォルト設定の提供（ローカルモード、Milvus standalone、Transformers.js）
+- デフォルト設定の提供（ローカルモード、Milvus standalone、ローカルONNXモデル）
 - 環境変数からの設定読み込み
 - 設定ファイルとのマージ
 - 設定の優先順位適用（環境変数 > 設定ファイル > デフォルト）
 - 適用された設定のログ出力
 
 **インターフェース**:
-- `loadConfig()`: 設定読み込み（環境変数、ファイル、デフォルトをマージ）
-- `getConfig()`: 現在の設定取得
-- `validateConfig(config)`: 設定のバリデーション
-- `applyEnvironmentOverrides(config)`: 環境変数によるオーバーライド
+```rust
+pub struct ConfigManager {
+    config: Config,
+}
+
+impl ConfigManager {
+    pub fn load() -> Result<Self>;
+    pub fn get(&self) -> &Config;
+    pub fn validate(&self) -> Result<()>;
+    fn apply_env_overrides(&mut self);
+}
+```
 
 **サポート環境変数**:
-```typescript
+```rust
 // モード設定
-LSP_MCP_MODE: 'local' | 'cloud'
+LSP_MCP_MODE: "local" | "cloud"
 
 // ベクターDB設定
-LSP_MCP_VECTOR_BACKEND: 'milvus' | 'zilliz'
-LSP_MCP_VECTOR_ADDRESS: string  // 例: 'localhost:19530'
-LSP_MCP_VECTOR_TOKEN: string    // Zilliz Cloud認証用
-
-// 埋め込み設定
-LSP_MCP_EMBEDDING_PROVIDER: 'transformers' | 'openai' | 'voyageai'
-LSP_MCP_EMBEDDING_API_KEY: string  // クラウドプロバイダー用
-LSP_MCP_EMBEDDING_MODEL: string    // モデル名（省略可）
+LSP_MCP_VECTOR_BACKEND: "milvus" | "zilliz"
+LSP_MCP_VECTOR_ADDRESS: String  // 例: "localhost:19530"
+LSP_MCP_VECTOR_TOKEN: String    // Zilliz Cloud認証用
 
 // ログ設定
-LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+LOG_LEVEL: "DEBUG" | "INFO" | "WARN" | "ERROR"
 ```
 
 **設定の優先順位**:
@@ -264,7 +270,7 @@ LOG_LEVEL: 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
   ↓
 2. ユーザー設定ファイル（.context-mcp.json）
   ↓
-3. デフォルト設定（types.ts内のDEFAULT_CONFIG）
+3. デフォルト設定（config::DEFAULT内）
   ↓
 優先度（低）
 ```
@@ -817,19 +823,25 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 - 高性能で安定しており、豊富なドキュメント
 - プラグインインターフェースは残し、将来の拡張性を確保
 
-### 決定4: Node.js実装
+### 決定4: Rust実装
 
 **検討した選択肢**:
-1. **Node.js/TypeScript** - Claude Code連携容易、npm豊富
-2. Rust - 高性能、メモリ安全
+1. **Rust** - 高性能、メモリ安全、単一バイナリ配布
+2. Node.js/TypeScript - Claude Code連携容易、npm豊富
 3. Python - ML/AIツール豊富、開発速度
 
-**決定**: Node.js/TypeScript
+**決定**: Rust
 **根拠**:
-- Claude CodeがElectronベースでNode.js環境
-- MCPのNode.js SDKが公式提供
-- Tree-sitterのNode.jsバインディング利用可
-- TypeScriptによる型安全性
+- **高性能**: ネイティブコンパイル、ゼロコスト抽象化による高速な実行
+- **メモリ安全性**: Rustの所有権システムによる安全なメモリ管理、データ競合の排除
+- **単一バイナリ配布**: 外部ランタイム（Node.js等）不要、配布が容易
+- **低リソース使用量**: メモリ・CPU使用量がNode.jsより大幅に削減
+- **MCP Rust SDK**: 公式Rust SDK (`rmcp`) が利用可能、4,700+ QPSの実績
+- **Tree-sitter**: Rustネイティブライブラリ、高品質なRustバインディング
+- **ONNX Runtime**: Rust crateでローカルモデル推論が可能
+- **Milvus SDK**: 公式Rust SDK (`milvus-sdk-rust`) が利用可能
+- **並行処理**: tokio/async-std等の高性能非同期ランタイム
+- **型安全性**: 強力な型システムと静的解析によるバグの早期発見
 
 ### 決定5: ローカルファースト設計
 
@@ -848,9 +860,9 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 - **ユーザー選択の尊重**: クラウドモードも選択可能で柔軟性を維持
 
 **実装アプローチ**:
-- デフォルトはローカル埋め込みモデル（Transformers.js）
+- デフォルトはローカル埋め込みモデル（ONNX Runtime経由、all-MiniLM-L6-v2.onnx）
 - デフォルトはローカルベクターDB（Milvus standalone）
-- 設定で簡単にクラウドモードに切り替え可能（Zilliz Cloud）
+- 設定でクラウドベクターDB（Zilliz Cloud）に切り替え可能
 - 初回セットアップ時にモード選択を提示
 - Docker Composeで簡単にMilvus standaloneを起動
 
@@ -1042,9 +1054,8 @@ interface VectorStorePlugin {
     }
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2",
-    "local": true
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "tokenizerPath": "./models/tokenizer.json"
   },
   "search": {
     "hybridWeight": 0.3,
@@ -1084,9 +1095,8 @@ interface VectorStorePlugin {
     }
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2",
-    "local": true
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "tokenizerPath": "./models/tokenizer.json"
   },
   "privacy": {
     "blockExternalCalls": true
@@ -1106,8 +1116,8 @@ interface VectorStorePlugin {
     }
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2"
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "tokenizerPath": "./models/tokenizer.json"
   },
   "privacy": {
     "blockExternalCalls": true
@@ -1127,12 +1137,13 @@ interface VectorStorePlugin {
     }
   },
   "embedding": {
-    "provider": "openai",
-    "model": "text-embedding-3-small",
-    "apiKey": "${OPENAI_API_KEY}"
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "tokenizerPath": "./models/tokenizer.json"
   },
   "privacy": {
     "blockExternalCalls": false
   }
 }
 ```
+
+**注記**: クラウドモードでもローカルONNXモデルを使用します。クラウドとローカルの違いはベクターDBのバックエンドのみです。

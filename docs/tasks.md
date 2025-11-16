@@ -79,11 +79,28 @@
 - タスク9.3: トレースインストルメンテーションの実装 | MCPツール呼び出しトレース（tool.name, tool.params, tool.duration）、ベクターDB操作トレース（operation.type, operation.duration）、AST解析トレース、埋め込み生成トレース (依存: 9.2 | 工数: 6h | ステータス: TODO)
 - タスク9.4: メトリクス収集の実装 | Counter（requests.total, requests.errors, vectordb.operations）、Histogram（requests.duration, search.results）、Gauge（index.files, index.symbols, memory.usage）の実装 (依存: 9.2 | 工数: 5h | ステータス: TODO)
 - タスク9.5: ログエクスポーターの実装 | エラーログ（error level）、警告ログ（warn level）、情報ログ（info level）、デバッグログ（debug level）のOTLP経由エクスポート (依存: 9.2 | 工数: 3h | ステータス: TODO)
-- タスク9.6: 分散トレーシングのコンテキスト伝播実装 | ベクターDB、埋め込みAPI等の外部サービス呼び出し時のトレースコンテキスト伝播、W3C Trace Context準拠 (依存: 9.3 | 工数: 3h | ステータス: TODO)
+- タスク9.6: 分散トレーシングのコンテキスト伝播実装 | ベクターDB等の外部サービス呼び出し時のトレースコンテキスト伝播、W3C Trace Context準拠 (依存: 9.3 | 工数: 3h | ステータス: TODO)
 - タスク9.7: パフォーマンス最適化 | 非同期エクスポート、バッチ処理、サンプリング（デフォルト10%）、条件付き計測（テレメトリ無効時のオーバーヘッドゼロ化） (依存: 9.3, 9.4, 9.5 | 工数: 4h | ステータス: TODO)
 - タスク9.8: ヘルスチェックエンドポイントの実装 | /healthエンドポイント提供、サービス稼働状態返却、依存サービス（ベクターDB、埋め込みエンジン）の死活監視 (依存: 9.2 | 工数: 2h | ステータス: TODO)
 - タスク9.9: テレメトリ機能のテスト | ユニットテスト（トレース/メトリクス/ログ収集）、統合テスト（Jaeger/Prometheus連携）、パフォーマンステスト（オーバーヘッド5%以内検証） (依存: 9.3, 9.4, 9.5, 9.6, 9.7, 9.8 | 工数: 5h | ステータス: TODO)
 - タスク9.10: テレメトリドキュメントの作成 | docs/OBSERVABILITY.md作成（監視設定ガイド、環境変数リファレンス、Jaeger/Grafana/Prometheus連携手順、メトリクス一覧、トラブルシューティング） (依存: 9.9 | 工数: 3h | ステータス: TODO)
+
+### フェーズ10: Rust移行実装 (推定期間: 10-15日)
+
+- タスク10.1: Rustプロジェクト初期化とCargo設定 | Cargo.tomlセットアップ、ワークスペース構成、依存クレート追加（rmcp, tokio, tree-sitter, ort, milvus-sdk-rust等） (依存: なし | 工数: 3h | ステータス: TODO)
+- タスク10.2: MCP Rust SDKの統合 | rmcp crateを使用したMCPサーバー基盤実装、ツールハンドラー登録、エラーハンドリング (依存: 10.1 | 工数: 6h | ステータス: TODO)
+- タスク10.3: Tree-sitter統合とAST解析 | tree-sitter Rustクレート統合、各言語パーサー（TS/JS, Python, Go, Rust, Java, C/C++）の設定、シンボル抽出機能 (依存: 10.1 | 工数: 10h | ステータス: TODO)
+- タスク10.4: ONNX Runtime統合とEmbedding Engine実装 | ort crateまたはtract crate統合、all-MiniLM-L6-v2.onnxモデルロード、tokenizerクレート統合、埋め込み生成機能 (依存: 10.1 | 工数: 8h | ステータス: TODO)
+- タスク10.5: Milvus Rust SDK統合 | milvus-sdk-rust統合、コレクション管理、ベクトル挿入・検索機能、エラーハンドリング (依存: 10.1 | 工数: 7h | ステータス: TODO)
+- タスク10.6: BM25全文検索エンジン実装 | rusqliteまたはsledを使用した転置インデックス、BM25スコアリング、検索機能 (依存: 10.1 | 工数: 6h | ステータス: TODO)
+- タスク10.7: ハイブリッド検索エンジン実装 | BM25とベクトル検索の統合、スコア正規化、重み付けパラメータ (依存: 10.5, 10.6 | 工数: 5h | ステータス: TODO)
+- タスク10.8: Indexing Service実装 | ファイルスキャン、並列処理（tokio::spawn）、進捗追跡、エラー収集 (依存: 10.3, 10.4, 10.5 | 工数: 8h | ステータス: TODO)
+- タスク10.9: MCPツール実装 | index_project, search_code, get_symbol, find_related_docs, get_index_status, clear_indexのRust実装 (依存: 10.2, 10.7, 10.8 | 工数: 10h | ステータス: TODO)
+- タスク10.10: ファイル監視とインクリメンタル更新 | notify crateを使用したファイル監視、デバウンス処理、差分更新 (依存: 10.8 | 工数: 5h | ステータス: TODO)
+- タスク10.11: 設定管理システム実装 | 環境変数読み込み、.context-mcp.json解析、設定マージ、バリデーション (依存: 10.1 | 工数: 4h | ステータス: TODO)
+- タスク10.12: テストスイート実装 | cargo testでのユニットテスト、統合テスト、カバレッジ測定 (依存: フェーズ10全体 | 工数: 12h | ステータス: TODO)
+- タスク10.13: リリースビルド最適化 | cargo build --release最適化、バイナリサイズ削減（strip, LTO）、クロスコンパイル設定（macOS, Linux, Windows） (依存: 10.12 | 工数: 4h | ステータス: TODO)
+- タスク10.14: ドキュメント更新 | README.md、SETUP.md、Rustビルド手順、実行方法の更新 (依存: 10.13 | 工数: 3h | ステータス: TODO)
 
 ## タスクステータスの凡例
 - `TODO` - 未着手
@@ -105,6 +122,7 @@
 | M7: リリース準備完了 | フェーズ7完了 | 開始+25日 |
 | M8: ゼロコンフィグ対応完了 | フェーズ8完了 | 開始+27日 |
 | M9: 監視機能完成 | フェーズ9完了 | 開始+30日 |
+| M10: Rust移行完成 | フェーズ10完了 | 開始+15日（新ブランチ基準） |
 
 ## リスクと軽減策
 
@@ -146,16 +164,18 @@
 ## 備考
 
 ### 技術スタック概要
-- **言語**: TypeScript | **ランタイム**: Node.js 18+
-- **AST解析**: Tree-sitter
+- **言語**: Rust | **MSRV**: 1.75（推奨: 1.80以降）
+- **AST解析**: tree-sitter Rustクレート
 - **ベクターDB（ローカル）**: Milvus standalone（Docker Compose、localhost:19530）
 - **ベクターDB（クラウド）**: Zilliz Cloud
-- **埋め込み（デフォルト）**: Transformers.js（ローカル実行）
-- **埋め込み（クラウド）**: OpenAI API、VoyageAI API（オプション）
-- **全文検索**: BM25（自前実装、SQLite）
-- **ファイル監視**: chokidar | **テスト**: Jest | **ビルド**: tsc
+- **埋め込み**: ローカルONNXモデル（ort/tract crate経由）
+- **全文検索**: BM25（自前実装、rusqlite/sled等）
+- **ファイル監視**: notify crate | **テスト**: cargo test | **ビルド**: cargo build
+- **非同期ランタイム**: tokio | **MCP SDK**: rmcp (公式Rust SDK)
 
 > **設計変更（2025-01-03）**: ベクターDBサポートをMilvusのみに変更（Chroma、DuckDBを削除）。VectorStorePluginインターフェースは将来の拡張性のために保持。
 
+> **実装言語変更（2025-11-16）**: Node.js/TypeScript → Rustに変更。高性能、メモリ安全性、単一バイナリ配布を実現。埋め込みモデルもローカルONNXのみサポート。
+
 ### 開発環境要件
-- Node.js 18.0以上 | npm 9.0以上 | Docker & Docker Compose（Milvus実行用） | Git | 最低8GB RAM推奨
+- Rust 1.75以上（推奨: 1.80以降） | Cargo | Docker & Docker Compose（Milvus実行用） | Git | 最低8GB RAM推奨
