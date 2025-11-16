@@ -450,6 +450,7 @@ dependencies = [
  "config",
  "criterion",
  "dotenv",
+ "futures",
  "ignore",
  "milvus",
  "mockall",
@@ -1786,8 +1787,6 @@ checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
 [[package]]
 name = "milvus"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1f82843f8be2ef39f2ddf3c31704374afbc032f976fbb51cdeca6af30da34b"
 dependencies = [
  "futures",
  "prost",

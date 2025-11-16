@@ -1,6 +1,6 @@
 use crate::error::{ContextMcpError, Result};
 use super::types::{Embedding, EmbeddingConfig, ModelInfo};
-use ort::{Environment, ExecutionProvider, GraphOptimizationLevel, Session, SessionBuilder, Value};
+use ort::session::{builder::GraphOptimizationLevel, Session};
 use parking_lot::Mutex;
 use std::path::Path;
 use std::sync::Arc;
@@ -45,9 +45,6 @@ pub struct EmbeddingEngine {
 
     /// Model information
     model_info: ModelInfo,
-
-    /// ONNX Runtime environment (kept alive for the session)
-    _environment: Arc<Environment>,
 }
 
 impl EmbeddingEngine {
@@ -83,17 +80,8 @@ impl EmbeddingEngine {
             )));
         }
 
-        // Initialize ONNX Runtime environment
-        let environment = Arc::new(
-            Environment::builder()
-                .with_name("context-mcp")
-                .with_log_level(ort::LoggingLevel::Warning)
-                .build()
-                .map_err(|e| ContextMcpError::Embedding(format!("Failed to create ONNX environment: {}", e)))?
-        );
-
         // Create session
-        let session = Self::create_session(&environment, &config.model_path)?;
+        let session = Self::create_session(&config.model_path)?;
 
         // Load tokenizer
         let tokenizer = Tokenizer::from_file(&config.tokenizer_path)
@@ -114,21 +102,20 @@ impl EmbeddingEngine {
             tokenizer: Arc::new(Mutex::new(tokenizer)),
             config,
             model_info,
-            _environment: environment,
         })
     }
 
     /// Create ONNX Runtime session with optimizations
-    fn create_session(environment: &Environment, model_path: &Path) -> Result<Session> {
+    fn create_session(model_path: &Path) -> Result<Session> {
         debug!("Creating ONNX session");
 
-        let session = SessionBuilder::new(environment)
+        let session = Session::builder()
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to create session builder: {}", e)))?
             .with_optimization_level(GraphOptimizationLevel::Level3)
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to set optimization level: {}", e)))?
             .with_intra_threads(4)
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to set intra threads: {}", e)))?
-            .with_model_from_file(model_path)
+            .commit_from_file(model_path)
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to load model: {}", e)))?;
 
         debug!("ONNX session created successfully");
