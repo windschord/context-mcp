@@ -5,6 +5,7 @@ use crate::error::{ContextMcpError, Result};
 use super::types::{Language, ParseResult, Position, Range, Symbol, SymbolKind};
 
 /// Tree-sitter language parsers
+#[derive(Clone)]
 pub struct LanguageParsers {
     typescript: tree_sitter::Language,
     javascript: tree_sitter::Language,
@@ -34,14 +35,14 @@ impl LanguageParsers {
     /// Get parser for a specific language
     pub fn get_language(&self, lang: Language) -> Option<tree_sitter::Language> {
         match lang {
-            Language::TypeScript => Some(self.typescript),
-            Language::JavaScript => Some(self.javascript),
-            Language::Python => Some(self.python),
-            Language::Go => Some(self.go),
-            Language::Rust => Some(self.rust),
-            Language::Java => Some(self.java),
-            Language::C => Some(self.c),
-            Language::Cpp => Some(self.cpp),
+            Language::TypeScript => Some(self.typescript.clone()),
+            Language::JavaScript => Some(self.javascript.clone()),
+            Language::Python => Some(self.python.clone()),
+            Language::Go => Some(self.go.clone()),
+            Language::Rust => Some(self.rust.clone()),
+            Language::Java => Some(self.java.clone()),
+            Language::C => Some(self.c.clone()),
+            Language::Cpp => Some(self.cpp.clone()),
             Language::Unknown => None,
         }
     }
