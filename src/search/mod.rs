@@ -31,11 +31,14 @@
 /// ```
 
 pub mod bm25_engine;
+pub mod hybrid_engine;
 pub mod tokenizer;
 pub mod types;
 
 pub use bm25_engine::BM25Engine;
+pub use hybrid_engine::{HybridSearchEngine, normalize_min_max, normalize_scores, normalize_z_score};
 pub use tokenizer::Tokenizer;
 pub use types::{
-    BM25Config, BM25Result, Document, IndexStats, SearchOptions,
+    BM25Config, BM25Result, Document, HybridConfig, HybridResult, IndexStats,
+    NormalizationType, SearchOptions,
 };

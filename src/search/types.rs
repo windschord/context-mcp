@@ -1,8 +1,10 @@
-/// Type definitions for BM25 full-text search engine
+/// Type definitions for BM25 full-text search engine and hybrid search
 ///
 /// This module defines the core types used in the BM25 search implementation,
 /// including configuration, document representation, and search results.
+/// It also includes types for hybrid search that combines BM25 with vector search.
 
+use crate::storage::types::VectorRecord;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -246,6 +248,177 @@ impl IndexStats {
     }
 }
 
+/// Normalization method for combining BM25 and vector scores
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub enum NormalizationType {
+    /// Min-max normalization to [0, 1]
+    MinMax,
+    /// Z-score normalization (standardization)
+    ZScore,
+    /// No normalization (use raw scores)
+    None,
+}
+
+impl Default for NormalizationType {
+    fn default() -> Self {
+        Self::MinMax
+    }
+}
+
+/// Configuration for hybrid search
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HybridConfig {
+    /// Weight for BM25 score (default: 0.3), vector score gets (1 - alpha)
+    /// - alpha = 0.0: pure vector search
+    /// - alpha = 0.5: equal weight
+    /// - alpha = 1.0: pure BM25 search
+    pub alpha: f32,
+
+    /// Number of final results to return
+    pub top_k: usize,
+
+    /// Number of BM25 results to fetch (default: top_k * 3)
+    /// Fetching more candidates improves recall
+    pub bm25_top_k: usize,
+
+    /// Number of vector results to fetch (default: top_k * 3)
+    /// Fetching more candidates improves recall
+    pub vector_top_k: usize,
+
+    /// Score normalization method
+    pub normalization: NormalizationType,
+}
+
+impl Default for HybridConfig {
+    fn default() -> Self {
+        Self {
+            alpha: 0.3,
+            top_k: 10,
+            bm25_top_k: 30,
+            vector_top_k: 30,
+            normalization: NormalizationType::MinMax,
+        }
+    }
+}
+
+impl HybridConfig {
+    /// Create a new hybrid configuration
+    pub fn new(alpha: f32, top_k: usize) -> Self {
+        Self {
+            alpha,
+            top_k,
+            bm25_top_k: top_k * 3,
+            vector_top_k: top_k * 3,
+            normalization: NormalizationType::MinMax,
+        }
+    }
+
+    /// Set alpha (BM25 weight)
+    pub fn with_alpha(mut self, alpha: f32) -> Self {
+        self.alpha = alpha;
+        self
+    }
+
+    /// Set top_k
+    pub fn with_top_k(mut self, top_k: usize) -> Self {
+        self.top_k = top_k;
+        self
+    }
+
+    /// Set BM25 top_k
+    pub fn with_bm25_top_k(mut self, bm25_top_k: usize) -> Self {
+        self.bm25_top_k = bm25_top_k;
+        self
+    }
+
+    /// Set vector top_k
+    pub fn with_vector_top_k(mut self, vector_top_k: usize) -> Self {
+        self.vector_top_k = vector_top_k;
+        self
+    }
+
+    /// Set normalization method
+    pub fn with_normalization(mut self, normalization: NormalizationType) -> Self {
+        self.normalization = normalization;
+        self
+    }
+
+    /// Validate configuration
+    pub fn validate(&self) -> Result<(), String> {
+        if self.alpha < 0.0 || self.alpha > 1.0 {
+            return Err(format!("alpha must be between 0.0 and 1.0, got {}", self.alpha));
+        }
+        if self.top_k == 0 {
+            return Err("top_k must be greater than 0".to_string());
+        }
+        if self.bm25_top_k == 0 {
+            return Err("bm25_top_k must be greater than 0".to_string());
+        }
+        if self.vector_top_k == 0 {
+            return Err("vector_top_k must be greater than 0".to_string());
+        }
+        Ok(())
+    }
+}
+
+/// Hybrid search result combining BM25 and vector search
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HybridResult {
+    /// Document/record ID
+    pub id: String,
+
+    /// Combined hybrid score (higher is better)
+    pub score: f32,
+
+    /// BM25 component score (if document was found by BM25)
+    pub bm25_score: Option<f32>,
+
+    /// Vector component score (if document was found by vector search)
+    pub vector_score: Option<f32>,
+
+    /// Full vector record data
+    pub record: VectorRecord,
+
+    /// Terms matched by BM25 search
+    pub matched_terms: Vec<String>,
+}
+
+impl HybridResult {
+    /// Create a new hybrid result
+    pub fn new(
+        id: String,
+        score: f32,
+        bm25_score: Option<f32>,
+        vector_score: Option<f32>,
+        record: VectorRecord,
+        matched_terms: Vec<String>,
+    ) -> Self {
+        Self {
+            id,
+            score,
+            bm25_score,
+            vector_score,
+            record,
+            matched_terms,
+        }
+    }
+
+    /// Check if this result came from BM25 search
+    pub fn has_bm25(&self) -> bool {
+        self.bm25_score.is_some()
+    }
+
+    /// Check if this result came from vector search
+    pub fn has_vector(&self) -> bool {
+        self.vector_score.is_some()
+    }
+
+    /// Check if this result came from both sources
+    pub fn is_hybrid(&self) -> bool {
+        self.has_bm25() && self.has_vector()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -305,5 +478,49 @@ mod tests {
         assert_eq!(options.min_score, Some(0.5));
         assert!(!options.include_text);
         assert!(options.include_metadata);
+    }
+
+    #[test]
+    fn test_hybrid_config_default() {
+        let config = HybridConfig::default();
+        assert_eq!(config.alpha, 0.3);
+        assert_eq!(config.top_k, 10);
+        assert_eq!(config.bm25_top_k, 30);
+        assert_eq!(config.vector_top_k, 30);
+        assert_eq!(config.normalization, NormalizationType::MinMax);
+    }
+
+    #[test]
+    fn test_hybrid_config_validation() {
+        let valid = HybridConfig::new(0.5, 20);
+        assert!(valid.validate().is_ok());
+
+        let invalid_alpha_low = HybridConfig::new(-0.1, 10);
+        assert!(invalid_alpha_low.validate().is_err());
+
+        let invalid_alpha_high = HybridConfig::new(1.5, 10);
+        assert!(invalid_alpha_high.validate().is_err());
+
+        let invalid_top_k = HybridConfig::new(0.5, 0);
+        assert!(invalid_top_k.validate().is_err());
+    }
+
+    #[test]
+    fn test_hybrid_config_builder() {
+        let config = HybridConfig::new(0.4, 20)
+            .with_bm25_top_k(100)
+            .with_vector_top_k(80)
+            .with_normalization(NormalizationType::ZScore);
+
+        assert_eq!(config.alpha, 0.4);
+        assert_eq!(config.top_k, 20);
+        assert_eq!(config.bm25_top_k, 100);
+        assert_eq!(config.vector_top_k, 80);
+        assert_eq!(config.normalization, NormalizationType::ZScore);
+    }
+
+    #[test]
+    fn test_normalization_type() {
+        assert_eq!(NormalizationType::default(), NormalizationType::MinMax);
     }
 }
