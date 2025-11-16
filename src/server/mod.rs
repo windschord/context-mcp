@@ -921,8 +921,14 @@ impl Default for ContextMcpServer {
 impl ServerHandler for ContextMcpServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
-            name: "context-mcp".to_string(),
-            version: env!("CARGO_PKG_VERSION").to_string(),
+            protocol_version: ProtocolVersion::default(),
+            server_info: Implementation {
+                name: "context-mcp".to_string(),
+                title: None,
+                version: env!("CARGO_PKG_VERSION").to_string(),
+                icons: None,
+                website_url: None,
+            },
             instructions: Some(
                 "Context-MCP: Semantic code search with Tree-sitter AST analysis and vector database.\n\
                  Provides hybrid search (BM25 + vector similarity) across your codebase.\n\n\
@@ -937,7 +943,6 @@ impl ServerHandler for ContextMcpServer {
                     .to_string(),
             ),
             capabilities: ServerCapabilities::builder().enable_tools().build(),
-            ..Default::default()
         }
     }
 
