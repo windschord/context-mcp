@@ -45,8 +45,8 @@ struct ServerState {
     /// Milvus client for vector storage
     storage: Option<Arc<MilvusClient>>,
 
-    /// BM25 engine for full-text search
-    bm25: Option<Arc<parking_lot::Mutex<BM25Engine>>>,
+    /// BM25 engine for full-text search (already thread-safe internally)
+    bm25: Option<Arc<BM25Engine>>,
 
     /// Hybrid search engine
     hybrid: Option<Arc<HybridSearchEngine>>,
@@ -169,12 +169,12 @@ impl ContextMcpServer {
 
         let bm25 = BM25Engine::new(&state.config.bm25.db_path)
             .and_then(|engine| engine.with_config(bm25_config))?;
-        state.bm25 = Some(Arc::new(parking_lot::Mutex::new(bm25)));
+        state.bm25 = Some(Arc::new(bm25));
 
         // Initialize hybrid search engine
         info!("Initializing hybrid search engine");
         let hybrid = HybridSearchEngine::new(
-            state.bm25.as_ref().unwrap().lock().clone_for_hybrid(),
+            (*state.bm25.as_ref().unwrap()).clone(),
             (*state.storage.as_ref().unwrap()).clone(),
             (*state.embedding.as_ref().unwrap()).clone(),
         );
@@ -186,7 +186,7 @@ impl ContextMcpServer {
             (*state.parser.as_ref().unwrap()).clone(),
             (*state.embedding.as_ref().unwrap()).clone(),
             (*state.storage.as_ref().unwrap()).clone(),
-            state.bm25.as_ref().unwrap().lock().clone_for_indexing(),
+            (*state.bm25.as_ref().unwrap()).clone(),
         )
         .with_collection_name(state.config.indexing.collection_name.clone());
         state.indexing = Some(Arc::new(indexing));
@@ -495,7 +495,6 @@ impl ContextMcpServer {
         };
 
         let results = bm25
-            .lock()
             .search(&symbol_name, 100)
             .map_err(|e| ContextMcpError::Search(e.to_string()))?;
 

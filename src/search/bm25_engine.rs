@@ -22,15 +22,18 @@
 use crate::error::{ContextMcpError, Result};
 use crate::search::tokenizer::Tokenizer;
 use crate::search::types::{BM25Config, BM25Result, Document, IndexStats, SearchOptions};
+use parking_lot::Mutex;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, info, warn};
 
 /// BM25 search engine with SQLite-backed inverted index
+#[derive(Clone)]
 pub struct BM25Engine {
-    /// SQLite database connection
-    conn: Connection,
+    /// SQLite database connection (wrapped in Mutex for thread safety)
+    conn: Arc<Mutex<Connection>>,
 
     /// Tokenizer for processing text
     tokenizer: Tokenizer,
@@ -39,7 +42,7 @@ pub struct BM25Engine {
     config: BM25Config,
 
     /// Cached average document length (updated on index modifications)
-    cached_avg_doc_length: Option<f32>,
+    cached_avg_doc_length: Arc<Mutex<Option<f32>>>,
 }
 
 impl BM25Engine {
@@ -56,11 +59,11 @@ impl BM25Engine {
         let conn = Connection::open(db_path)
             .map_err(|e| ContextMcpError::Database(format!("Failed to open database: {}", e)))?;
 
-        let mut engine = Self {
-            conn,
+        let engine = Self {
+            conn: Arc::new(Mutex::new(conn)),
             tokenizer: Tokenizer::code(), // Use code-aware tokenizer by default
             config: BM25Config::default(),
-            cached_avg_doc_length: None,
+            cached_avg_doc_length: Arc::new(Mutex::new(None)),
         };
 
         engine.initialize_schema()?;
@@ -74,11 +77,11 @@ impl BM25Engine {
         let conn = Connection::open_in_memory()
             .map_err(|e| ContextMcpError::Database(format!("Failed to create in-memory database: {}", e)))?;
 
-        let mut engine = Self {
-            conn,
+        let engine = Self {
+            conn: Arc::new(Mutex::new(conn)),
             tokenizer: Tokenizer::code(),
             config: BM25Config::default(),
-            cached_avg_doc_length: None,
+            cached_avg_doc_length: Arc::new(Mutex::new(None)),
         };
 
         engine.initialize_schema()?;
@@ -100,10 +103,11 @@ impl BM25Engine {
     }
 
     /// Initialize database schema
-    fn initialize_schema(&mut self) -> Result<()> {
+    fn initialize_schema(&self) -> Result<()> {
         debug!("Initializing database schema");
 
-        self.conn.execute_batch(
+        let conn = self.conn.lock();
+        conn.execute_batch(
             r#"
             CREATE TABLE IF NOT EXISTS documents (
                 id TEXT PRIMARY KEY,
@@ -140,13 +144,13 @@ impl BM25Engine {
     ///
     /// # Returns
     /// Ok(()) on success
-    pub fn index_document(&mut self, id: &str, text: &str) -> Result<()> {
+    pub fn index_document(&self, id: &str, text: &str) -> Result<()> {
         let doc = Document::new(id.to_string(), text.to_string());
         self.index_document_with_metadata(doc)
     }
 
     /// Index a document with metadata
-    pub fn index_document_with_metadata(&mut self, doc: Document) -> Result<()> {
+    pub fn index_document_with_metadata(&self, doc: Document) -> Result<()> {
         debug!("Indexing document: {}", doc.id);
 
         // Remove existing document if it exists
@@ -167,7 +171,8 @@ impl BM25Engine {
             .map_err(|e| ContextMcpError::Database(format!("Failed to serialize metadata: {}", e)))?;
 
         // Begin transaction
-        let tx = self.conn.transaction()
+        let mut conn = self.conn.lock();
+        let tx = conn.transaction()
             .map_err(|e| ContextMcpError::Database(format!("Failed to begin transaction: {}", e)))?;
 
         // Insert document
@@ -190,7 +195,7 @@ impl BM25Engine {
             .map_err(|e| ContextMcpError::Database(format!("Failed to commit transaction: {}", e)))?;
 
         // Invalidate cached average document length
-        self.cached_avg_doc_length = None;
+        *self.cached_avg_doc_length.lock() = None;
 
         debug!("Successfully indexed document: {} ({} terms)", doc.id, doc_length);
         Ok(())
@@ -203,7 +208,7 @@ impl BM25Engine {
     ///
     /// # Returns
     /// Ok(()) on success
-    pub fn index_documents(&mut self, docs: Vec<(String, String)>) -> Result<()> {
+    pub fn index_documents(&self, docs: Vec<(String, String)>) -> Result<()> {
         info!("Batch indexing {} documents", docs.len());
 
         for (id, text) in docs {
@@ -215,7 +220,7 @@ impl BM25Engine {
     }
 
     /// Index multiple documents with metadata
-    pub fn index_documents_batch(&mut self, docs: Vec<Document>) -> Result<()> {
+    pub fn index_documents_batch(&self, docs: Vec<Document>) -> Result<()> {
         info!("Batch indexing {} documents with metadata", docs.len());
 
         for doc in docs {
@@ -317,14 +322,15 @@ impl BM25Engine {
     }
 
     /// Remove a document from the index
-    pub fn remove_document(&mut self, id: &str) -> Result<()> {
+    pub fn remove_document(&self, id: &str) -> Result<()> {
         debug!("Removing document: {}", id);
 
-        let deleted = self.conn.execute("DELETE FROM documents WHERE id = ?1", params![id])
+        let conn = self.conn.lock();
+        let deleted = conn.execute("DELETE FROM documents WHERE id = ?1", params![id])
             .map_err(|e| ContextMcpError::Database(format!("Failed to delete document: {}", e)))?;
 
         if deleted > 0 {
-            self.cached_avg_doc_length = None;
+            *self.cached_avg_doc_length.lock() = None;
             debug!("Successfully removed document: {}", id);
         }
 
@@ -332,16 +338,17 @@ impl BM25Engine {
     }
 
     /// Clear all documents from the index
-    pub fn clear(&mut self) -> Result<()> {
+    pub fn clear(&self) -> Result<()> {
         info!("Clearing all documents");
 
-        self.conn.execute("DELETE FROM inverted_index", [])
+        let conn = self.conn.lock();
+        conn.execute("DELETE FROM inverted_index", [])
             .map_err(|e| ContextMcpError::Database(format!("Failed to clear inverted index: {}", e)))?;
 
-        self.conn.execute("DELETE FROM documents", [])
+        conn.execute("DELETE FROM documents", [])
             .map_err(|e| ContextMcpError::Database(format!("Failed to clear documents: {}", e)))?;
 
-        self.cached_avg_doc_length = None;
+        *self.cached_avg_doc_length.lock() = None;
 
         info!("Successfully cleared all documents");
         Ok(())
@@ -349,7 +356,8 @@ impl BM25Engine {
 
     /// Get the total number of documents in the index
     pub fn document_count(&self) -> Result<usize> {
-        let count: i64 = self.conn
+        let conn = self.conn.lock();
+        let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM documents", [], |row| row.get(0))
             .map_err(|e| ContextMcpError::Database(format!("Failed to get document count: {}", e)))?;
 
@@ -360,11 +368,12 @@ impl BM25Engine {
     pub fn get_stats(&self) -> Result<IndexStats> {
         let doc_count = self.document_count()?;
 
-        let term_count: i64 = self.conn
+        let conn = self.conn.lock();
+        let term_count: i64 = conn
             .query_row("SELECT COUNT(DISTINCT term) FROM inverted_index", [], |row| row.get(0))
             .map_err(|e| ContextMcpError::Database(format!("Failed to get term count: {}", e)))?;
 
-        let total_tokens: i64 = self.conn
+        let total_tokens: i64 = conn
             .query_row("SELECT SUM(length) FROM documents", [], |row| row.get(0))
             .unwrap_or(0);
 
@@ -386,13 +395,15 @@ impl BM25Engine {
 
     /// Get average document length, using cache if available
     fn get_avg_doc_length(&self) -> Result<f32> {
-        if let Some(cached) = self.cached_avg_doc_length {
+        if let Some(cached) = *self.cached_avg_doc_length.lock() {
             return Ok(cached);
         }
 
-        let total_length: i64 = self.conn
+        let conn = self.conn.lock();
+        let total_length: i64 = conn
             .query_row("SELECT SUM(length) FROM documents", [], |row| row.get(0))
             .unwrap_or(0);
+        drop(conn); // Release lock before calling document_count
 
         let doc_count = self.document_count()?;
 
@@ -410,9 +421,10 @@ impl BM25Engine {
         let mut idfs = HashMap::new();
         let n = total_docs as f32;
 
+        let conn = self.conn.lock();
         for term in terms {
             // Get document frequency (number of documents containing this term)
-            let df: i64 = self.conn
+            let df: i64 = conn
                 .query_row(
                     "SELECT COUNT(DISTINCT doc_id) FROM inverted_index WHERE term = ?1",
                     params![term],
@@ -438,7 +450,8 @@ impl BM25Engine {
             placeholders
         );
 
-        let mut stmt = self.conn.prepare(&sql)
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(&sql)
             .map_err(|e| ContextMcpError::Database(format!("Failed to prepare query: {}", e)))?;
 
         let params: Vec<&dyn rusqlite::ToSql> = query_terms
@@ -463,8 +476,10 @@ impl BM25Engine {
         term_idfs: &HashMap<String, f32>,
         avg_doc_length: f32,
     ) -> Result<f32> {
+        let conn = self.conn.lock();
+
         // Get document length
-        let doc_length: i64 = self.conn
+        let doc_length: i64 = conn
             .query_row(
                 "SELECT length FROM documents WHERE id = ?1",
                 params![doc_id],
@@ -481,7 +496,7 @@ impl BM25Engine {
             let idf = term_idfs.get(term).copied().unwrap_or(0.0);
 
             // Get term frequency in this document
-            let tf: Option<i64> = self.conn
+            let tf: Option<i64> = conn
                 .query_row(
                     "SELECT frequency FROM inverted_index WHERE term = ?1 AND doc_id = ?2",
                     params![term, doc_id],
@@ -512,7 +527,8 @@ impl BM25Engine {
             placeholders
         );
 
-        let mut stmt = self.conn.prepare(&sql)
+        let conn = self.conn.lock();
+        let mut stmt = conn.prepare(&sql)
             .map_err(|e| ContextMcpError::Database(format!("Failed to prepare query: {}", e)))?;
 
         let mut params: Vec<&dyn rusqlite::ToSql> = vec![&doc_id as &dyn rusqlite::ToSql];
@@ -529,7 +545,8 @@ impl BM25Engine {
 
     /// Get document text and metadata
     fn get_document_data(&self, doc_id: &str) -> Result<(String, HashMap<String, String>)> {
-        let row = self.conn
+        let conn = self.conn.lock();
+        let row = conn
             .query_row(
                 "SELECT text, metadata FROM documents WHERE id = ?1",
                 params![doc_id],
@@ -558,7 +575,7 @@ mod tests {
 
     #[test]
     fn test_index_and_search() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         // Index some documents
         engine.index_document("doc1", "fn parse_config() {}").unwrap();
@@ -579,7 +596,7 @@ mod tests {
 
     #[test]
     fn test_remove_document() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         engine.index_document("doc1", "test document").unwrap();
         assert_eq!(engine.document_count().unwrap(), 1);
@@ -590,7 +607,7 @@ mod tests {
 
     #[test]
     fn test_clear() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         engine.index_document("doc1", "test 1").unwrap();
         engine.index_document("doc2", "test 2").unwrap();
@@ -602,7 +619,7 @@ mod tests {
 
     #[test]
     fn test_bm25_scoring() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         // Index documents with different term frequencies
         engine.index_document("doc1", "rust rust rust programming").unwrap();
@@ -618,7 +635,7 @@ mod tests {
 
     #[test]
     fn test_search_with_options() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         engine.index_document("doc1", "rust programming").unwrap();
         engine.index_document("doc2", "python programming").unwrap();
@@ -633,7 +650,7 @@ mod tests {
 
     #[test]
     fn test_get_stats() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         engine.index_document("doc1", "hello world").unwrap();
         engine.index_document("doc2", "hello rust").unwrap();
@@ -646,7 +663,7 @@ mod tests {
 
     #[test]
     fn test_metadata_indexing() {
-        let mut engine = BM25Engine::new_in_memory().unwrap();
+        let engine = BM25Engine::new_in_memory().unwrap();
 
         let mut metadata = HashMap::new();
         metadata.insert("lang".to_string(), "rust".to_string());
