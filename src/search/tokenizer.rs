@@ -182,21 +182,64 @@ fn split_camel_case(word: &str) -> Vec<String> {
         return vec![];
     }
 
-    let camel_regex = get_camel_regex();
+    let chars: Vec<char> = word.chars().collect();
     let mut results = Vec::new();
-    let mut last_end = 0;
+    let mut current = String::new();
+    let mut i = 0;
 
-    for mat in camel_regex.find_iter(word) {
-        if mat.start() > last_end {
-            // There's a gap, add the gap as a separate term
-            results.push(word[last_end..mat.start()].to_string());
+    while i < chars.len() {
+        let ch = chars[i];
+
+        if ch.is_uppercase() {
+            // Check if we have accumulated lowercase/digit chars
+            if !current.is_empty() && (current.chars().last().unwrap().is_lowercase() || current.chars().last().unwrap().is_ascii_digit()) {
+                results.push(current.clone());
+                current.clear();
+            }
+
+            // Collect consecutive uppercase letters
+            current.push(ch);
+            let mut j = i + 1;
+            while j < chars.len() && chars[j].is_uppercase() {
+                current.push(chars[j]);
+                j += 1;
+            }
+
+            // If next char is lowercase, keep the last uppercase with it
+            if j < chars.len() && chars[j].is_lowercase() && current.len() > 1 {
+                let last_upper = current.pop().unwrap();
+                results.push(current.clone());
+                current.clear();
+                current.push(last_upper);
+            }
+
+            i = j;
+        } else if ch.is_lowercase() {
+            current.push(ch);
+            i += 1;
+        } else if ch.is_ascii_digit() {
+            // Numbers can continue current word or start new one
+            if !current.is_empty() && current.chars().last().unwrap().is_uppercase() {
+                // If current is all uppercase, keep the number separate
+                if current.chars().all(|c| c.is_uppercase()) && current.len() > 1 {
+                    results.push(current.clone());
+                    current.clear();
+                }
+            }
+            current.push(ch);
+            i += 1;
+        } else {
+            // Other characters end the current word
+            if !current.is_empty() {
+                results.push(current.clone());
+                current.clear();
+            }
+            i += 1;
         }
-        results.push(mat.as_str().to_string());
-        last_end = mat.end();
     }
 
-    if last_end < word.len() {
-        results.push(word[last_end..].to_string());
+    if !current.is_empty() {
+        results.push(current);
     }
 
     if results.is_empty() {
@@ -236,7 +279,7 @@ fn get_camel_regex() -> &'static Regex {
         // 1. Consecutive uppercase letters followed by lowercase (HTTPServer -> HTTP, Server)
         // 2. Uppercase letter followed by lowercase letters (PascalCase -> Pascal, Case)
         // 3. Consecutive lowercase letters (camelCase -> camel, case)
-        Regex::new(r"[A-Z]+(?=[A-Z][a-z]|\b)|[A-Z][a-z]+|[a-z]+|[0-9]+").unwrap()
+        Regex::new(r"[A-Z][a-z]+|[A-Z]+|[a-z]+|[0-9]+").unwrap()
     })
 }
 
