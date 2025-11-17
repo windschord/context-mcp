@@ -167,6 +167,13 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
 
+        // Initialize git repository so .gitignore is recognized
+        std::process::Command::new("git")
+            .args(["init"])
+            .current_dir(root)
+            .output()
+            .unwrap();
+
         // Create test files
         fs::create_dir_all(root.join("src")).unwrap();
         fs::write(root.join("src/main.rs"), "fn main() {}").unwrap();

@@ -264,7 +264,6 @@ fn split_snake_case(word: &str) -> Vec<String> {
 
 // Cached regex patterns for performance
 static WORD_REGEX: OnceLock<Regex> = OnceLock::new();
-static CAMEL_REGEX: OnceLock<Regex> = OnceLock::new();
 
 fn get_word_regex() -> &'static Regex {
     WORD_REGEX.get_or_init(|| {
@@ -273,15 +272,6 @@ fn get_word_regex() -> &'static Regex {
     })
 }
 
-fn get_camel_regex() -> &'static Regex {
-    CAMEL_REGEX.get_or_init(|| {
-        // Match:
-        // 1. Consecutive uppercase letters followed by lowercase (HTTPServer -> HTTP, Server)
-        // 2. Uppercase letter followed by lowercase letters (PascalCase -> Pascal, Case)
-        // 3. Consecutive lowercase letters (camelCase -> camel, case)
-        Regex::new(r"[A-Z][a-z]+|[A-Z]+|[a-z]+|[0-9]+").unwrap()
-    })
-}
 
 #[cfg(test)]
 mod tests {

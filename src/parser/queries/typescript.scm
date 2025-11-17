@@ -26,7 +26,7 @@
 ; Interface declarations
 (interface_declaration
   name: (type_identifier) @interface.name
-  body: (object_type) @interface.body) @interface.definition
+  body: (_) @interface.body) @interface.definition
 
 ; Type alias declarations
 (type_alias_declaration

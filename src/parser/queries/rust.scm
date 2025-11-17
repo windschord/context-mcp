@@ -52,7 +52,3 @@
 ; Doc comments
 (line_comment) @comment
 (block_comment) @comment
-
-; Attribute macros
-(attribute_item
-  (identifier) @attribute.name)
