@@ -64,35 +64,38 @@ LSP-MCPは以下の6つのMCPツールを提供します:
 
 ### 前提条件
 
-- Node.js 18.0以上
-- npm 9.0以上
-- Docker & Docker Compose（Milvus使用時、推奨）
+- **Rust**: 1.70以上 ([rustup](https://rustup.rs/)でインストール推奨)
+- **Protocol Buffers compiler**: protoc ([インストール手順](https://grpc.io/docs/protoc-installation/))
+- **Docker & Docker Compose**: Milvus使用時に必要（推奨）
 
-### npx経由で使用（最も簡単、推奨）
+### バイナリリリースから使用（最も簡単、推奨）
 
-GitHubリポジトリから直接実行できます:
+GitHubリリースページから、お使いのプラットフォーム向けのビルド済みバイナリをダウンロードできます：
 
 ```bash
-# GitHubリポジトリから直接実行
-npx github:windschord/lsp-mcp --help
-npx github:windschord/lsp-mcp --version
-npx github:windschord/lsp-mcp
+# Linux (x86_64)
+curl -L https://github.com/windschord/context-mcp/releases/latest/download/context-mcp-linux-x86_64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
+context-mcp --version
 
-# または完全なURL形式
-npx git+https://github.com/windschord/lsp-mcp.git
+# macOS (Intel)
+curl -L https://github.com/windschord/context-mcp/releases/latest/download/context-mcp-macos-x86_64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
+context-mcp --version
 
-# 特定のブランチ・タグから実行
-npx github:windschord/lsp-mcp#main
-npx github:windschord/lsp-mcp#v0.1.0
+# macOS (Apple Silicon)
+curl -L https://github.com/windschord/context-mcp/releases/latest/download/context-mcp-macos-aarch64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
+context-mcp --version
 ```
 
-### ローカルインストール（開発時）
+### ソースからビルド（開発時）
 
 ```bash
 git clone https://github.com/windschord/lsp-mcp.git
 cd lsp-mcp
-npm install
-npm run build
+cargo build --release
+./target/release/context-mcp --version
 ```
 
 ## クイックスタート
@@ -124,7 +127,7 @@ claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
   --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- /usr/local/bin/context-mcp
 ```
 
 設定後、Claude Codeを再起動してください。
@@ -137,8 +140,8 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
@@ -222,7 +225,7 @@ claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
   --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- /usr/local/bin/context-mcp
 ```
 
 **JSONファイル編集**:
@@ -230,8 +233,8 @@ claude mcp add --transport stdio lsp-mcp \
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
@@ -254,7 +257,7 @@ claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_EMBEDDING_PROVIDER=openai \
   --env LSP_MCP_EMBEDDING_API_KEY=your-openai-api-key \
   --env LOG_LEVEL=INFO \
-  -- npx github:windschord/lsp-mcp
+  -- /usr/local/bin/context-mcp
 ```
 
 **JSONファイル編集**:
@@ -262,8 +265,8 @@ claude mcp add --transport stdio lsp-mcp \
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/lsp-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "cloud",
         "LSP_MCP_VECTOR_BACKEND": "zilliz",
@@ -287,7 +290,7 @@ claude mcp add --transport stdio lsp-mcp \
 claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
   --env LOG_LEVEL=DEBUG \
-  -- node /path/to/lsp_mcp/bin/lsp-mcp.js
+  -- /path/to/lsp_mcp/target/debug/context-mcp
 ```
 
 **JSONファイル編集**:
@@ -295,8 +298,8 @@ claude mcp add --transport stdio lsp-mcp \
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "node",
-      "args": ["/path/to/lsp_mcp/bin/lsp-mcp.js"],
+      "command": "/path/to/lsp_mcp/target/debug/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "DEBUG"
@@ -437,46 +440,56 @@ LSP-MCPは**フェーズ1〜7のすべてのタスクが完了**しており、�
 ### ビルド
 
 ```bash
-# TypeScriptコンパイル
-npm run build
+# リリースビルド
+cargo build --release
 
-# ウォッチモード
-npm run dev
+# デバッグビルド
+cargo build
+
+# ビルドの確認（コンパイルチェックのみ）
+cargo check
 ```
 
 ### テスト
 
 ```bash
 # 全テスト実行
-npm test
+cargo test
 
-# ウォッチモード
-npm run test:watch
+# ライブラリテストのみ
+cargo test --lib
 
-# カバレッジレポート
-npm run test:coverage
-```
+# 詳細出力
+cargo test --verbose
 
-### パフォーマンステスト
-
-```bash
-# 大規模サンプルプロジェクトの生成（初回のみ）
-npm run perf:generate
-
-# パフォーマンステスト実行
-npm run test:performance
+# 全機能有効化してテスト
+cargo test --all-features
 ```
 
 ### Lint & Format
 
 ```bash
-# Lint
-npm run lint
-npm run lint:fix
+# Lint（clippy）
+cargo clippy --all-targets --all-features
 
 # Format
-npm run format
-npm run format:check
+cargo fmt --all
+
+# Format check
+cargo fmt --all -- --check
+```
+
+### 依存関係の管理
+
+```bash
+# 依存関係の更新確認
+cargo update --dry-run
+
+# 依存関係の更新
+cargo update
+
+# 依存関係ツリーの表示
+cargo tree
 ```
 
 ## パフォーマンス
