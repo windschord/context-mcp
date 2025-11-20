@@ -243,20 +243,15 @@ impl IndexStats {
 }
 
 /// Normalization method for combining BM25 and vector scores
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Default)]
 pub enum NormalizationType {
     /// Min-max normalization to [0, 1]
+    #[default]
     MinMax,
     /// Z-score normalization (standardization)
     ZScore,
     /// No normalization (use raw scores)
     None,
-}
-
-impl Default for NormalizationType {
-    fn default() -> Self {
-        Self::MinMax
-    }
 }
 
 /// Configuration for hybrid search

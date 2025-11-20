@@ -44,7 +44,7 @@ use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
 
 /// Complete server configuration
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
     /// Milvus vector database configuration
@@ -291,18 +291,6 @@ impl Default for HybridConfig {
             normalization: default_normalization(),
             bm25_top_k: default_bm25_top_k(),
             vector_top_k: default_vector_top_k(),
-        }
-    }
-}
-
-impl Default for ServerConfig {
-    fn default() -> Self {
-        Self {
-            milvus: MilvusConfig::default(),
-            embedding: EmbeddingConfig::default(),
-            bm25: BM25Config::default(),
-            indexing: IndexingConfig::default(),
-            hybrid: HybridConfig::default(),
         }
     }
 }
