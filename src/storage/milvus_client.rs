@@ -2,6 +2,7 @@ use crate::error::{ContextMcpError, Result};
 use crate::storage::types::{
     CollectionConfig, CollectionStats, SearchQuery, SearchResult, VectorRecord,
 };
+use async_trait::async_trait;
 use milvus::client::Client;
 use milvus::collection::{Collection, MetricType, SearchParams};
 use milvus::data::{FromField, SearchResults};
@@ -9,6 +10,9 @@ use milvus::schema::{self, Collection as _, Entity, FieldSchema};
 use milvus::value::Value;
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
+
+#[cfg(test)]
+use mockall::automock;
 
 // デフォルトのベクトル次元数（FieldSchemaはconst contextで使用するため固定値が必要）
 const DIMENSION: i64 = 384;
@@ -468,6 +472,46 @@ impl<'a> schema::Collection<'a> for CodeVectorSearchResult {
     }
 }
 
+/// Trait for Milvus client operations
+///
+/// This trait defines the interface for interacting with a Milvus vector database.
+/// It can be implemented by the real MilvusClient or mocked for testing purposes.
+#[cfg_attr(test, automock)]
+#[async_trait]
+pub trait MilvusClientTrait: Send + Sync {
+    /// Check if a collection exists
+    async fn collection_exists(&self, name: &str) -> Result<bool>;
+
+    /// Create a new collection with the given configuration
+    async fn create_collection(&self, config: CollectionConfig) -> Result<()>;
+
+    /// Drop a collection
+    async fn drop_collection(&self, name: &str) -> Result<()>;
+
+    /// Insert vector records into a collection
+    async fn insert(
+        &self,
+        collection_name: &str,
+        records: Vec<VectorRecord>,
+    ) -> Result<Vec<String>>;
+
+    /// Search for similar vectors
+    async fn search(
+        &self,
+        collection_name: &str,
+        query: SearchQuery,
+    ) -> Result<Vec<SearchResult>>;
+
+    /// Delete records by IDs
+    async fn delete(&self, collection_name: &str, ids: Vec<String>) -> Result<()>;
+
+    /// Get collection statistics
+    async fn get_collection_stats(&self, name: &str) -> Result<CollectionStats>;
+
+    /// Flush collection to ensure all data is persisted
+    async fn flush(&self, collection_name: &str) -> Result<()>;
+}
+
 /// Milvus client for vector storage and retrieval
 pub struct MilvusClient {
     client: Client,
@@ -870,9 +914,238 @@ impl MilvusClient {
     }
 }
 
+/// Implementation of MilvusClientTrait for MilvusClient
+#[async_trait]
+impl MilvusClientTrait for MilvusClient {
+    async fn collection_exists(&self, name: &str) -> Result<bool> {
+        self.collection_exists(name).await
+    }
+
+    async fn create_collection(&self, config: CollectionConfig) -> Result<()> {
+        self.create_collection(config).await
+    }
+
+    async fn drop_collection(&self, name: &str) -> Result<()> {
+        self.drop_collection(name).await
+    }
+
+    async fn insert(
+        &self,
+        collection_name: &str,
+        records: Vec<VectorRecord>,
+    ) -> Result<Vec<String>> {
+        self.insert(collection_name, records).await
+    }
+
+    async fn search(
+        &self,
+        collection_name: &str,
+        query: SearchQuery,
+    ) -> Result<Vec<SearchResult>> {
+        self.search(collection_name, query).await
+    }
+
+    async fn delete(&self, collection_name: &str, ids: Vec<String>) -> Result<()> {
+        self.delete(collection_name, ids).await
+    }
+
+    async fn get_collection_stats(&self, name: &str) -> Result<CollectionStats> {
+        self.get_collection_stats(name).await
+    }
+
+    async fn flush(&self, collection_name: &str) -> Result<()> {
+        self.flush(collection_name).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ========================================
+    // Unit tests using MockMilvusClientTrait
+    // ========================================
+
+    #[tokio::test]
+    async fn test_mock_collection_exists() {
+        let mut mock = MockMilvusClientTrait::new();
+        mock.expect_collection_exists()
+            .with(mockall::predicate::eq("test_collection"))
+            .times(1)
+            .returning(|_| Ok(true));
+
+        let result = mock.collection_exists("test_collection").await;
+        assert!(result.is_ok());
+        assert!(result.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_mock_create_collection() {
+        let mut mock = MockMilvusClientTrait::new();
+        let config = CollectionConfig::code_vectors(384);
+
+        mock.expect_create_collection()
+            .withf(|c| c.name == "code_vectors" && c.dimension == 384)
+            .times(1)
+            .returning(|_| Ok(()));
+
+        let result = mock.create_collection(config).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_insert_vectors() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_insert()
+            .withf(|name, records| name == "test_collection" && records.len() == 2)
+            .times(1)
+            .returning(|_, _| Ok(vec!["id1".to_string(), "id2".to_string()]));
+
+        let records = vec![
+            VectorRecord::new(
+                "test1.rs:10".to_string(),
+                vec![0.1; 384],
+                "test_project".to_string(),
+                "test1.rs".to_string(),
+                "rust".to_string(),
+                "function".to_string(),
+                "test_fn".to_string(),
+                10,
+                20,
+                "fn test_fn() {}".to_string(),
+                "Test function".to_string(),
+            ),
+            VectorRecord::new(
+                "test2.rs:30".to_string(),
+                vec![0.2; 384],
+                "test_project".to_string(),
+                "test2.rs".to_string(),
+                "rust".to_string(),
+                "struct".to_string(),
+                "TestStruct".to_string(),
+                30,
+                40,
+                "struct TestStruct {}".to_string(),
+                "Test struct".to_string(),
+            ),
+        ];
+
+        let result = mock.insert("test_collection", records).await;
+        assert!(result.is_ok());
+        let ids = result.unwrap();
+        assert_eq!(ids.len(), 2);
+        assert_eq!(ids[0], "id1");
+        assert_eq!(ids[1], "id2");
+    }
+
+    #[tokio::test]
+    async fn test_mock_search_vectors() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_search()
+            .withf(|name, query| name == "test_collection" && query.top_k == 10)
+            .times(1)
+            .returning(|_, _| {
+                Ok(vec![SearchResult {
+                    id: "test1.rs:10".to_string(),
+                    score: 0.95,
+                    record: VectorRecord::new(
+                        "test1.rs:10".to_string(),
+                        vec![],
+                        "test_project".to_string(),
+                        "test1.rs".to_string(),
+                        "rust".to_string(),
+                        "function".to_string(),
+                        "test_fn".to_string(),
+                        10,
+                        20,
+                        "fn test_fn() {}".to_string(),
+                        "Test function".to_string(),
+                    ),
+                }])
+            });
+
+        let query = SearchQuery::new(vec![0.1; 384], 10);
+        let result = mock.search("test_collection", query).await;
+        assert!(result.is_ok());
+        let results = result.unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].id, "test1.rs:10");
+        assert!((results[0].score - 0.95).abs() < 1e-5);
+    }
+
+    #[tokio::test]
+    async fn test_mock_delete_vectors() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_delete()
+            .withf(|name, ids| name == "test_collection" && ids.len() == 2)
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        let result = mock
+            .delete("test_collection", vec!["id1".to_string(), "id2".to_string()])
+            .await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_error_simulation() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_collection_exists()
+            .times(1)
+            .returning(|_| Err(ContextMcpError::Database("Connection failed".to_string())));
+
+        let result = mock.collection_exists("test_collection").await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Database(msg)) => assert_eq!(msg, "Connection failed"),
+            _ => panic!("Expected Database error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_flush() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_flush()
+            .with(mockall::predicate::eq("test_collection"))
+            .times(1)
+            .returning(|_| Ok(()));
+
+        let result = mock.flush("test_collection").await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_get_collection_stats() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_get_collection_stats()
+            .with(mockall::predicate::eq("test_collection"))
+            .times(1)
+            .returning(|name| {
+                Ok(CollectionStats::new(
+                    name.to_string(),
+                    1000,
+                    true,
+                    1024 * 1024,
+                ))
+            });
+
+        let result = mock.get_collection_stats("test_collection").await;
+        assert!(result.is_ok());
+        let stats = result.unwrap();
+        assert_eq!(stats.name, "test_collection");
+        assert_eq!(stats.entity_count, 1000);
+        assert!(stats.indexed);
+    }
+
+    // ========================================
+    // Integration tests (requires Milvus)
+    // ========================================
 
     // Note: These are integration tests that require a running Milvus instance
     // Run with: cargo test --package context-mcp --lib storage::milvus_client -- --ignored

@@ -1,5 +1,6 @@
 use super::types::{Embedding, EmbeddingConfig, ModelInfo};
 use crate::error::{ContextMcpError, Result};
+use async_trait::async_trait;
 use ort::session::{builder::GraphOptimizationLevel, Session};
 use ort::value::Tensor;
 use parking_lot::Mutex;
@@ -7,6 +8,32 @@ use std::path::Path;
 use std::sync::Arc;
 use tokenizers::Tokenizer;
 use tracing::{debug, info, warn};
+
+#[cfg(test)]
+use mockall::automock;
+
+/// Trait for embedding engine operations
+///
+/// This trait defines the interface for generating embeddings from text.
+/// It can be implemented by the real EmbeddingEngine or mocked for testing purposes.
+#[cfg_attr(test, automock)]
+#[async_trait]
+pub trait EmbeddingEngineTrait: Send + Sync {
+    /// Generate embedding for a single text
+    async fn embed(&self, text: &str) -> Result<Embedding>;
+
+    /// Generate embeddings for multiple texts in batch
+    async fn embed_batch<'a>(&self, texts: &'a [&'a str]) -> Result<Vec<Embedding>>;
+
+    /// Get model information
+    fn model_info(&self) -> &ModelInfo;
+
+    /// Get the embedding dimension
+    fn dimension(&self) -> usize;
+
+    /// Get the configuration
+    fn config(&self) -> &EmbeddingConfig;
+}
 
 /// Embedding engine using ONNX Runtime for local inference
 ///
@@ -328,13 +355,227 @@ impl EmbeddingEngine {
     }
 }
 
-// Ensure EmbeddingEngine is Send + Sync for use in async contexts
+// SAFETY: EmbeddingEngine is Send + Sync for use in async contexts
+//
+// Safety rationale:
+// 1. ort::Session: The ONNX Runtime session is thread-safe according to the
+//    ort crate documentation. Multiple threads can safely use the same session
+//    for inference as long as access is properly synchronized.
+//    We protect it with Mutex<Session> to ensure exclusive access.
+//
+// 2. tokenizers::Tokenizer: The HuggingFace tokenizers library is designed for
+//    concurrent use. The Tokenizer type is internally thread-safe for read operations.
+//    We protect it with Arc<Mutex<Tokenizer>> to ensure safe concurrent access.
+//
+// 3. EmbeddingConfig and ModelInfo: These are simple data structures containing
+//    only owned data (PathBuf, primitive types, String). They are inherently Send + Sync.
+//
+// All mutable state is protected by Mutex, ensuring exclusive access and preventing
+// data races. The Arc ensures proper reference counting across threads.
 unsafe impl Send for EmbeddingEngine {}
 unsafe impl Sync for EmbeddingEngine {}
+
+/// Implementation of EmbeddingEngineTrait for EmbeddingEngine
+#[async_trait]
+impl EmbeddingEngineTrait for EmbeddingEngine {
+    async fn embed(&self, text: &str) -> Result<Embedding> {
+        self.embed(text).await
+    }
+
+    async fn embed_batch<'a>(&self, texts: &'a [&'a str]) -> Result<Vec<Embedding>> {
+        self.embed_batch(texts).await
+    }
+
+    fn model_info(&self) -> &ModelInfo {
+        self.model_info()
+    }
+
+    fn dimension(&self) -> usize {
+        self.dimension()
+    }
+
+    fn config(&self) -> &EmbeddingConfig {
+        self.config()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
+
+    // ========================================
+    // Unit tests using MockEmbeddingEngineTrait
+    // ========================================
+
+    #[tokio::test]
+    async fn test_mock_embed() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .with(mockall::predicate::eq("test text"))
+            .times(1)
+            .returning(|text| {
+                Ok(Embedding::new(
+                    vec![0.1; 384], // Fixed 384-dimensional vector
+                    text.to_string(),
+                    2, // Number of tokens
+                ))
+            });
+
+        let result = mock.embed("test text").await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.dimension(), 384);
+        assert_eq!(embedding.text, "test text");
+    }
+
+    #[tokio::test]
+    async fn test_mock_embed_batch() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed_batch()
+            .withf(|texts| texts.len() == 2)
+            .times(1)
+            .returning(|texts| {
+                Ok(texts
+                    .iter()
+                    .map(|text| {
+                        Embedding::new(
+                            vec![0.1; 384], // Fixed 384-dimensional vector
+                            text.to_string(),
+                            2,
+                        )
+                    })
+                    .collect())
+            });
+
+        let result = mock.embed_batch(&["text1", "text2"]).await;
+        assert!(result.is_ok());
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 2);
+        assert_eq!(embeddings[0].dimension(), 384);
+        assert_eq!(embeddings[1].dimension(), 384);
+    }
+
+    #[tokio::test]
+    async fn test_mock_model_info() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        let model_info = ModelInfo::all_mini_lm_l6_v2(PathBuf::from("test.onnx"), 256);
+
+        mock.expect_model_info().times(1).return_const(model_info);
+
+        let result = mock.model_info();
+        assert_eq!(result.name, "all-MiniLM-L6-v2");
+        assert_eq!(result.dimension, 384);
+    }
+
+    #[tokio::test]
+    async fn test_mock_dimension() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_dimension().times(1).returning(|| 384);
+
+        let result = mock.dimension();
+        assert_eq!(result, 384);
+    }
+
+    #[tokio::test]
+    async fn test_mock_config() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("test.onnx"),
+            tokenizer_path: PathBuf::from("tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        mock.expect_config().times(1).return_const(config);
+
+        let result = mock.config();
+        assert_eq!(result.max_length, 256);
+        assert_eq!(result.batch_size, 32);
+    }
+
+    #[tokio::test]
+    async fn test_mock_normalized_vector() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|text| {
+                // Create a normalized vector (L2 norm = 1.0)
+                let dim = 384;
+                let value = 1.0 / (dim as f32).sqrt();
+                Ok(Embedding::new(vec![value; dim], text.to_string(), 2))
+            });
+
+        let result = mock.embed("test").await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+
+        // Verify L2 norm is approximately 1.0
+        let norm: f32 = embedding
+            .vector
+            .iter()
+            .map(|x| x * x)
+            .sum::<f32>()
+            .sqrt();
+        assert!((norm - 1.0).abs() < 1e-5);
+    }
+
+    #[tokio::test]
+    async fn test_mock_error_simulation() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|_| Err(ContextMcpError::Embedding("Model load error".to_string())));
+
+        let result = mock.embed("test").await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => assert_eq!(msg, "Model load error"),
+            _ => panic!("Expected Embedding error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_batch_error_simulation() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed_batch()
+            .times(1)
+            .returning(|_| Err(ContextMcpError::Embedding("Tokenization error".to_string())));
+
+        let result = mock.embed_batch(&["text1", "text2"]).await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => assert_eq!(msg, "Tokenization error"),
+            _ => panic!("Expected Embedding error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_empty_batch() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed_batch()
+            .withf(|texts| texts.is_empty())
+            .times(1)
+            .returning(|_| Ok(Vec::new()));
+
+        let result = mock.embed_batch(&[]).await;
+        assert!(result.is_ok());
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 0);
+    }
+
+    // ========================================
+    // Original unit tests
+    // ========================================
 
     #[test]
     fn test_normalize_vector() {

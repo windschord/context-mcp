@@ -45,5 +45,5 @@
 mod engine;
 mod types;
 
-pub use engine::EmbeddingEngine;
+pub use engine::{EmbeddingEngine, EmbeddingEngineTrait};
 pub use types::{Embedding, EmbeddingConfig, ModelInfo};

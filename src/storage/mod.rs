@@ -5,7 +5,7 @@
 pub mod milvus_client;
 pub mod types;
 
-pub use milvus_client::MilvusClient;
+pub use milvus_client::{MilvusClient, MilvusClientTrait};
 pub use types::{
     CollectionConfig, CollectionStats, FieldSchema, IndexConfig, IndexType, MetricType,
     SearchQuery, SearchResult, VectorRecord,
