@@ -125,7 +125,9 @@ impl AstParser {
             return Ok(Vec::new());
         }
 
-        let ts_language = self.parsers.get_language(language).unwrap();
+        let ts_language = self.parsers.get_language(language).ok_or_else(|| {
+            ContextMcpError::TreeSitter(format!("Language parser not found for {:?}", language))
+        })?;
         let query = Query::new(&ts_language, query_str)
             .map_err(|e| ContextMcpError::TreeSitter(format!("Invalid query: {}", e)))?;
 

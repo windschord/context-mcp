@@ -35,11 +35,18 @@ where α = 0.3 (デフォルト)
 
 ### 環境セットアップ
 ```bash
-# 依存関係のインストール
-npm install
+# Rustツールチェーンのインストール（rustup推奨）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# TypeScriptのビルド
-npm run build
+# Protocol Buffers compilerのインストール
+# Ubuntu/Debian
+sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
+
+# macOS
+brew install protobuf
+
+# 依存関係のビルド
+cargo build
 
 # Milvus standalone起動（Docker Compose）
 docker-compose up -d
@@ -51,34 +58,43 @@ docker-compose down
 ### テスト実行
 ```bash
 # 全テスト実行
-npm test
+cargo test
 
-# ウォッチモード
-npm run test:watch
+# ライブラリテストのみ
+cargo test --lib
 
-# カバレッジレポート
-npm run test:coverage
+# 詳細出力
+cargo test --verbose
 
-# 特定のテストファイルのみ実行
-npm test -- path/to/test-file.test.ts
+# 全機能有効化してテスト
+cargo test --all-features
+
+# 特定のテストのみ実行
+cargo test test_name
 ```
 
 ### 開発・ビルド
 ```bash
-# TypeScript型チェック
-npm run typecheck
+# デバッグビルド
+cargo build
 
-# Lint実行
-npm run lint
+# リリースビルド
+cargo build --release
 
-# Lint自動修正
-npm run lint:fix
+# コンパイルチェックのみ
+cargo check
+
+# Lint実行（clippy）
+cargo clippy --all-targets --all-features
 
 # フォーマット
-npm run format
+cargo fmt --all
 
-# 開発モード（ウォッチ）
-npm run dev
+# フォーマットチェック
+cargo fmt --all -- --check
+
+# ドキュメント生成
+cargo doc --no-deps --open
 ```
 
 ## MCPツール仕様
