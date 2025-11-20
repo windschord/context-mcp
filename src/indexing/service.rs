@@ -446,58 +446,89 @@ impl IndexStats {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
-    // Note: These tests require ONNX model files and Milvus connection
-    // They are marked as ignored by default and should be run manually
+    // ========================================
+    // Task 12.7: IndexingService tests
+    // ========================================
+    //
+    // Note: IndexingService currently requires concrete types (EmbeddingEngine, MilvusClient).
+    // Full mock-based testing would require refactoring to accept trait objects:
+    //   Arc<dyn EmbeddingEngineTrait>, Arc<dyn MilvusClientTrait>
+    //
+    // The tests below focus on testable units (config, progress, stats).
+    // Integration tests with real components are marked as #[ignore].
 
-    async fn create_test_service() -> Result<IndexingService> {
-        // This would require actual model files and Milvus instance
-        // For now, this is a placeholder for integration tests
-        todo!("Implement test service creation with mock components")
+    // ==========================
+    // Unit tests for types
+    // ==========================
+
+    #[test]
+    fn test_index_config_creation() {
+        let config = IndexConfig::new(PathBuf::from("/test/path"));
+        assert_eq!(config.root_path, PathBuf::from("/test/path"));
+        assert_eq!(config.batch_size, 32);
+        assert!(config.include_documents);
+    }
+
+    #[test]
+    fn test_index_config_builder() {
+        let config = IndexConfig::new(PathBuf::from("/test"))
+            .with_project_id("my-project".to_string())
+            .with_batch_size(64)
+            .with_exclude_patterns(vec!["target/**".to_string()]);
+
+        assert_eq!(config.project_id, "my-project");
+        assert_eq!(config.batch_size, 64);
+        assert_eq!(config.exclude_patterns.len(), 1);
     }
 
     #[tokio::test]
-    #[ignore]
-    async fn test_index_single_file() {
-        // Test indexing a single Rust file
-        let temp_dir = TempDir::new().unwrap();
-        let test_file = temp_dir.path().join("test.rs");
-        tokio::fs::write(&test_file, "fn main() { println!(\"Hello\"); }")
-            .await
-            .unwrap();
+    async fn test_index_progress_atomic_operations() {
+        let progress = IndexProgress::new(10);
+        assert_eq!(progress.total_files(), 10);
+        assert_eq!(progress.processed_files(), 0);
 
-        let service = create_test_service().await.unwrap();
-        let result = service
-            .index_file(&test_file, "test-project")
-            .await
-            .unwrap();
+        progress.increment_processed();
+        assert_eq!(progress.processed_files(), 1);
 
-        assert!(result.success);
-        assert!(result.symbol_count > 0);
+        progress.add_symbols(5);
+        assert_eq!(progress.total_symbols(), 5);
     }
+
+    #[test]
+    fn test_index_stats_summary() {
+        let stats = IndexStats {
+            vector_count: 100,
+            bm25_document_count: 50,
+            bm25_term_count: 200,
+            collection_name: "test_collection".to_string(),
+        };
+
+        let summary = stats.summary();
+        assert!(summary.contains("100 vectors"));
+        assert!(summary.contains("50 BM25 documents"));
+        assert!(summary.contains("200 unique terms"));
+    }
+
+    // ==================================================================
+    // Integration tests with IndexingService (requires real components)
+    // ==================================================================
+
+    // Note: The following tests require ONNX model files and running Milvus instance.
+    // Run with: cargo test --lib indexing::service -- --ignored
 
     #[tokio::test]
     #[ignore]
-    async fn test_index_project() {
-        // Test indexing an entire project
-        let temp_dir = TempDir::new().unwrap();
-        tokio::fs::create_dir_all(temp_dir.path().join("src"))
-            .await
-            .unwrap();
-        tokio::fs::write(temp_dir.path().join("src/lib.rs"), "pub fn hello() {}")
-            .await
-            .unwrap();
-        tokio::fs::write(temp_dir.path().join("src/main.rs"), "fn main() {}")
-            .await
-            .unwrap();
-
-        let service = create_test_service().await.unwrap();
-        let config = IndexConfig::new(temp_dir.path().to_path_buf());
-
-        let result = service.index_project(config).await.unwrap();
-
-        assert!(result.indexed_files > 0);
-        assert!(result.total_symbols > 0);
+    async fn test_integration_indexing_service_full_workflow() {
+        // This test requires:
+        // 1. ONNX model files in ./models/
+        // 2. Running Milvus instance at localhost:19530
+        //
+        // It tests the complete workflow:
+        // - Create IndexingService with real components
+        // - Index a small Rust project
+        // - Verify symbols are extracted and stored
+        // - Clean up
+        todo!("Implement full integration test with real Embedding and Milvus")
     }
 }
