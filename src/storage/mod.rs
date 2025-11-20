@@ -10,3 +10,6 @@ pub use types::{
     CollectionConfig, CollectionStats, FieldSchema, IndexConfig, IndexType, MetricType,
     SearchQuery, SearchResult, VectorRecord,
 };
+
+#[cfg(test)]
+pub use milvus_client::MockMilvusClientTrait;

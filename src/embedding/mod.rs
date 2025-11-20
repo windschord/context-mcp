@@ -47,3 +47,6 @@ mod types;
 
 pub use engine::{EmbeddingEngine, EmbeddingEngineTrait};
 pub use types::{Embedding, EmbeddingConfig, ModelInfo};
+
+#[cfg(test)]
+pub use engine::MockEmbeddingEngineTrait;
