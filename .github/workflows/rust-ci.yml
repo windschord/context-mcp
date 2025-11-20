@@ -201,7 +201,7 @@ jobs:
         run: cargo install cargo-llvm-cov
 
       - name: Run tests with coverage
-        run: cargo llvm-cov --lib --all-features --fail-under-lines 40
+        run: cargo llvm-cov --lib --all-features --fail-under-lines 55
 
       - name: Generate coverage report
         if: always()
