@@ -338,3 +338,408 @@ fn default_top_k() -> usize {
 fn default_threshold() -> f32 {
     0.5
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ========================================
+    // Task 12.7: Tools parameter tests
+    // ========================================
+
+    #[test]
+    fn test_index_project_params_deserialization() {
+        let json = r#"{
+            "rootPath": "/test/path",
+            "languages": ["rust", "python"],
+            "excludePatterns": ["target/**", "node_modules/**"],
+            "includeDocuments": true
+        }"#;
+
+        let params: IndexProjectParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.root_path, "/test/path");
+        assert_eq!(params.languages.len(), 2);
+        assert_eq!(params.exclude_patterns.len(), 2);
+        assert!(params.include_documents);
+    }
+
+    #[test]
+    fn test_index_project_params_defaults() {
+        let json = r#"{
+            "rootPath": "/test/path"
+        }"#;
+
+        let params: IndexProjectParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.root_path, "/test/path");
+        assert!(params.languages.is_empty());
+        assert!(params.exclude_patterns.is_empty());
+        assert!(params.include_documents); // default_true
+    }
+
+    #[test]
+    fn test_index_project_params_include_documents_false() {
+        let json = r#"{
+            "rootPath": "/test/path",
+            "includeDocuments": false
+        }"#;
+
+        let params: IndexProjectParams = serde_json::from_str(json).unwrap();
+        assert!(!params.include_documents);
+    }
+
+    #[test]
+    fn test_index_project_response_serialization() {
+        let response = IndexProjectResponse {
+            total_files: 100,
+            code_files: 80,
+            document_files: 20,
+            total_symbols: 500,
+            processing_time_ms: 5000,
+            errors: 0,
+            status: "completed".to_string(),
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("totalFiles"));
+        assert!(json.contains("codeFiles"));
+        assert!(json.contains("processingTimeMs"));
+    }
+
+    #[test]
+    fn test_search_code_params_deserialization() {
+        let json = r#"{
+            "query": "authentication function",
+            "projectId": "my-project",
+            "fileTypes": ["rs", "py"],
+            "topK": 20,
+            "scoreThreshold": 0.7
+        }"#;
+
+        let params: SearchCodeParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.query, "authentication function");
+        assert_eq!(params.project_id, Some("my-project".to_string()));
+        assert_eq!(params.file_types.len(), 2);
+        assert_eq!(params.top_k, 20);
+        assert!((params.score_threshold - 0.7).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_search_code_params_defaults() {
+        let json = r#"{
+            "query": "test query"
+        }"#;
+
+        let params: SearchCodeParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.query, "test query");
+        assert!(params.project_id.is_none());
+        assert!(params.file_types.is_empty());
+        assert_eq!(params.top_k, 10); // default_top_k
+        assert!((params.score_threshold - 0.5).abs() < 1e-5); // default_threshold
+    }
+
+    #[test]
+    fn test_search_code_params_optional_project_id() {
+        let json = r#"{
+            "query": "test"
+        }"#;
+
+        let params: SearchCodeParams = serde_json::from_str(json).unwrap();
+        assert!(params.project_id.is_none());
+    }
+
+    #[test]
+    fn test_search_result_serialization() {
+        let result = SearchResult {
+            file_path: "/path/to/file.rs".to_string(),
+            snippet: "fn test() {}".to_string(),
+            score: 0.95,
+            language: "rust".to_string(),
+            symbol_type: Some("function".to_string()),
+            symbol_name: Some("test".to_string()),
+            line_range: (10, 20),
+            metadata: None,
+        };
+
+        let json = serde_json::to_string(&result).unwrap();
+        assert!(json.contains("filePath"));
+        assert!(json.contains("symbolType"));
+        assert!(json.contains("lineRange"));
+        assert!(!json.contains("metadata")); // None is skipped
+    }
+
+    #[test]
+    fn test_get_symbol_params_deserialization() {
+        let json = r#"{
+            "symbolName": "MyClass",
+            "symbolType": "class",
+            "projectId": "proj1"
+        }"#;
+
+        let params: GetSymbolParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.symbol_name, "MyClass");
+        assert_eq!(params.symbol_type, Some("class".to_string()));
+        assert_eq!(params.project_id, Some("proj1".to_string()));
+    }
+
+    #[test]
+    fn test_get_symbol_params_minimal() {
+        let json = r#"{
+            "symbolName": "foo"
+        }"#;
+
+        let params: GetSymbolParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.symbol_name, "foo");
+        assert!(params.symbol_type.is_none());
+        assert!(params.project_id.is_none());
+    }
+
+    #[test]
+    fn test_symbol_location_serialization() {
+        let location = SymbolLocation {
+            file_path: "/src/main.rs".to_string(),
+            symbol_name: "main".to_string(),
+            symbol_type: "function".to_string(),
+            line_range: (1, 10),
+            snippet: "fn main() {}".to_string(),
+            is_definition: true,
+            docstring: Some("Main entry point".to_string()),
+        };
+
+        let json = serde_json::to_string(&location).unwrap();
+        assert!(json.contains("isDefinition"));
+        assert!(json.contains("docstring"));
+    }
+
+    #[test]
+    fn test_find_related_docs_params_deserialization() {
+        let json = r#"{
+            "filePath": "/src/auth.rs",
+            "symbolName": "authenticate",
+            "topK": 5
+        }"#;
+
+        let params: FindRelatedDocsParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.file_path, Some("/src/auth.rs".to_string()));
+        assert_eq!(params.symbol_name, Some("authenticate".to_string()));
+        assert_eq!(params.top_k, 5);
+    }
+
+    #[test]
+    fn test_find_related_docs_params_defaults() {
+        let json = r#"{}"#;
+
+        let params: FindRelatedDocsParams = serde_json::from_str(json).unwrap();
+        assert!(params.file_path.is_none());
+        assert!(params.symbol_name.is_none());
+        assert_eq!(params.top_k, 10); // default_top_k
+    }
+
+    #[test]
+    fn test_related_document_serialization() {
+        let doc = RelatedDocument {
+            file_path: "/docs/README.md".to_string(),
+            title: "Authentication Guide".to_string(),
+            relevance_score: 0.85,
+            excerpt: "How to use authentication...".to_string(),
+            section: Some("Getting Started".to_string()),
+        };
+
+        let json = serde_json::to_string(&doc).unwrap();
+        assert!(json.contains("relevanceScore"));
+        assert!(json.contains("section"));
+    }
+
+    #[test]
+    fn test_get_index_status_params_deserialization() {
+        let json = r#"{
+            "projectId": "my-project"
+        }"#;
+
+        let params: GetIndexStatusParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.project_id, Some("my-project".to_string()));
+    }
+
+    #[test]
+    fn test_get_index_status_params_no_project_id() {
+        let json = r#"{}"#;
+
+        let params: GetIndexStatusParams = serde_json::from_str(json).unwrap();
+        assert!(params.project_id.is_none());
+    }
+
+    #[test]
+    fn test_index_statistics_serialization() {
+        let stats = IndexStatistics {
+            total_files: 100,
+            code_files: 80,
+            document_files: 20,
+            total_symbols: 500,
+            total_vectors: 500,
+            index_size_bytes: 1024 * 1024,
+        };
+
+        let json = serde_json::to_string(&stats).unwrap();
+        assert!(json.contains("totalFiles"));
+        assert!(json.contains("totalSymbols"));
+        assert!(json.contains("indexSizeBytes"));
+    }
+
+    #[test]
+    fn test_project_index_status_serialization() {
+        let status = ProjectIndexStatus {
+            project_id: "proj1".to_string(),
+            root_path: "/path/to/proj".to_string(),
+            status: "indexed".to_string(),
+            last_indexed_at: Some("2024-01-01T00:00:00Z".to_string()),
+            stats: IndexStatistics {
+                total_files: 50,
+                code_files: 40,
+                document_files: 10,
+                total_symbols: 200,
+                total_vectors: 200,
+                index_size_bytes: 512 * 1024,
+            },
+        };
+
+        let json = serde_json::to_string(&status).unwrap();
+        assert!(json.contains("projectId"));
+        assert!(json.contains("lastIndexedAt"));
+    }
+
+    #[test]
+    fn test_clear_index_params_deserialization() {
+        let json = r#"{
+            "projectId": "my-project",
+            "confirm": true
+        }"#;
+
+        let params: ClearIndexParams = serde_json::from_str(json).unwrap();
+        assert_eq!(params.project_id, Some("my-project".to_string()));
+        assert!(params.confirm);
+    }
+
+    #[test]
+    fn test_clear_index_params_defaults() {
+        let json = r#"{}"#;
+
+        let params: ClearIndexParams = serde_json::from_str(json).unwrap();
+        assert!(params.project_id.is_none());
+        assert!(!params.confirm); // default is false
+    }
+
+    #[test]
+    fn test_clear_index_response_serialization() {
+        let response = ClearIndexResponse {
+            success: true,
+            projects_cleared: 3,
+            vectors_deleted: 1500,
+            message: "Index cleared successfully".to_string(),
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("projectsCleared"));
+        assert!(json.contains("vectorsDeleted"));
+    }
+
+    #[test]
+    fn test_search_code_response_serialization() {
+        let response = SearchCodeResponse {
+            results: vec![
+                SearchResult {
+                    file_path: "/src/lib.rs".to_string(),
+                    snippet: "pub fn foo() {}".to_string(),
+                    score: 0.9,
+                    language: "rust".to_string(),
+                    symbol_type: Some("function".to_string()),
+                    symbol_name: Some("foo".to_string()),
+                    line_range: (1, 5),
+                    metadata: None,
+                },
+            ],
+            total_found: 1,
+            search_time_ms: 50,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("totalFound"));
+        assert!(json.contains("searchTimeMs"));
+    }
+
+    #[test]
+    fn test_get_symbol_response_serialization() {
+        let response = GetSymbolResponse {
+            definitions: vec![],
+            references: vec![],
+            total_count: 0,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("totalCount"));
+    }
+
+    #[test]
+    fn test_find_related_docs_response_serialization() {
+        let response = FindRelatedDocsResponse {
+            documents: vec![],
+            total_found: 0,
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("totalFound"));
+    }
+
+    #[test]
+    fn test_get_index_status_response_serialization() {
+        let response = GetIndexStatusResponse {
+            projects: vec![],
+            overall_stats: IndexStatistics {
+                total_files: 0,
+                code_files: 0,
+                document_files: 0,
+                total_symbols: 0,
+                total_vectors: 0,
+                index_size_bytes: 0,
+            },
+        };
+
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("overallStats"));
+    }
+
+    // Test invalid JSON handling
+    #[test]
+    fn test_invalid_json_deserialization() {
+        let json = r#"{
+            "rootPath": 123
+        }"#;
+
+        let result: Result<IndexProjectParams, _> = serde_json::from_str(json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_missing_required_field() {
+        let json = r#"{
+            "languages": ["rust"]
+        }"#;
+
+        let result: Result<IndexProjectParams, _> = serde_json::from_str(json);
+        assert!(result.is_err());
+    }
+
+    // Test default helper functions
+    #[test]
+    fn test_default_true() {
+        assert!(default_true());
+    }
+
+    #[test]
+    fn test_default_top_k() {
+        assert_eq!(default_top_k(), 10);
+    }
+
+    #[test]
+    fn test_default_threshold() {
+        assert!((default_threshold() - 0.5).abs() < 1e-5);
+    }
+}

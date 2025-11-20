@@ -531,4 +531,163 @@ mod tests {
         // - Clean up
         todo!("Implement full integration test with real Embedding and Milvus")
     }
+
+    // ==================================================================
+    // Task 12.7: Additional unit tests for IndexingService components
+    // ==================================================================
+
+    #[test]
+    fn test_index_result_creation() {
+        let start = std::time::Instant::now();
+        std::thread::sleep(std::time::Duration::from_millis(10));
+
+        let result = IndexResult::new(
+            true,
+            10,
+            8,
+            100,
+            Vec::new(),
+            start.elapsed(),
+        );
+
+        assert!(result.success);
+        assert_eq!(result.total_files, 10);
+        assert_eq!(result.indexed_files, 8);
+        assert_eq!(result.total_symbols, 100);
+        assert!(result.duration.as_millis() >= 10);
+    }
+
+    #[test]
+    fn test_file_index_result_success() {
+        let result = FileIndexResult::success(
+            "/path/to/file.rs".to_string(),
+            5,
+            100,
+        );
+
+        assert!(result.success);
+        assert_eq!(result.file_path, "/path/to/file.rs");
+        assert_eq!(result.symbol_count, 5);
+        assert_eq!(result.processing_time_ms, 100);
+        assert!(result.error.is_none());
+    }
+
+    #[test]
+    fn test_file_index_result_error() {
+        let error = IndexError::parse(
+            "/path/to/file.rs".to_string(),
+            "Parse error".to_string(),
+        );
+
+        let result = FileIndexResult::error(
+            "/path/to/file.rs".to_string(),
+            error.clone(),
+            50,
+        );
+
+        assert!(!result.success);
+        assert_eq!(result.symbol_count, 0);
+        assert!(result.error.is_some());
+        assert_eq!(result.error.unwrap().kind, ErrorKind::Parse);
+    }
+
+    #[test]
+    fn test_index_error_types() {
+        let io_error = IndexError::io("file.rs".to_string(), "File not found".to_string());
+        assert_eq!(io_error.kind, ErrorKind::Io);
+
+        let parse_error = IndexError::parse("file.rs".to_string(), "Syntax error".to_string());
+        assert_eq!(parse_error.kind, ErrorKind::Parse);
+
+        let emb_error = IndexError::embedding("file.rs".to_string(), "Model error".to_string());
+        assert_eq!(emb_error.kind, ErrorKind::Embedding);
+
+        let storage_error = IndexError::storage("file.rs".to_string(), "DB error".to_string());
+        assert_eq!(storage_error.kind, ErrorKind::Storage);
+    }
+
+    #[test]
+    fn test_index_progress_tracking() {
+        let progress = IndexProgress::new(100);
+
+        assert_eq!(progress.total_files(), 100);
+        assert_eq!(progress.processed_files(), 0);
+        assert_eq!(progress.total_symbols(), 0);
+
+        progress.increment_processed();
+        assert_eq!(progress.processed_files(), 1);
+
+        progress.add_symbols(10);
+        assert_eq!(progress.total_symbols(), 10);
+
+        let error = IndexError::new(
+            "file.rs".to_string(),
+            "Error".to_string(),
+            ErrorKind::Io,
+        );
+        progress.add_error(error);
+        assert_eq!(progress.error_count(), 1);
+    }
+
+    #[test]
+    fn test_index_progress_report() {
+        let progress = IndexProgress::new(10);
+
+        for _i in 0..5 {
+            progress.increment_processed();
+        }
+        progress.add_symbols(25);
+
+        let report = progress.report();
+        assert!(report.contains("5/10"));
+        assert!(report.contains("25 symbols"));
+    }
+
+    #[test]
+    fn test_scan_config_from_index_config() {
+        let index_config = IndexConfig::new(PathBuf::from("/test/path"))
+            .with_exclude_patterns(vec!["target/**".to_string()])
+            .with_include_documents(true);
+
+        let scan_config = ScanConfig::from(&index_config);
+
+        assert_eq!(scan_config.exclude_patterns.len(), 1);
+        assert!(scan_config.include_documents);
+    }
+
+    #[test]
+    fn test_index_result_from_progress() {
+        let progress = Arc::new(IndexProgress::new(10));
+
+        // Process all 10 files successfully
+        for _ in 0..10 {
+            progress.increment_processed();
+        }
+        progress.add_symbols(50);
+
+        let result = IndexResult::from_progress(&progress);
+
+        assert!(result.success);
+        assert_eq!(result.total_files, 10);
+        assert_eq!(result.indexed_files, 10);
+        assert_eq!(result.total_symbols, 50);
+    }
+
+    #[test]
+    fn test_index_result_with_errors() {
+        let progress = Arc::new(IndexProgress::new(10));
+
+        // Process 5 files, with 2 errors
+        for _ in 0..5 {
+            progress.increment_processed();
+        }
+        progress.add_error(IndexError::io("file1.rs".to_string(), "Error 1".to_string()));
+        progress.add_error(IndexError::io("file2.rs".to_string(), "Error 2".to_string()));
+
+        let result = IndexResult::from_progress(&progress);
+
+        assert!(!result.success); // Not all files processed
+        assert_eq!(result.errors.len(), 2);
+        assert_eq!(result.indexed_files, 3); // 5 processed - 2 errors
+    }
 }
