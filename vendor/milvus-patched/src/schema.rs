@@ -586,7 +586,7 @@ impl<'a> CollectionSchemaBuilder<'a> {
         Err(error::Error::from(Error::NoPrimaryKey))
     }
 
-    pub fn build(&mut self) -> Result<CollectionSchema> {
+    pub fn build(&mut self) -> Result<CollectionSchema<'_>> {
         let mut has_primary = false;
 
         for f in self.inner.iter() {

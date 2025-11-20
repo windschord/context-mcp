@@ -1,5 +1,7 @@
+#[allow(unused_imports)]
 use prost::{bytes::BytesMut, Message};
 
+#[allow(unused_imports)]
 use self::{common::PlaceholderGroup, schema::CollectionSchema};
 
 #[path = "milvus.proto.common.rs"]
