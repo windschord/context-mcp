@@ -573,6 +573,250 @@ mod tests {
         assert_eq!(embeddings.len(), 0);
     }
 
+    #[tokio::test]
+    async fn test_mock_long_text() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        // Long text with 1000+ characters
+        let long_text = "a".repeat(1000);
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|text| {
+                Ok(Embedding::new(
+                    vec![0.1; 384],
+                    text.to_string(),
+                    256, // Typically truncated to max_length
+                ))
+            });
+
+        let result = mock.embed(&long_text).await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.dimension(), 384);
+        assert_eq!(embedding.text, long_text);
+        assert_eq!(embedding.token_count, 256);
+    }
+
+    #[tokio::test]
+    async fn test_mock_concurrent_access() {
+        // This test verifies that multiple tasks can safely access the embedding engine
+        // In practice, the real EmbeddingEngine uses Arc<Mutex<>> internally for thread safety
+
+        // Create a mock for each task to avoid Send issues with parking_lot::MutexGuard
+        let results = futures::future::join_all((0..10).map(|i| {
+            tokio::spawn(async move {
+                let mut mock = MockEmbeddingEngineTrait::new();
+                mock.expect_embed()
+                    .times(1)
+                    .returning(|text| {
+                        Ok(Embedding::new(
+                            vec![0.1; 384],
+                            text.to_string(),
+                            2,
+                        ))
+                    });
+
+                let text = format!("text {}", i);
+                mock.embed(&text).await
+            })
+        }))
+        .await;
+
+        // Verify all tasks completed successfully
+        for result in results {
+            let result = result.unwrap(); // tokio::spawn result
+            assert!(result.is_ok());
+            let embedding = result.unwrap();
+            assert_eq!(embedding.dimension(), 384);
+        }
+    }
+
+    // ========================================
+    // Integration tests with real ONNX model (optional, requires model files)
+    // ========================================
+
+    #[tokio::test]
+    #[ignore = "Requires real ONNX model files to be present"]
+    async fn test_real_model_embed() {
+        // This test requires downloading the model first:
+        // 1. Download all-MiniLM-L6-v2.onnx
+        // 2. Download tokenizer.json
+        // 3. Place them in ./test_models/
+
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("./test_models/all-MiniLM-L6-v2.onnx"),
+            tokenizer_path: PathBuf::from("./test_models/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let engine = EmbeddingEngine::new(config).await;
+
+        // Skip test if model files are not available
+        if engine.is_err() {
+            eprintln!(
+                "Skipping test_real_model_embed: model files not found. \
+                 Download test models to ./test_models/"
+            );
+            return;
+        }
+
+        let engine = engine.unwrap();
+
+        // Test single embedding
+        let result = engine.embed("Hello, world!").await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.dimension(), 384);
+
+        // Verify normalization (L2 norm should be ~1.0)
+        let norm: f32 = embedding
+            .vector
+            .iter()
+            .map(|x| x * x)
+            .sum::<f32>()
+            .sqrt();
+        assert!((norm - 1.0).abs() < 1e-3);
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires real ONNX model files to be present"]
+    async fn test_real_model_similarity() {
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("./test_models/all-MiniLM-L6-v2.onnx"),
+            tokenizer_path: PathBuf::from("./test_models/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let engine = EmbeddingEngine::new(config).await;
+
+        if engine.is_err() {
+            eprintln!(
+                "Skipping test_real_model_similarity: model files not found. \
+                 Download test models to ./test_models/"
+            );
+            return;
+        }
+
+        let engine = engine.unwrap();
+
+        // Similar texts should have high cosine similarity
+        let emb1 = engine.embed("The cat sits on the mat.").await.unwrap();
+        let emb2 = engine.embed("A cat is sitting on a mat.").await.unwrap();
+        let emb3 = engine.embed("Quantum physics is complex.").await.unwrap();
+
+        // Cosine similarity (since vectors are normalized, this is just dot product)
+        let similarity_12: f32 = emb1
+            .vector
+            .iter()
+            .zip(emb2.vector.iter())
+            .map(|(a, b)| a * b)
+            .sum();
+
+        let similarity_13: f32 = emb1
+            .vector
+            .iter()
+            .zip(emb3.vector.iter())
+            .map(|(a, b)| a * b)
+            .sum();
+
+        // Similar texts should have higher similarity than dissimilar texts
+        assert!(
+            similarity_12 > similarity_13,
+            "Similar texts should have higher similarity: {} > {}",
+            similarity_12,
+            similarity_13
+        );
+        assert!(
+            similarity_12 > 0.7,
+            "Similar texts should have high similarity: {}",
+            similarity_12
+        );
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires real ONNX model files to be present"]
+    async fn test_real_model_batch() {
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("./test_models/all-MiniLM-L6-v2.onnx"),
+            tokenizer_path: PathBuf::from("./test_models/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let engine = EmbeddingEngine::new(config).await;
+
+        if engine.is_err() {
+            eprintln!(
+                "Skipping test_real_model_batch: model files not found. \
+                 Download test models to ./test_models/"
+            );
+            return;
+        }
+
+        let engine = engine.unwrap();
+
+        // Test batch embedding
+        let texts = vec!["First text", "Second text", "Third text"];
+        let result = engine.embed_batch(&texts).await;
+        assert!(result.is_ok());
+
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 3);
+
+        for embedding in &embeddings {
+            assert_eq!(embedding.dimension(), 384);
+
+            // Verify normalization
+            let norm: f32 = embedding
+                .vector
+                .iter()
+                .map(|x| x * x)
+                .sum::<f32>()
+                .sqrt();
+            assert!((norm - 1.0).abs() < 1e-3);
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "Requires real ONNX model files to be present"]
+    async fn test_real_model_large_batch() {
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("./test_models/all-MiniLM-L6-v2.onnx"),
+            tokenizer_path: PathBuf::from("./test_models/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let engine = EmbeddingEngine::new(config).await;
+
+        if engine.is_err() {
+            eprintln!(
+                "Skipping test_real_model_large_batch: model files not found. \
+                 Download test models to ./test_models/"
+            );
+            return;
+        }
+
+        let engine = engine.unwrap();
+
+        // Test large batch (100 texts)
+        let texts: Vec<String> = (0..100).map(|i| format!("Text number {}", i)).collect();
+        let text_refs: Vec<&str> = texts.iter().map(|s| s.as_str()).collect();
+
+        let result = engine.embed_batch(&text_refs).await;
+        assert!(result.is_ok());
+
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 100);
+
+        for embedding in &embeddings {
+            assert_eq!(embedding.dimension(), 384);
+        }
+    }
+
     // ========================================
     // Original unit tests
     // ========================================

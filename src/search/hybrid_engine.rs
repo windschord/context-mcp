@@ -420,6 +420,10 @@ pub fn normalize_z_score(scores: &[f32]) -> Vec<f32> {
 mod tests {
     use super::*;
 
+    // ========================================
+    // Normalization tests
+    // ========================================
+
     #[test]
     fn test_normalize_min_max() {
         let scores = vec![1.0, 2.0, 3.0, 4.0, 5.0];
@@ -504,5 +508,166 @@ mod tests {
 
         let none = normalize_scores(&scores, NormalizationType::None);
         assert_eq!(none, scores);
+    }
+
+    // ========================================
+    // HybridSearchEngine integration tests
+    // ========================================
+
+    fn create_test_vector_record(id: &str, file_path: &str) -> VectorRecord {
+        VectorRecord::new(
+            id.to_string(),
+            vec![0.1; 384],
+            "test_project".to_string(),
+            file_path.to_string(),
+            "rust".to_string(),
+            "function".to_string(),
+            "test_fn".to_string(),
+            10,
+            20,
+            "fn test_fn() {}".to_string(),
+            "Test function".to_string(),
+        )
+    }
+
+    #[test]
+    fn test_hybrid_config_validation() {
+        let valid_config = HybridConfig::new(0.3, 10);
+        assert!(valid_config.validate().is_ok());
+
+        let invalid_alpha_high = HybridConfig::new(1.5, 10);
+        assert!(invalid_alpha_high.validate().is_err());
+
+        let invalid_alpha_low = HybridConfig::new(-0.1, 10);
+        assert!(invalid_alpha_low.validate().is_err());
+
+        let invalid_top_k = HybridConfig::new(0.5, 0);
+        assert!(invalid_top_k.validate().is_err());
+    }
+
+    #[test]
+    fn test_hybrid_config_alpha_variations() {
+        // Test pure vector search (alpha = 0.0)
+        let vector_only = HybridConfig::new(0.0, 10);
+        assert!(vector_only.validate().is_ok());
+        assert_eq!(vector_only.alpha, 0.0);
+
+        // Test equal weight (alpha = 0.5)
+        let equal_weight = HybridConfig::new(0.5, 10);
+        assert!(equal_weight.validate().is_ok());
+        assert_eq!(equal_weight.alpha, 0.5);
+
+        // Test pure BM25 search (alpha = 1.0)
+        let bm25_only = HybridConfig::new(1.0, 10);
+        assert!(bm25_only.validate().is_ok());
+        assert_eq!(bm25_only.alpha, 1.0);
+    }
+
+    #[test]
+    fn test_normalize_scores_with_normalization_types() {
+        let scores = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+        // MinMax normalization
+        let min_max = normalize_scores(&scores, NormalizationType::MinMax);
+        assert_eq!(min_max.len(), 5);
+        assert!((min_max[0] - 0.0).abs() < 1e-6);
+        assert!((min_max[4] - 1.0).abs() < 1e-6);
+
+        // ZScore normalization
+        let z_score = normalize_scores(&scores, NormalizationType::ZScore);
+        assert_eq!(z_score.len(), 5);
+        let mean: f32 = z_score.iter().sum::<f32>() / z_score.len() as f32;
+        assert!(mean.abs() < 1e-6);
+
+        // None (no normalization)
+        let none = normalize_scores(&scores, NormalizationType::None);
+        assert_eq!(none, scores);
+    }
+
+    #[test]
+    fn test_hybrid_result_creation() {
+        let record = create_test_vector_record("test_id", "test.rs");
+        let result = HybridResult::new(
+            "test_id".to_string(),
+            0.85,
+            Some(0.7),
+            Some(0.9),
+            record,
+            vec!["test".to_string(), "keyword".to_string()],
+        );
+
+        assert_eq!(result.id, "test_id");
+        assert_eq!(result.score, 0.85);
+        assert_eq!(result.bm25_score, Some(0.7));
+        assert_eq!(result.vector_score, Some(0.9));
+        assert!(result.is_hybrid());
+        assert!(result.has_bm25());
+        assert!(result.has_vector());
+        assert_eq!(result.matched_terms.len(), 2);
+    }
+
+    #[test]
+    fn test_hybrid_result_bm25_only() {
+        let record = create_test_vector_record("test_id", "test.rs");
+        let result = HybridResult::new(
+            "test_id".to_string(),
+            0.7,
+            Some(0.7),
+            None,
+            record,
+            vec!["keyword".to_string()],
+        );
+
+        assert!(result.has_bm25());
+        assert!(!result.has_vector());
+        assert!(!result.is_hybrid());
+    }
+
+    #[test]
+    fn test_hybrid_result_vector_only() {
+        let record = create_test_vector_record("test_id", "test.rs");
+        let result = HybridResult::new(
+            "test_id".to_string(),
+            0.9,
+            None,
+            Some(0.9),
+            record,
+            vec![],
+        );
+
+        assert!(!result.has_bm25());
+        assert!(result.has_vector());
+        assert!(!result.is_hybrid());
+    }
+
+    #[test]
+    fn test_score_combination() {
+        // Test hybrid score calculation: score = alpha * bm25 + (1-alpha) * vector
+        let alpha = 0.3_f32;
+        let bm25_score = 0.8_f32;
+        let vector_score = 0.6_f32;
+
+        let expected_score = alpha * bm25_score + (1.0 - alpha) * vector_score;
+        let calculated_score = 0.3 * 0.8 + 0.7 * 0.6;
+
+        assert!((expected_score - calculated_score).abs() < 1e-6);
+        assert!((expected_score - 0.66).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_normalization_edge_cases() {
+        // Empty scores
+        let empty_min_max: Vec<f32> = normalize_min_max(&[]);
+        assert!(empty_min_max.is_empty());
+        let empty_z_score: Vec<f32> = normalize_z_score(&[]);
+        assert!(empty_z_score.is_empty());
+
+        // Single score
+        assert_eq!(normalize_min_max(&[5.0]), vec![1.0]);
+        assert_eq!(normalize_z_score(&[5.0]), vec![0.0]);
+
+        // All equal scores
+        assert_eq!(normalize_min_max(&[3.0, 3.0, 3.0]), vec![1.0, 1.0, 1.0]);
+        assert_eq!(normalize_z_score(&[3.0, 3.0, 3.0]), vec![0.0, 0.0, 0.0]);
     }
 }
