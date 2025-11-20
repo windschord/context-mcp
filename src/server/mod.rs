@@ -262,26 +262,64 @@ impl ContextMcpServer {
         // Initialize hybrid search engine
         info!("Initializing hybrid search engine");
         let hybrid = HybridSearchEngine::new(
-            Arc::clone(state.bm25.as_ref().unwrap()),
-            Arc::clone(state.storage.as_ref().unwrap()),
-            Arc::clone(state.embedding.as_ref().unwrap()),
+            Arc::clone(
+                state
+                    .bm25
+                    .as_ref()
+                    .expect("BM25 engine must be initialized before hybrid search"),
+            ),
+            Arc::clone(
+                state
+                    .storage
+                    .as_ref()
+                    .expect("Storage must be initialized before hybrid search"),
+            ),
+            Arc::clone(
+                state
+                    .embedding
+                    .as_ref()
+                    .expect("Embedding engine must be initialized before hybrid search"),
+            ),
         );
         state.hybrid = Some(Arc::new(hybrid));
 
         // Initialize indexing service
         info!("Initializing indexing service");
         let indexing = IndexingService::new(
-            Arc::clone(state.parser.as_ref().unwrap()),
-            Arc::clone(state.embedding.as_ref().unwrap()),
-            Arc::clone(state.storage.as_ref().unwrap()),
-            Arc::clone(state.bm25.as_ref().unwrap()),
+            Arc::clone(
+                state
+                    .parser
+                    .as_ref()
+                    .expect("Parser must be initialized before indexing service"),
+            ),
+            Arc::clone(
+                state
+                    .embedding
+                    .as_ref()
+                    .expect("Embedding engine must be initialized before indexing service"),
+            ),
+            Arc::clone(
+                state
+                    .storage
+                    .as_ref()
+                    .expect("Storage must be initialized before indexing service"),
+            ),
+            Arc::clone(
+                state
+                    .bm25
+                    .as_ref()
+                    .expect("BM25 engine must be initialized before indexing service"),
+            ),
         )
         .with_collection_name(state.config.indexing.collection_name.clone());
         state.indexing = Some(Arc::new(indexing));
 
         // Create Milvus collection if it doesn't exist
         let collection_name = &state.config.indexing.collection_name;
-        let storage = state.storage.as_ref().unwrap();
+        let storage = state
+            .storage
+            .as_ref()
+            .expect("Storage must be initialized before collection creation");
 
         if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);
