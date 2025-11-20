@@ -297,7 +297,12 @@
 
 #### フェーズ12.1: モック基盤の構築（優先度: 最高）
 
-- タスク12.1: Milvusクライアントモックトレイトの実装 | MockMilvusClientトレイト定義、基本CRUD操作モック、検索結果モック実装 (依存: 10.5 | 工数: 6h | ステータス: TODO)
+- タスク12.1: Milvusクライアントモックの実装（mockall使用） | mockallクレートを使用してMockMilvusClientを自動生成、基本CRUD操作モック、検索結果モック実装 (依存: 10.5 | 工数: 6h | ステータス: TODO)
+  - **使用ライブラリ**: `mockall` (Rustの標準的なモックライブラリ)
+  - **実装方針**:
+    - `MilvusClient`構造体のメソッドに`#[cfg_attr(test, mockall::automock)]`マクロを適用
+    - テストコードで`MockMilvusClient`を使用し、`expect_*()`メソッドで期待値を設定
+    - または、`MilvusClientTrait`を定義し、`#[automock]`マクロで自動モック生成
   - **テスト条件（requirements.mdより）**:
     - REQ-025: ローカル埋め込みモデルとMilvusの組み合わせテスト（ローカルモード時の外部API非接続）
     - REQ-026: Milvus standalone接続時のデータ保存検証
@@ -306,16 +311,51 @@
     - コンポーネント7 Vector Store: connect(), upsert(), query(), delete()の各操作
     - データベーススキーマ: code_vectorsコレクションの全フィールド（id, vector, file_path, language, type, name, line_start, line_end, snippet, docstring, metadata）
   - **受入基準**:
-    - [ ] `MockMilvusClient`トレイトが定義され、MilvusClientトレイトと同じインターフェースを実装
-    - [ ] `create_collection()`のモック実装（成功/失敗のシミュレーション）
-    - [ ] `insert()`のモック実装（IDの生成、メモリ保存）
-    - [ ] `search()`のモック実装（固定ベクトルまたはランダムな類似度スコア返却）
-    - [ ] `delete()`のモック実装
-    - [ ] エラーシミュレーション機能（接続エラー、タイムアウト、権限エラー）
+    - [ ] Cargo.tomlに`mockall = "0.13"`を開発依存関係として追加
+    - [ ] `MilvusClientTrait`を定義し、`#[automock]`マクロを適用
+    - [ ] `MilvusClient`が`MilvusClientTrait`を実装
+    - [ ] `MockMilvusClient`が自動生成され、テストで使用可能
+    - [ ] `expect_create_collection()`でコレクション作成のモック設定が可能
+    - [ ] `expect_insert()`で挿入操作のモック設定が可能（戻り値のカスタマイズ）
+    - [ ] `expect_search()`でベクトル検索のモック設定が可能（固定結果または動的結果）
+    - [ ] `expect_delete()`で削除操作のモック設定が可能
+    - [ ] エラーシミュレーション: `returning()`や`returning_once()`でエラーを返却可能
     - [ ] 実際のMilvusサーバーへの依存なしでテスト実行可能
+  - **実装例**:
+    ```rust
+    #[cfg_attr(test, automock)]
+    #[async_trait]
+    pub trait MilvusClientTrait {
+        async fn create_collection(&self, name: &str, schema: Schema) -> Result<()>;
+        async fn insert(&self, collection: &str, vectors: Vec<Vector>) -> Result<Vec<String>>;
+        async fn search(&self, query: SearchQuery) -> Result<Vec<SearchResult>>;
+        async fn delete(&self, collection: &str, ids: Vec<String>) -> Result<()>;
+    }
+
+    // テストでの使用例
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_insert_vectors() {
+            let mut mock = MockMilvusClientTrait::new();
+            mock.expect_insert()
+                .returning(|_, _| Ok(vec!["id1".to_string(), "id2".to_string()]));
+
+            let result = mock.insert("test_collection", vec![]).await;
+            assert!(result.is_ok());
+        }
+    }
+    ```
   - **期待カバレッジ向上**: +12%
 
-- タスク12.2: 埋め込みエンジンモックトレイトの実装 | MockEmbeddingEngineトレイト定義、固定ベクトル返却モック、バッチ処理モック実装 (依存: 10.4 | 工数: 4h | ステータス: TODO)
+- タスク12.2: 埋め込みエンジンモックの実装（mockall使用） | mockallクレートを使用してMockEmbeddingEngineを自動生成、固定ベクトル返却モック、バッチ処理モック実装 (依存: 10.4 | 工数: 4h | ステータス: TODO)
+  - **使用ライブラリ**: `mockall` (Rustの標準的なモックライブラリ)
+  - **実装方針**:
+    - `EmbeddingEngineTrait`を定義し、`#[automock]`マクロで自動モック生成
+    - テストコードで`MockEmbeddingEngineTrait`を使用し、`expect_*()`メソッドで期待値を設定
+    - 固定384次元ベクトルまたは動的なベクトル生成をモックで実現
   - **テスト条件（requirements.mdより）**:
     - REQ-025: ローカル埋め込みモデル（ONNX Runtime経由）の動作検証
     - NFR-017: ローカル埋め込みモデルのサポート
@@ -323,13 +363,42 @@
     - コンポーネント6 Embedding Engine: embed(), embed_batch(), model_info()の各操作
     - 使用ライブラリ: ort, tokenizers（モックではこれらへの依存なし）
   - **受入基準**:
-    - [ ] `MockEmbeddingEngine`トレイトが定義され、EmbeddingEngineトレイトと同じインターフェースを実装
-    - [ ] `embed()`のモック実装（固定384次元ベクトルまたはテキスト長に基づくベクトル返却）
-    - [ ] `embed_batch()`のモック実装（複数テキストのバッチ処理）
-    - [ ] `model_info()`のモック実装（モックモデル情報の返却）
-    - [ ] 正規化処理のシミュレーション
-    - [ ] エラーシミュレーション機能（モデルロードエラー、トークナイズエラー）
+    - [ ] `EmbeddingEngineTrait`を定義し、`#[automock]`マクロを適用
+    - [ ] `EmbeddingEngine`が`EmbeddingEngineTrait`を実装
+    - [ ] `MockEmbeddingEngineTrait`が自動生成され、テストで使用可能
+    - [ ] `expect_embed()`で単一テキストの埋め込み生成をモック（固定384次元ベクトル返却）
+    - [ ] `expect_embed_batch()`でバッチ処理をモック（複数ベクトル返却）
+    - [ ] `expect_model_info()`でモデル情報のモックを設定
+    - [ ] 正規化済みベクトル（ノルム=1.0）をモックで返却可能
+    - [ ] エラーシミュレーション: モデルロードエラー、トークナイズエラーを`returning()`で返却
     - [ ] 実際のONNXモデルへの依存なしでテスト実行可能
+  - **実装例**:
+    ```rust
+    #[cfg_attr(test, automock)]
+    #[async_trait]
+    pub trait EmbeddingEngineTrait {
+        async fn embed(&self, text: &str) -> Result<Vec<f32>>;
+        async fn embed_batch(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>>;
+        fn model_info(&self) -> ModelInfo;
+    }
+
+    // テストでの使用例
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[tokio::test]
+        async fn test_embed_text() {
+            let mut mock = MockEmbeddingEngineTrait::new();
+            mock.expect_embed()
+                .returning(|_| Ok(vec![0.1; 384])); // 固定384次元ベクトル
+
+            let result = mock.embed("test text").await;
+            assert!(result.is_ok());
+            assert_eq!(result.unwrap().len(), 384);
+        }
+    }
+    ```
   - **期待カバレッジ向上**: +5%
 
 #### フェーズ12.2: サーバー層のテスト（優先度: 最高）

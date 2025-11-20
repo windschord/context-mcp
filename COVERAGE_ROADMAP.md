@@ -30,15 +30,22 @@ GitHub ActionsのCIで80%未満の場合はチェックが失敗するように�
 
 **推定工数**: 2-3日
 
+**使用ライブラリ**: `mockall` v0.13（Rustの標準的なモックライブラリ）
+
 1. Milvusクライアントのモック実装
-   - `MockMilvusClient`トレイト作成
-   - 基本的なCRUD操作のモック
-   - 検索結果のモック
+   - Cargo.tomlに`mockall`を開発依存関係として追加
+   - `MilvusClientTrait`を定義し、`#[automock]`マクロを適用
+   - `MockMilvusClient`が自動生成される
+   - 基本的なCRUD操作のモック（`expect_create_collection()`, `expect_insert()`, `expect_search()`, `expect_delete()`）
+   - 検索結果のモック（固定結果または動的結果）
+   - エラーシミュレーション（`returning()`でエラー返却）
 
 2. 埋め込みエンジンのモック実装
-   - `MockEmbeddingEngine`トレイト作成
-   - 固定ベクトル返却のモック
-   - バッチ処理のモック
+   - `EmbeddingEngineTrait`を定義し、`#[automock]`マクロを適用
+   - `MockEmbeddingEngine`が自動生成される
+   - 固定ベクトル返却のモック（384次元ベクトル）
+   - バッチ処理のモック（`expect_embed_batch()`）
+   - モデル情報のモック（`expect_model_info()`）
 
 ### フェーズ2: サーバー層のテスト（優先度: 高）
 
@@ -136,14 +143,19 @@ GitHub ActionsのCIで80%未満の場合はチェックが失敗するように�
 
 ### 課題1: Milvus依存
 - **問題**: 実際のMilvusサーバーが必要
-- **対策**: モック実装と、オプショナルな統合テスト（GitHub Actions Servicesでの実Milvus起動）
+- **対策**:
+  - **mockallクレート**を使用したモック実装（`#[automock]`マクロで自動生成）
+  - `MilvusClientTrait`を定義し、本番コードとテストコードで実装を切り替え
+  - オプショナルな統合テスト（GitHub Actions Servicesでの実Milvus起動）
 
 ### 課題2: ONNX モデル依存
 - **問題**: 埋め込みモデルのファイルサイズが大きい
 - **対策**:
-  - 軽量なテスト用モデルの使用
-  - GitHub LFSでのモデル管理
-  - CI環境での動的ダウンロード
+  - **mockallクレート**を使用したモック実装（`EmbeddingEngineTrait`+`#[automock]`）
+  - テストでは固定384次元ベクトルを返却し、実際のモデルロード不要
+  - オプショナル: 軽量なテスト用モデルの使用（統合テスト時）
+  - GitHub LFSでのモデル管理（統合テスト用）
+  - CI環境での動的ダウンロード（統合テスト用）
 
 ### 課題3: 統合テストの実行時間
 - **問題**: 統合テストは時間がかかる
