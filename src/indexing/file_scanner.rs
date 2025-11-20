@@ -5,7 +5,6 @@
 /// - .gitignore pattern matching
 /// - Custom exclude patterns
 /// - Markdown documentation inclusion
-
 use crate::error::{ContextMcpError, Result};
 use crate::indexing::types::ScanConfig;
 use crate::parser::Language;

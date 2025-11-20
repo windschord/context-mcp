@@ -2,14 +2,13 @@
 ///
 /// This module defines configuration options, progress tracking, and result types
 /// for the indexing service.
-
 use crate::parser::Language;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use parking_lot::Mutex;
 
 /// Configuration for indexing a project
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -465,10 +464,7 @@ mod tests {
 
     #[test]
     fn test_index_error_creation() {
-        let error = IndexError::parse(
-            "/test/file.rs".to_string(),
-            "Parse failed".to_string(),
-        );
+        let error = IndexError::parse("/test/file.rs".to_string(), "Parse failed".to_string());
 
         assert_eq!(error.file_path, "/test/file.rs");
         assert_eq!(error.message, "Parse failed");
@@ -498,11 +494,7 @@ mod tests {
 
     #[test]
     fn test_file_index_result() {
-        let success = FileIndexResult::success(
-            "/test/file.rs".to_string(),
-            5,
-            100,
-        );
+        let success = FileIndexResult::success("/test/file.rs".to_string(), 5, 100);
         assert!(success.success);
         assert_eq!(success.symbol_count, 5);
         assert!(success.error.is_none());
@@ -532,14 +524,7 @@ mod tests {
 
     #[test]
     fn test_index_result_metrics() {
-        let result = IndexResult::new(
-            true,
-            100,
-            90,
-            500,
-            Vec::new(),
-            Duration::from_secs(10),
-        );
+        let result = IndexResult::new(true, 100, 90, 500, Vec::new(), Duration::from_secs(10));
 
         assert_eq!(result.success_rate(), 90.0);
         assert_eq!(result.throughput(), 9.0);

@@ -48,8 +48,10 @@ async fn main() -> Result<()> {
         error!("");
         error!("  4. Milvus connection refused:");
         error!("     → Check Milvus is running: docker ps");
-        error!("     → Check address in config: {}",
-               std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string()));
+        error!(
+            "     → Check address in config: {}",
+            std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string())
+        );
         error!("");
         return Err(e.into());
     }

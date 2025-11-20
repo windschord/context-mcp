@@ -9,7 +9,6 @@
 /// 6. Custom tokenizer and BM25 configuration
 ///
 /// Run with: cargo run --example bm25_usage
-
 use context_mcp::search::{BM25Config, BM25Engine, Document, SearchOptions, Tokenizer};
 use std::collections::HashMap;
 use std::path::Path;
@@ -30,11 +29,26 @@ fn main() -> context_mcp::Result<()> {
     // Example 2: Index some code documents
     println!("2. Indexing code documents...");
 
-    engine.index_document("src/parser.rs:10", "pub fn parse_config(path: &str) -> Result<Config>")?;
-    engine.index_document("src/config.rs:20", "pub struct Config { database_url: String, port: u16 }")?;
-    engine.index_document("src/main.rs:5", "fn main() { let config = parse_config('config.toml'); }")?;
-    engine.index_document("src/server.rs:15", "pub fn start_server(config: Config) -> Result<()>")?;
-    engine.index_document("src/db.rs:30", "fn connect_database(url: &str) -> Result<Connection>")?;
+    engine.index_document(
+        "src/parser.rs:10",
+        "pub fn parse_config(path: &str) -> Result<Config>",
+    )?;
+    engine.index_document(
+        "src/config.rs:20",
+        "pub struct Config { database_url: String, port: u16 }",
+    )?;
+    engine.index_document(
+        "src/main.rs:5",
+        "fn main() { let config = parse_config('config.toml'); }",
+    )?;
+    engine.index_document(
+        "src/server.rs:15",
+        "pub fn start_server(config: Config) -> Result<()>",
+    )?;
+    engine.index_document(
+        "src/db.rs:30",
+        "fn connect_database(url: &str) -> Result<Connection>",
+    )?;
 
     println!("   ✓ Indexed {} documents\n", engine.document_count()?);
 
@@ -45,7 +59,10 @@ fn main() -> context_mcp::Result<()> {
     for (i, result) in results.iter().enumerate() {
         println!("   {}. {} (score: {:.4})", i + 1, result.id, result.score);
         println!("      Matched terms: {:?}", result.matched_terms);
-        println!("      Snippet: {}", &result.text[..result.text.len().min(60)]);
+        println!(
+            "      Snippet: {}",
+            &result.text[..result.text.len().min(60)]
+        );
     }
     println!();
 
@@ -70,9 +87,7 @@ fn main() -> context_mcp::Result<()> {
 
     // Example 6: Search with custom options
     println!("6. Searching with custom options (min_score threshold)...");
-    let options = SearchOptions::new()
-        .with_top_k(3)
-        .with_min_score(0.5);
+    let options = SearchOptions::new().with_top_k(3).with_min_score(0.5);
 
     let results = engine.search_with_options("database", options)?;
     println!("   ✓ Found {} high-scoring results", results.len());
@@ -86,7 +101,10 @@ fn main() -> context_mcp::Result<()> {
     let stats = engine.get_stats()?;
     println!("   Documents: {}", stats.document_count);
     println!("   Unique terms: {}", stats.term_count);
-    println!("   Average document length: {:.2} terms", stats.avg_doc_length);
+    println!(
+        "   Average document length: {:.2} terms",
+        stats.avg_doc_length
+    );
     println!("   Total tokens: {}", stats.total_tokens);
     println!();
 
@@ -204,7 +222,10 @@ fn custom_tokenizer_example() -> context_mcp::Result<()> {
 
     engine.index_document("doc1", "getUserById fetchDataFromAPI")?;
     let results = engine.search("user data", 10)?;
-    println!("   ✓ Custom tokenizer search found {} results", results.len());
+    println!(
+        "   ✓ Custom tokenizer search found {} results",
+        results.len()
+    );
 
     Ok(())
 }
@@ -218,24 +239,40 @@ fn custom_config_example() -> context_mcp::Result<()> {
 
     engine.index_document("short", "rust")?;
     engine.index_document("medium", "rust programming language")?;
-    engine.index_document("long", "rust programming language with many features and capabilities")?;
+    engine.index_document(
+        "long",
+        "rust programming language with many features and capabilities",
+    )?;
 
     let results = engine.search("rust", 10)?;
     println!("   ✓ Custom config (k1=1.5, b=0.9) results:");
     for (i, result) in results.iter().enumerate() {
-        println!("      {}. {} (score: {:.4})", i + 1, result.id, result.score);
+        println!(
+            "      {}. {} (score: {:.4})",
+            i + 1,
+            result.id,
+            result.score
+        );
     }
 
     // Compare with default config
     let mut default_engine = BM25Engine::new_in_memory()?;
     default_engine.index_document("short", "rust")?;
     default_engine.index_document("medium", "rust programming language")?;
-    default_engine.index_document("long", "rust programming language with many features and capabilities")?;
+    default_engine.index_document(
+        "long",
+        "rust programming language with many features and capabilities",
+    )?;
 
     let default_results = default_engine.search("rust", 10)?;
     println!("   ✓ Default config (k1=1.2, b=0.75) results:");
     for (i, result) in default_results.iter().enumerate() {
-        println!("      {}. {} (score: {:.4})", i + 1, result.id, result.score);
+        println!(
+            "      {}. {} (score: {:.4})",
+            i + 1,
+            result.id,
+            result.score
+        );
     }
 
     Ok(())
@@ -260,10 +297,16 @@ fn persistent_db_example() -> context_mcp::Result<()> {
     {
         // Reopen the database and verify data persists
         let engine = BM25Engine::new(&db_path)?;
-        println!("   ✓ Reopened database, document count: {}", engine.document_count()?);
+        println!(
+            "   ✓ Reopened database, document count: {}",
+            engine.document_count()?
+        );
 
         let results = engine.search("persistent", 5)?;
-        println!("   ✓ Search found {} results (data persisted)", results.len());
+        println!(
+            "   ✓ Search found {} results (data persisted)",
+            results.len()
+        );
     }
 
     // Clean up

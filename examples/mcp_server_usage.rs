@@ -25,8 +25,7 @@
 ///    ```bash
 ///    cargo run --example mcp_server_usage
 ///    ```
-
-use context_mcp::{ContextMcpServer, ServerConfig, Result};
+use context_mcp::{ContextMcpServer, Result, ServerConfig};
 
 #[tokio::main]
 async fn main() -> Result<()> {

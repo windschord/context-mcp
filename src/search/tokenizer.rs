@@ -6,7 +6,6 @@
 /// - Whitespace and punctuation tokenization
 /// - Lowercase normalization
 /// - Special handling for code symbols
-
 use regex::Regex;
 use std::sync::OnceLock;
 
@@ -192,7 +191,10 @@ fn split_camel_case(word: &str) -> Vec<String> {
 
         if ch.is_uppercase() {
             // Check if we have accumulated lowercase/digit chars
-            if !current.is_empty() && (current.chars().last().unwrap().is_lowercase() || current.chars().last().unwrap().is_ascii_digit()) {
+            if !current.is_empty()
+                && (current.chars().last().unwrap().is_lowercase()
+                    || current.chars().last().unwrap().is_ascii_digit())
+            {
                 results.push(current.clone());
                 current.clear();
             }
@@ -272,7 +274,6 @@ fn get_word_regex() -> &'static Regex {
     })
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -282,10 +283,7 @@ mod tests {
         let tokenizer = Tokenizer::new();
         let tokens = tokenizer.tokenize("Hello world! This is a test.");
 
-        assert_eq!(
-            tokens,
-            vec!["hello", "world", "this", "is", "a", "test"]
-        );
+        assert_eq!(tokens, vec!["hello", "world", "this", "is", "a", "test"]);
     }
 
     #[test]
@@ -363,38 +361,20 @@ mod tests {
 
     #[test]
     fn test_split_camel_case_function() {
-        assert_eq!(
-            split_camel_case("camelCase"),
-            vec!["camel", "Case"]
-        );
-        assert_eq!(
-            split_camel_case("HTTPServer"),
-            vec!["HTTP", "Server"]
-        );
+        assert_eq!(split_camel_case("camelCase"), vec!["camel", "Case"]);
+        assert_eq!(split_camel_case("HTTPServer"), vec!["HTTP", "Server"]);
         assert_eq!(
             split_camel_case("getHTTPResponseCode"),
             vec!["get", "HTTP", "Response", "Code"]
         );
-        assert_eq!(
-            split_camel_case("lowercase"),
-            vec!["lowercase"]
-        );
+        assert_eq!(split_camel_case("lowercase"), vec!["lowercase"]);
     }
 
     #[test]
     fn test_split_snake_case_function() {
-        assert_eq!(
-            split_snake_case("snake_case"),
-            vec!["snake", "case"]
-        );
-        assert_eq!(
-            split_snake_case("HTTP_SERVER"),
-            vec!["HTTP", "SERVER"]
-        );
-        assert_eq!(
-            split_snake_case("__private"),
-            vec!["private"]
-        );
+        assert_eq!(split_snake_case("snake_case"), vec!["snake", "case"]);
+        assert_eq!(split_snake_case("HTTP_SERVER"), vec!["HTTP", "SERVER"]);
+        assert_eq!(split_snake_case("__private"), vec!["private"]);
         assert_eq!(
             split_snake_case("no_underscores_here"),
             vec!["no", "underscores", "here"]

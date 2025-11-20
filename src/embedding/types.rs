@@ -122,10 +122,7 @@ mod tests {
 
     #[test]
     fn test_model_info_creation() {
-        let info = ModelInfo::all_mini_lm_l6_v2(
-            PathBuf::from("test.onnx"),
-            256,
-        );
+        let info = ModelInfo::all_mini_lm_l6_v2(PathBuf::from("test.onnx"), 256);
         assert_eq!(info.name, "all-MiniLM-L6-v2");
         assert_eq!(info.dimension, 384);
     }
@@ -133,19 +130,11 @@ mod tests {
     #[test]
     fn test_embedding_normalization_check() {
         // Normalized vector
-        let normalized = Embedding::new(
-            vec![0.6, 0.8],
-            "test".to_string(),
-            2,
-        );
+        let normalized = Embedding::new(vec![0.6, 0.8], "test".to_string(), 2);
         assert!(normalized.is_normalized());
 
         // Non-normalized vector
-        let non_normalized = Embedding::new(
-            vec![1.0, 1.0],
-            "test".to_string(),
-            2,
-        );
+        let non_normalized = Embedding::new(vec![1.0, 1.0], "test".to_string(), 2);
         assert!(!non_normalized.is_normalized());
     }
 }

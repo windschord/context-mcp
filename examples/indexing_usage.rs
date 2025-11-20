@@ -26,9 +26,8 @@
 /// ```bash
 /// cargo run --example indexing_usage
 /// ```
-
-use context_mcp::embedding::{EmbeddingEngine, EmbeddingConfig};
-use context_mcp::indexing::{IndexingService, IndexConfig};
+use context_mcp::embedding::{EmbeddingConfig, EmbeddingEngine};
+use context_mcp::indexing::{IndexConfig, IndexingService};
 use context_mcp::parser::SymbolExtractor;
 use context_mcp::search::bm25_engine::BM25Engine;
 use context_mcp::search::types::BM25Config;
@@ -127,7 +126,13 @@ async fn main() -> anyhow::Result<()> {
         info!("");
         info!("=== Errors ===");
         for (idx, error) in result.errors.iter().take(5).enumerate() {
-            info!("{}. {} - {:?}: {}", idx + 1, error.file_path, error.kind, error.message);
+            info!(
+                "{}. {} - {:?}: {}",
+                idx + 1,
+                error.file_path,
+                error.kind,
+                error.message
+            );
         }
         if result.errors.len() > 5 {
             info!("... and {} more errors", result.errors.len() - 5);
@@ -151,16 +156,12 @@ async fn main() -> anyhow::Result<()> {
     let single_file = PathBuf::from("./src/main.rs");
 
     if single_file.exists() {
-        let file_result = service
-            .index_file(&single_file, "context-mcp")
-            .await?;
+        let file_result = service.index_file(&single_file, "context-mcp").await?;
 
         if file_result.success {
             info!(
                 "✓ Successfully indexed {} ({} symbols, {}ms)",
-                file_result.file_path,
-                file_result.symbol_count,
-                file_result.processing_time_ms
+                file_result.file_path, file_result.symbol_count, file_result.processing_time_ms
             );
         } else {
             info!("✗ Failed to index {}", file_result.file_path);
@@ -194,8 +195,8 @@ async fn main() -> anyhow::Result<()> {
         PathBuf::from("./src/error.rs"),
     ];
 
-    let batch_config = IndexConfig::new(PathBuf::from("."))
-        .with_project_id("context-mcp".to_string());
+    let batch_config =
+        IndexConfig::new(PathBuf::from(".")).with_project_id("context-mcp".to_string());
 
     let batch_result = service.index_files(files_to_index, &batch_config).await?;
     info!("Batch indexing result: {}", batch_result.summary());
@@ -210,10 +211,7 @@ async fn main() -> anyhow::Result<()> {
             context_mcp::parser::Language::Rust,
             context_mcp::parser::Language::TypeScript,
         ])
-        .with_exclude_patterns(vec![
-            "*.test.rs".to_string(),
-            "target/**".to_string(),
-        ])
+        .with_exclude_patterns(vec!["*.test.rs".to_string(), "target/**".to_string()])
         .with_batch_size(32)
         .with_max_parallel(8)
         .with_include_documents(true);

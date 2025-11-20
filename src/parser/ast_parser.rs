@@ -1,9 +1,9 @@
 use std::time::Instant;
-use tree_sitter::{Node, Parser, Query, QueryCursor, Tree};
 use streaming_iterator::StreamingIterator;
+use tree_sitter::{Node, Parser, Query, QueryCursor, Tree};
 
-use crate::error::{ContextMcpError, Result};
 use super::types::{Language, ParseResult, Position, Range, Symbol, SymbolKind};
+use crate::error::{ContextMcpError, Result};
 
 /// Tree-sitter language parsers
 #[derive(Clone)]
@@ -63,7 +63,12 @@ impl AstParser {
     }
 
     /// Parse a source file and extract symbols
-    pub fn parse_file(&self, file_path: &str, source_code: &str, language: Language) -> Result<ParseResult> {
+    pub fn parse_file(
+        &self,
+        file_path: &str,
+        source_code: &str,
+        language: Language,
+    ) -> Result<ParseResult> {
         let start = Instant::now();
 
         // Get tree-sitter language
@@ -109,7 +114,12 @@ impl AstParser {
     }
 
     /// Extract symbols from parsed tree
-    fn extract_symbols(&self, tree: &Tree, source_code: &str, language: Language) -> Result<Vec<Symbol>> {
+    fn extract_symbols(
+        &self,
+        tree: &Tree,
+        source_code: &str,
+        language: Language,
+    ) -> Result<Vec<Symbol>> {
         let query_str = get_query_for_language(language);
         if query_str.is_empty() {
             return Ok(Vec::new());
@@ -125,7 +135,9 @@ impl AstParser {
         let mut symbols = Vec::new();
 
         while let Some(match_) = matches.next() {
-            if let Some(symbol) = self.extract_symbol_from_match(&match_, &query, source_code, language) {
+            if let Some(symbol) =
+                self.extract_symbol_from_match(&match_, &query, source_code, language)
+            {
                 symbols.push(symbol);
             }
         }
@@ -156,9 +168,9 @@ impl AstParser {
             let node = capture.node;
 
             match capture_name.as_ref() {
-                "function.name" | "method.name" | "class.name" | "struct.name"
-                | "enum.name" | "interface.name" | "trait.name" | "type.name"
-                | "variable.name" | "constant.name" => {
+                "function.name" | "method.name" | "class.name" | "struct.name" | "enum.name"
+                | "interface.name" | "trait.name" | "type.name" | "variable.name"
+                | "constant.name" => {
                     name = Some(node_text(node, source_code));
                     if range.is_none() {
                         range = Some(node_to_range(node));
@@ -339,7 +351,9 @@ class MyClass:
         pass
 "#;
 
-        let result = parser.parse_file("test.py", source, Language::Python).unwrap();
+        let result = parser
+            .parse_file("test.py", source, Language::Python)
+            .unwrap();
         assert!(result.success);
         assert!(!result.symbols.is_empty());
     }
@@ -364,7 +378,9 @@ impl Point {
 }
 "#;
 
-        let result = parser.parse_file("test.rs", source, Language::Rust).unwrap();
+        let result = parser
+            .parse_file("test.rs", source, Language::Rust)
+            .unwrap();
         assert!(result.success);
         assert!(!result.symbols.is_empty());
     }
@@ -386,7 +402,9 @@ class Person {
 }
 "#;
 
-        let result = parser.parse_file("test.ts", source, Language::TypeScript).unwrap();
+        let result = parser
+            .parse_file("test.ts", source, Language::TypeScript)
+            .unwrap();
         assert!(result.success);
         assert!(!result.symbols.is_empty());
     }
@@ -394,7 +412,9 @@ class Person {
     #[test]
     fn test_unsupported_language() {
         let parser = AstParser::new();
-        let result = parser.parse_file("test.unknown", "code", Language::Unknown).unwrap();
+        let result = parser
+            .parse_file("test.unknown", "code", Language::Unknown)
+            .unwrap();
         assert!(!result.success);
         assert!(result.error.is_some());
     }

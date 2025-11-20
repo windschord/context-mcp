@@ -2,7 +2,6 @@
 ///
 /// This module provides abstractions for storing and querying code embeddings
 /// using Milvus as the vector database backend.
-
 pub mod milvus_client;
 pub mod types;
 

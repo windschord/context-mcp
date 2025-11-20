@@ -37,7 +37,6 @@
 ///   }
 /// }
 /// ```
-
 use crate::error::{ContextMcpError, Result};
 use serde::{Deserialize, Serialize};
 use std::env;

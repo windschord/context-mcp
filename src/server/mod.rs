@@ -97,7 +97,9 @@ struct FindRelatedDocsParams {
 /// Parameters for get_index_status tool
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetIndexStatusParams {
-    #[schemars(description = "Project ID to get status for (optional, returns all if not specified)")]
+    #[schemars(
+        description = "Project ID to get status for (optional, returns all if not specified)"
+    )]
     project_id: Option<String>,
 }
 
@@ -228,12 +230,10 @@ impl ContextMcpServer {
             batch_size: state.config.embedding.batch_size,
         };
 
-        let embedding = EmbeddingEngine::new(embedding_config)
-            .await
-            .map_err(|e| {
-                error!("Failed to initialize embedding engine: {}", e);
-                e
-            })?;
+        let embedding = EmbeddingEngine::new(embedding_config).await.map_err(|e| {
+            error!("Failed to initialize embedding engine: {}", e);
+            e
+        })?;
         state.embedding = Some(Arc::new(embedding));
 
         // Initialize Milvus client
@@ -247,10 +247,8 @@ impl ContextMcpServer {
 
         // Initialize BM25 engine
         info!("Initializing BM25 engine");
-        let bm25_config = crate::search::types::BM25Config::new(
-            state.config.bm25.k1,
-            state.config.bm25.b,
-        );
+        let bm25_config =
+            crate::search::types::BM25Config::new(state.config.bm25.k1, state.config.bm25.b);
 
         // Create parent directory if it doesn't exist
         if let Some(parent) = state.config.bm25.db_path.parent() {
@@ -287,7 +285,8 @@ impl ContextMcpServer {
 
         if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);
-            let mut collection_config = CollectionConfig::code_vectors(state.config.indexing.dimension as i32);
+            let mut collection_config =
+                CollectionConfig::code_vectors(state.config.indexing.dimension as i32);
             collection_config.name = collection_name.clone();
             collection_config.description = "Code vectors for semantic search".to_string();
             collection_config.shard_num = Some(state.config.milvus.shard_num);
@@ -346,7 +345,11 @@ impl ContextMcpServer {
                 }
             };
 
-            (indexing_service, state.config.indexing.batch_size, state.config.indexing.max_parallel)
+            (
+                indexing_service,
+                state.config.indexing.batch_size,
+                state.config.indexing.max_parallel,
+            )
         };
 
         // Determine project ID
@@ -575,7 +578,9 @@ impl ContextMcpServer {
     }
 
     /// Tool 3: Get symbol definition and references
-    #[tool(description = "Find definitions and references of a symbol (function, class, variable, etc.) across the codebase.")]
+    #[tool(
+        description = "Find definitions and references of a symbol (function, class, variable, etc.) across the codebase."
+    )]
     async fn get_symbol(
         &self,
         Parameters(params): Parameters<GetSymbolParams>,
@@ -621,7 +626,10 @@ impl ContextMcpServer {
             }
 
             let file_path = parts[0].to_string();
-            let line_start = parts.get(1).and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
+            let line_start = parts
+                .get(1)
+                .and_then(|s| s.parse::<usize>().ok())
+                .unwrap_or(0);
 
             // Check metadata for symbol type
             let symbol_type_match = symbol_type.as_ref().map_or(true, |st| {
@@ -675,7 +683,9 @@ impl ContextMcpServer {
     }
 
     /// Tool 4: Find related documentation
-    #[tool(description = "Find documentation files related to specific code files or symbols using semantic search.")]
+    #[tool(
+        description = "Find documentation files related to specific code files or symbols using semantic search."
+    )]
     async fn find_related_docs(
         &self,
         Parameters(params): Parameters<FindRelatedDocsParams>,
@@ -727,7 +737,10 @@ impl ContextMcpServer {
             (hybrid_engine, collection_name, top_k_value)
         };
 
-        let results = match hybrid_engine.search(&query, &collection_name, top_k_value).await {
+        let results = match hybrid_engine
+            .search(&query, &collection_name, top_k_value)
+            .await
+        {
             Ok(results) => results,
             Err(e) => {
                 error!("Document search failed: {}", e);
@@ -769,7 +782,9 @@ impl ContextMcpServer {
     }
 
     /// Tool 5: Get indexing status
-    #[tool(description = "Get the current indexing status and statistics for all or specific projects.")]
+    #[tool(
+        description = "Get the current indexing status and statistics for all or specific projects."
+    )]
     async fn get_index_status(
         &self,
         Parameters(params): Parameters<GetIndexStatusParams>,
@@ -838,7 +853,9 @@ impl ContextMcpServer {
     }
 
     /// Tool 6: Clear index
-    #[tool(description = "Clear the index for specific or all projects. Requires confirmation to prevent accidental deletion.")]
+    #[tool(
+        description = "Clear the index for specific or all projects. Requires confirmation to prevent accidental deletion."
+    )]
     async fn clear_index(
         &self,
         Parameters(params): Parameters<ClearIndexParams>,

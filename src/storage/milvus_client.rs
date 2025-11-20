@@ -33,12 +33,21 @@ struct CodeVectorEntity {
 impl schema::Entity for CodeVectorEntity {
     const NAME: &'static str = "code_vectors";
     const SCHEMA: &'static [schema::FieldSchema<'static>] = &[
-        FieldSchema::new_primary_varchar("id", Some("Unique identifier (file_path:line_start)"), false, 256),
+        FieldSchema::new_primary_varchar(
+            "id",
+            Some("Unique identifier (file_path:line_start)"),
+            false,
+            256,
+        ),
         FieldSchema::new_float_vector("vector", Some("Embedding vector"), DIMENSION),
         FieldSchema::new_varchar("project_id", Some("Project identifier"), 128),
         FieldSchema::new_varchar("file_path", Some("Source file path"), 512),
         FieldSchema::new_varchar("language", Some("Programming language"), 32),
-        FieldSchema::new_varchar("symbol_type", Some("Symbol type (function, class, etc.)"), 32),
+        FieldSchema::new_varchar(
+            "symbol_type",
+            Some("Symbol type (function, class, etc.)"),
+            32,
+        ),
         FieldSchema::new_varchar("symbol_name", Some("Symbol name"), 128),
         FieldSchema::new_int64("line_start", Some("Start line number")),
         FieldSchema::new_int64("line_end", Some("End line number")),
@@ -55,17 +64,41 @@ impl schema::Entity for CodeVectorEntity {
     fn iter(&self) -> Self::ColumnIntoIter {
         [
             (&Self::SCHEMA[0], Value::String(self.id.clone().into())),
-            (&Self::SCHEMA[1], Value::FloatArray(self.vector.clone().into())),
-            (&Self::SCHEMA[2], Value::String(self.project_id.clone().into())),
-            (&Self::SCHEMA[3], Value::String(self.file_path.clone().into())),
-            (&Self::SCHEMA[4], Value::String(self.language.clone().into())),
-            (&Self::SCHEMA[5], Value::String(self.symbol_type.clone().into())),
-            (&Self::SCHEMA[6], Value::String(self.symbol_name.clone().into())),
+            (
+                &Self::SCHEMA[1],
+                Value::FloatArray(self.vector.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[2],
+                Value::String(self.project_id.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[3],
+                Value::String(self.file_path.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[4],
+                Value::String(self.language.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[5],
+                Value::String(self.symbol_type.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[6],
+                Value::String(self.symbol_name.clone().into()),
+            ),
             (&Self::SCHEMA[7], Value::Long(self.line_start)),
             (&Self::SCHEMA[8], Value::Long(self.line_end)),
             (&Self::SCHEMA[9], Value::String(self.snippet.clone().into())),
-            (&Self::SCHEMA[10], Value::String(self.docstring.clone().into())),
-            (&Self::SCHEMA[11], Value::String(self.metadata.clone().into())),
+            (
+                &Self::SCHEMA[10],
+                Value::String(self.docstring.clone().into()),
+            ),
+            (
+                &Self::SCHEMA[11],
+                Value::String(self.metadata.clone().into()),
+            ),
         ]
         .into_iter()
     }
@@ -461,9 +494,9 @@ impl MilvusClient {
     pub async fn new(address: &str) -> Result<Self> {
         info!("Connecting to Milvus at {}", address);
 
-        let client = Client::new(address.to_string())
-            .await
-            .map_err(|e| ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e)))?;
+        let client = Client::new(address.to_string()).await.map_err(|e| {
+            ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e))
+        })?;
 
         debug!("Successfully connected to Milvus");
 
@@ -482,9 +515,9 @@ impl MilvusClient {
     pub async fn new_with_token(address: &str, _token: &str) -> Result<Self> {
         info!("Connecting to Milvus/Zilliz Cloud at {}", address);
 
-        let client = Client::new(address.to_string())
-            .await
-            .map_err(|e| ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e)))?;
+        let client = Client::new(address.to_string()).await.map_err(|e| {
+            ContextMcpError::Database(format!("Failed to connect to Milvus: {}", e))
+        })?;
 
         // Note: The milvus crate doesn't have explicit token auth in constructor
         // Token should be passed via GRPC metadata or environment variables
@@ -514,13 +547,9 @@ impl MilvusClient {
     pub async fn collection_exists(&self, name: &str) -> Result<bool> {
         debug!("Checking if collection '{}' exists", name);
 
-        let exists = self
-            .client
-            .has_collection(name)
-            .await
-            .map_err(|e| {
-                ContextMcpError::Database(format!("Failed to check collection existence: {}", e))
-            })?;
+        let exists = self.client.has_collection(name).await.map_err(|e| {
+            ContextMcpError::Database(format!("Failed to check collection existence: {}", e))
+        })?;
 
         debug!("Collection '{}' exists: {}", name, exists);
         Ok(exists)
@@ -560,7 +589,10 @@ impl MilvusClient {
 
         // Check if collection already exists
         if self.collection_exists(&config.name).await? {
-            warn!("Collection '{}' already exists, skipping creation", config.name);
+            warn!(
+                "Collection '{}' already exists, skipping creation",
+                config.name
+            );
             return Ok(());
         }
 
@@ -598,9 +630,10 @@ impl MilvusClient {
 
         let collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
-        collection.load_blocked(1).await.map_err(|e| {
-            ContextMcpError::Database(format!("Failed to load collection: {}", e))
-        })?;
+        collection
+            .load_blocked(1)
+            .await
+            .map_err(|e| ContextMcpError::Database(format!("Failed to load collection: {}", e)))?;
 
         info!("Collection '{}' loaded successfully", collection_name);
         Ok(())
@@ -618,9 +651,10 @@ impl MilvusClient {
             return Ok(());
         }
 
-        self.client.drop_collection(name).await.map_err(|e| {
-            ContextMcpError::Database(format!("Failed to drop collection: {}", e))
-        })?;
+        self.client
+            .drop_collection(name)
+            .await
+            .map_err(|e| ContextMcpError::Database(format!("Failed to drop collection: {}", e)))?;
 
         info!("Collection '{}' dropped successfully", name);
         Ok(())
@@ -639,10 +673,7 @@ impl MilvusClient {
         _collection_name: &str,
         records: Vec<VectorRecord>,
     ) -> Result<Vec<String>> {
-        debug!(
-            "Inserting {} records into collection",
-            records.len(),
-        );
+        debug!("Inserting {} records into collection", records.len(),);
 
         if records.is_empty() {
             return Ok(vec![]);
@@ -656,8 +687,9 @@ impl MilvusClient {
             ids.push(record.id.clone());
 
             // Serialize metadata to JSON string
-            let metadata_json = serde_json::to_string(&record.metadata)
-                .map_err(|e| ContextMcpError::Parse(format!("Failed to serialize metadata: {}", e)))?;
+            let metadata_json = serde_json::to_string(&record.metadata).map_err(|e| {
+                ContextMcpError::Parse(format!("Failed to serialize metadata: {}", e))
+            })?;
 
             batch.add(CodeVectorEntity {
                 id: record.id,
@@ -700,10 +732,7 @@ impl MilvusClient {
         _collection_name: &str,
         query: SearchQuery,
     ) -> Result<Vec<SearchResult>> {
-        debug!(
-            "Searching collection with top_k={}",
-            query.top_k
-        );
+        debug!("Searching collection with top_k={}", query.top_k);
 
         let collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
@@ -718,12 +747,7 @@ impl MilvusClient {
         let vectors = vec![query.vector];
 
         let results: SearchResults<CodeVectorSearchResult> = collection
-            .search::<_, _, [&str; 0], _>(
-                query.filters.as_deref(),
-                &vectors,
-                [],
-                search_params,
-            )
+            .search::<_, _, [&str; 0], _>(query.filters.as_deref(), &vectors, [], search_params)
             .await
             .map_err(|e| ContextMcpError::Search(format!("Search failed: {}", e)))?;
 
@@ -817,9 +841,9 @@ impl MilvusClient {
 
         let collection_stats = CollectionStats::new(
             name.to_string(),
-            0,     // entity_count - not easily available
-            true,  // indexed
-            0,     // memory_size - not easily available
+            0,    // entity_count - not easily available
+            true, // indexed
+            0,    // memory_size - not easily available
         );
 
         debug!("Collection '{}' stats: {:?}", name, collection_stats);
@@ -836,9 +860,10 @@ impl MilvusClient {
 
         let collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
-        collection.flush().await.map_err(|e| {
-            ContextMcpError::Database(format!("Failed to flush collection: {}", e))
-        })?;
+        collection
+            .flush()
+            .await
+            .map_err(|e| ContextMcpError::Database(format!("Failed to flush collection: {}", e)))?;
 
         info!("Collection flushed successfully");
         Ok(())

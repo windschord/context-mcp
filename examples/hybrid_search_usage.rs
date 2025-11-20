@@ -175,9 +175,7 @@ async fn main() -> anyhow::Result<()> {
 }
 
 /// Create sample vector records for demonstration
-async fn create_sample_records(
-    embedding: &EmbeddingEngine,
-) -> anyhow::Result<Vec<VectorRecord>> {
+async fn create_sample_records(embedding: &EmbeddingEngine) -> anyhow::Result<Vec<VectorRecord>> {
     let samples = vec![
         (
             "config_parser.rs",
@@ -281,8 +279,14 @@ fn print_results(results: &[context_mcp::search::HybridResult], label: &str) {
 
     // Print statistics
     let hybrid_count = results.iter().filter(|r| r.is_hybrid()).count();
-    let bm25_only = results.iter().filter(|r| r.has_bm25() && !r.has_vector()).count();
-    let vector_only = results.iter().filter(|r| r.has_vector() && !r.has_bm25()).count();
+    let bm25_only = results
+        .iter()
+        .filter(|r| r.has_bm25() && !r.has_vector())
+        .count();
+    let vector_only = results
+        .iter()
+        .filter(|r| r.has_vector() && !r.has_bm25())
+        .count();
 
     println!("Statistics:");
     println!("  Total results: {}", results.len());

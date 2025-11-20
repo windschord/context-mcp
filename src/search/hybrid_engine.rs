@@ -1,3 +1,4 @@
+use crate::embedding::EmbeddingEngine;
 /// Hybrid search engine combining BM25 keyword search with vector similarity search
 ///
 /// This module implements a hybrid search engine that combines the best of both worlds:
@@ -38,9 +39,7 @@
 /// # Ok(())
 /// # }
 /// ```
-
 use crate::error::{ContextMcpError, Result};
-use crate::embedding::EmbeddingEngine;
 use crate::search::bm25_engine::BM25Engine;
 use crate::search::types::{HybridConfig, HybridResult, NormalizationType};
 use crate::storage::types::{SearchQuery, VectorRecord};
@@ -85,7 +84,11 @@ impl HybridSearchEngine {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new(bm25: Arc<BM25Engine>, milvus: Arc<MilvusClient>, embedding: Arc<EmbeddingEngine>) -> Self {
+    pub fn new(
+        bm25: Arc<BM25Engine>,
+        milvus: Arc<MilvusClient>,
+        embedding: Arc<EmbeddingEngine>,
+    ) -> Self {
         info!("Creating HybridSearchEngine");
         Self {
             bm25,
@@ -138,9 +141,7 @@ impl HybridSearchEngine {
         );
 
         // Validate configuration
-        config
-            .validate()
-            .map_err(|e| ContextMcpError::Config(e))?;
+        config.validate().map_err(|e| ContextMcpError::Config(e))?;
 
         // Step 1: Generate query embedding
         debug!("Generating query embedding");
@@ -167,28 +168,44 @@ impl HybridSearchEngine {
 
         debug!(
             "Normalized BM25 scores: min={:.4}, max={:.4}",
-            normalized_bm25.iter().cloned().fold(f32::INFINITY, f32::min),
-            normalized_bm25.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
+            normalized_bm25
+                .iter()
+                .cloned()
+                .fold(f32::INFINITY, f32::min),
+            normalized_bm25
+                .iter()
+                .cloned()
+                .fold(f32::NEG_INFINITY, f32::max)
         );
         debug!(
             "Normalized vector scores: min={:.4}, max={:.4}",
-            normalized_vector.iter().cloned().fold(f32::INFINITY, f32::min),
-            normalized_vector.iter().cloned().fold(f32::NEG_INFINITY, f32::max)
+            normalized_vector
+                .iter()
+                .cloned()
+                .fold(f32::INFINITY, f32::min),
+            normalized_vector
+                .iter()
+                .cloned()
+                .fold(f32::NEG_INFINITY, f32::max)
         );
 
         // Step 5 & 6: Combine and merge results
-        let hybrid_results = self.merge_results(
-            &bm25_results,
-            &normalized_bm25,
-            &vector_results,
-            &normalized_vector,
-            config.alpha,
-        ).await?;
+        let hybrid_results = self
+            .merge_results(
+                &bm25_results,
+                &normalized_bm25,
+                &vector_results,
+                &normalized_vector,
+                config.alpha,
+            )
+            .await?;
 
         // Sort by hybrid score (descending)
         let mut sorted_results = hybrid_results;
         sorted_results.sort_by(|a, b| {
-            b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal)
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         // Truncate to top_k
@@ -252,16 +269,16 @@ impl HybridSearchEngine {
                 // This is a fallback case where we construct a minimal VectorRecord
                 let record = VectorRecord::new(
                     id.clone(),
-                    vec![], // Empty vector
-                    "unknown".to_string(), // project_id
-                    id.clone(), // Use ID as file_path
-                    "unknown".to_string(), // language
-                    "document".to_string(), // symbol_type
-                    "".to_string(), // symbol_name
-                    0, // line_start
-                    0, // line_end
+                    vec![],                   // Empty vector
+                    "unknown".to_string(),    // project_id
+                    id.clone(),               // Use ID as file_path
+                    "unknown".to_string(),    // language
+                    "document".to_string(),   // symbol_type
+                    "".to_string(),           // symbol_name
+                    0,                        // line_start
+                    0,                        // line_end
                     bm25_result.text.clone(), // snippet
-                    "".to_string(), // docstring
+                    "".to_string(),           // docstring
                 );
 
                 results_map.insert(
@@ -444,11 +461,7 @@ mod tests {
         assert!(mean.abs() < 1e-6);
 
         // Check std dev is approximately 1
-        let variance = normalized
-            .iter()
-            .map(|&x| x.powi(2))
-            .sum::<f32>()
-            / normalized.len() as f32;
+        let variance = normalized.iter().map(|&x| x.powi(2)).sum::<f32>() / normalized.len() as f32;
         let std_dev = variance.sqrt();
         assert!((std_dev - 1.0).abs() < 1e-6);
     }

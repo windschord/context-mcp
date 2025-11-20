@@ -26,7 +26,6 @@
 ///     println!("Found {}: {}", symbol.kind, symbol.name);
 /// }
 /// ```
-
 pub mod ast_parser;
 pub mod symbol_extractor;
 pub mod types;
@@ -34,9 +33,7 @@ pub mod types;
 // Re-export main types for convenience
 pub use ast_parser::AstParser;
 pub use symbol_extractor::SymbolExtractor;
-pub use types::{
-    Language, ParseResult, Position, Range, Symbol, SymbolKind,
-};
+pub use types::{Language, ParseResult, Position, Range, Symbol, SymbolKind};
 
 #[cfg(test)]
 mod tests {
@@ -70,7 +67,7 @@ mod tests {
                 std::path::Path::new(filename)
                     .extension()
                     .and_then(|e| e.to_str())
-                    .unwrap_or("")
+                    .unwrap_or(""),
             );
             assert_eq!(detected, expected_lang, "Failed for {}", filename);
         }

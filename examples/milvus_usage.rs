@@ -12,7 +12,6 @@
 /// Prerequisites:
 /// - Milvus running at localhost:19530 (or update the address)
 /// - Start Milvus with: docker-compose up -d
-
 use context_mcp::storage::{CollectionConfig, MilvusClient, SearchQuery, VectorRecord};
 use std::collections::HashMap;
 
@@ -106,35 +105,42 @@ async fn main() -> context_mcp::Result<()> {
 
     // Create a query vector (similar to first record)
     let query_vector = vec![0.1; 384];
-    let search_query = SearchQuery::new(query_vector, 5)
-        .with_filter("language == 'rust'".to_string());
+    let search_query =
+        SearchQuery::new(query_vector, 5).with_filter("language == 'rust'".to_string());
 
     let results = client.search(collection_name, search_query).await?;
     println!("   ✓ Found {} results", results.len());
     for (i, result) in results.iter().enumerate() {
         println!("   {}. {} (score: {:.4})", i + 1, result.id, result.score);
-        println!("      Symbol: {} ({})", result.record.symbol_name, result.record.symbol_type);
+        println!(
+            "      Symbol: {} ({})",
+            result.record.symbol_name, result.record.symbol_type
+        );
         println!("      Snippet: {}", result.record.snippet);
     }
     println!();
 
     // Example 6: Search with specific output fields
     println!("7. Searching with custom output fields...");
-    let custom_query = SearchQuery::new(vec![0.2; 384], 3)
-        .with_output_fields(vec![
-            "id".to_string(),
-            "symbol_name".to_string(),
-            "symbol_type".to_string(),
-        ]);
+    let custom_query = SearchQuery::new(vec![0.2; 384], 3).with_output_fields(vec![
+        "id".to_string(),
+        "symbol_name".to_string(),
+        "symbol_type".to_string(),
+    ]);
 
     let custom_results = client.search(collection_name, custom_query).await?;
-    println!("   ✓ Found {} results with custom fields", custom_results.len());
+    println!(
+        "   ✓ Found {} results with custom fields",
+        custom_results.len()
+    );
     println!();
 
     // Example 7: Delete specific records
     println!("8. Deleting records...");
     let ids_to_delete = vec!["example.rs:30".to_string()];
-    client.delete(collection_name, ids_to_delete.clone()).await?;
+    client
+        .delete(collection_name, ids_to_delete.clone())
+        .await?;
     println!("   ✓ Deleted records: {:?}", ids_to_delete);
     println!();
 
@@ -185,8 +191,7 @@ fn create_sample_record(
 async fn connect_to_zilliz_cloud() -> context_mcp::Result<MilvusClient> {
     // For Zilliz Cloud, use HTTPS endpoint and token
     let address = "https://your-instance.zilliz.cloud:19530";
-    let token = std::env::var("ZILLIZ_TOKEN")
-        .expect("ZILLIZ_TOKEN environment variable not set");
+    let token = std::env::var("ZILLIZ_TOKEN").expect("ZILLIZ_TOKEN environment variable not set");
 
     let client = MilvusClient::new_with_token(address, &token).await?;
     println!("Connected to Zilliz Cloud");
@@ -196,7 +201,10 @@ async fn connect_to_zilliz_cloud() -> context_mcp::Result<MilvusClient> {
 
 // Example: Batch operations
 #[allow(dead_code)]
-async fn batch_insert_example(client: &MilvusClient, collection_name: &str) -> context_mcp::Result<()> {
+async fn batch_insert_example(
+    client: &MilvusClient,
+    collection_name: &str,
+) -> context_mcp::Result<()> {
     println!("Batch insert example...");
 
     // Create a large batch of records
@@ -242,8 +250,7 @@ async fn advanced_filtering_example(
     // Complex filter expression
     let filter = "language == 'rust' && symbol_type in ['function', 'struct'] && line_start > 10";
 
-    let query = SearchQuery::new(vec![0.1; 384], 10)
-        .with_filter(filter.to_string());
+    let query = SearchQuery::new(vec![0.1; 384], 10).with_filter(filter.to_string());
 
     let results = client.search(collection_name, query).await?;
     println!("✓ Found {} results with advanced filter", results.len());

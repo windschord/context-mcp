@@ -73,11 +73,7 @@ async fn main() -> anyhow::Result<()> {
     let embeddings = engine.embed_batch(&texts).await?;
 
     for (i, (text, embedding)) in texts.iter().zip(embeddings.iter()).enumerate() {
-        println!(
-            "\nText {}: \"{}\"",
-            i + 1,
-            text
-        );
+        println!("\nText {}: \"{}\"", i + 1, text);
         println!("  Dimension: {}", embedding.dimension());
         println!("  Tokens: {}", embedding.token_count);
         println!("  Normalized: {}", embedding.is_normalized());
@@ -87,17 +83,11 @@ async fn main() -> anyhow::Result<()> {
     println!("\n--- Example 3: Computing Cosine Similarity ---");
     if embeddings.len() >= 2 {
         let sim = cosine_similarity(&embeddings[0].vector, &embeddings[1].vector);
-        println!(
-            "Similarity between \"{}\" and \"{}\"",
-            texts[0], texts[1]
-        );
+        println!("Similarity between \"{}\" and \"{}\"", texts[0], texts[1]);
         println!("  Cosine similarity: {:.4}", sim);
 
         let sim2 = cosine_similarity(&embeddings[0].vector, &embeddings[2].vector);
-        println!(
-            "\nSimilarity between \"{}\" and \"{}\"",
-            texts[0], texts[2]
-        );
+        println!("\nSimilarity between \"{}\" and \"{}\"", texts[0], texts[2]);
         println!("  Cosine similarity: {:.4}", sim2);
     }
 
@@ -113,23 +103,15 @@ async fn main() -> anyhow::Result<()> {
     let code_embeddings = engine.embed_batch(&code_texts).await?;
 
     for (i, (text, embedding)) in code_texts.iter().zip(code_embeddings.iter()).enumerate() {
-        println!(
-            "\nCode text {}: \"{}\"",
-            i + 1,
-            text
-        );
+        println!("\nCode text {}: \"{}\"", i + 1, text);
         println!("  Tokens: {}", embedding.token_count);
     }
 
     // Compute similarities between code descriptions and implementations
     if code_embeddings.len() >= 2 {
         let sim = cosine_similarity(&code_embeddings[0].vector, &code_embeddings[1].vector);
-        println!(
-            "\nSimilarity between description and implementation:"
-        );
-        println!("  \"{}\"\n  vs\n  \"{}\"",
-            code_texts[0], code_texts[1]
-        );
+        println!("\nSimilarity between description and implementation:");
+        println!("  \"{}\"\n  vs\n  \"{}\"", code_texts[0], code_texts[1]);
         println!("  Cosine similarity: {:.4}", sim);
     }
 
@@ -143,8 +125,5 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     assert_eq!(a.len(), b.len(), "Vectors must have the same length");
 
     // For normalized vectors, cosine similarity is just the dot product
-    a.iter()
-        .zip(b.iter())
-        .map(|(x, y)| x * y)
-        .sum()
+    a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
 }

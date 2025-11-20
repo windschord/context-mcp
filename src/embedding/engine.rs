@@ -1,5 +1,5 @@
-use crate::error::{ContextMcpError, Result};
 use super::types::{Embedding, EmbeddingConfig, ModelInfo};
+use crate::error::{ContextMcpError, Result};
 use ort::session::{builder::GraphOptimizationLevel, Session};
 use ort::value::Tensor;
 use parking_lot::Mutex;
@@ -89,10 +89,7 @@ impl EmbeddingEngine {
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to load tokenizer: {}", e)))?;
 
         // Create model info
-        let model_info = ModelInfo::all_mini_lm_l6_v2(
-            config.model_path.clone(),
-            config.max_length,
-        );
+        let model_info = ModelInfo::all_mini_lm_l6_v2(config.model_path.clone(), config.max_length);
 
         info!("EmbeddingEngine initialized successfully");
         info!("Model: {} v{}", model_info.name, model_info.version);
@@ -111,9 +108,13 @@ impl EmbeddingEngine {
         debug!("Creating ONNX session");
 
         let session = Session::builder()
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create session builder: {}", e)))?
+            .map_err(|e| {
+                ContextMcpError::Embedding(format!("Failed to create session builder: {}", e))
+            })?
             .with_optimization_level(GraphOptimizationLevel::Level3)
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to set optimization level: {}", e)))?
+            .map_err(|e| {
+                ContextMcpError::Embedding(format!("Failed to set optimization level: {}", e))
+            })?
             .with_intra_threads(4)
             .map_err(|e| ContextMcpError::Embedding(format!("Failed to set intra threads: {}", e)))?
             .commit_from_file(model_path)
@@ -196,36 +197,46 @@ impl EmbeddingEngine {
             for i in 0..max_len {
                 input_ids.push(if i < ids.len() { ids[i] as i64 } else { 0 });
                 attention_mask.push(if i < mask.len() { mask[i] as i64 } else { 0 });
-                token_type_ids.push(if i < type_ids.len() { type_ids[i] as i64 } else { 0 });
+                token_type_ids.push(if i < type_ids.len() {
+                    type_ids[i] as i64
+                } else {
+                    0
+                });
             }
         }
 
         // Create ONNX tensors
-        let input_ids_array = ndarray::Array2::from_shape_vec(
-            (batch_size, max_len),
-            input_ids,
-        )
-        .map_err(|e| ContextMcpError::Embedding(format!("Failed to create input_ids tensor: {}", e)))?;
+        let input_ids_array = ndarray::Array2::from_shape_vec((batch_size, max_len), input_ids)
+            .map_err(|e| {
+                ContextMcpError::Embedding(format!("Failed to create input_ids tensor: {}", e))
+            })?;
 
         let attention_mask_array = ndarray::Array2::from_shape_vec(
             (batch_size, max_len),
             attention_mask,
         )
-        .map_err(|e| ContextMcpError::Embedding(format!("Failed to create attention_mask tensor: {}", e)))?;
+        .map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to create attention_mask tensor: {}", e))
+        })?;
 
         let token_type_ids_array = ndarray::Array2::from_shape_vec(
             (batch_size, max_len),
             token_type_ids,
         )
-        .map_err(|e| ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e)))?;
+        .map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e))
+        })?;
 
         // Create input tensors
-        let input_ids_tensor = Tensor::from_array(input_ids_array)
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create input_ids tensor: {}", e)))?;
-        let attention_mask_tensor = Tensor::from_array(attention_mask_array)
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create attention_mask tensor: {}", e)))?;
-        let token_type_ids_tensor = Tensor::from_array(token_type_ids_array)
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e)))?;
+        let input_ids_tensor = Tensor::from_array(input_ids_array).map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to create input_ids tensor: {}", e))
+        })?;
+        let attention_mask_tensor = Tensor::from_array(attention_mask_array).map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to create attention_mask tensor: {}", e))
+        })?;
+        let token_type_ids_tensor = Tensor::from_array(token_type_ids_array).map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to create token_type_ids tensor: {}", e))
+        })?;
 
         // Run inference
         let mut session = self.session.lock();
@@ -244,9 +255,9 @@ impl EmbeddingEngine {
             .or_else(|| outputs.get("logits"))
             .ok_or_else(|| ContextMcpError::Embedding("No output from model".to_string()))?;
 
-        let embeddings_data = output_tensor
-            .try_extract_tensor::<f32>()
-            .map_err(|e| ContextMcpError::Embedding(format!("Failed to extract output tensor: {}", e)))?;
+        let embeddings_data = output_tensor.try_extract_tensor::<f32>().map_err(|e| {
+            ContextMcpError::Embedding(format!("Failed to extract output tensor: {}", e))
+        })?;
 
         let (shape, data) = embeddings_data;
 
@@ -266,9 +277,12 @@ impl EmbeddingEngine {
             let start_idx = i * embedding_dim;
             let end_idx = start_idx + embedding_dim;
 
-            let raw_embedding = data
-                .get(start_idx..end_idx)
-                .ok_or_else(|| ContextMcpError::Embedding(format!("Invalid embedding range: {}..{}", start_idx, end_idx)))?;
+            let raw_embedding = data.get(start_idx..end_idx).ok_or_else(|| {
+                ContextMcpError::Embedding(format!(
+                    "Invalid embedding range: {}..{}",
+                    start_idx, end_idx
+                ))
+            })?;
 
             // Normalize embedding (L2 normalization)
             let normalized = Self::normalize_vector(raw_embedding);

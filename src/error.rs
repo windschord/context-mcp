@@ -83,9 +83,9 @@ impl From<ContextMcpError> for rmcp::ErrorData {
                 message: Cow::Owned(format!("Database error: {}", msg)),
                 data: None,
             },
-            ContextMcpError::Indexing(msg) |
-            ContextMcpError::Search(msg) |
-            ContextMcpError::Embedding(msg) => ErrorData {
+            ContextMcpError::Indexing(msg)
+            | ContextMcpError::Search(msg)
+            | ContextMcpError::Embedding(msg) => ErrorData {
                 code: ErrorCode::INTERNAL_ERROR,
                 message: Cow::Owned(msg),
                 data: None,

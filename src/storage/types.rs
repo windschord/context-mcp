@@ -318,8 +318,8 @@ mod tests {
 
     #[test]
     fn test_search_query_creation() {
-        let query = SearchQuery::new(vec![0.1, 0.2, 0.3], 10)
-            .with_filter("language == 'rust'".to_string());
+        let query =
+            SearchQuery::new(vec![0.1, 0.2, 0.3], 10).with_filter("language == 'rust'".to_string());
 
         assert_eq!(query.top_k, 10);
         assert_eq!(query.filters, Some("language == 'rust'".to_string()));

@@ -1,8 +1,8 @@
 use std::path::Path;
 
-use crate::error::Result;
 use super::ast_parser::AstParser;
 use super::types::{Language, ParseResult, Symbol};
+use crate::error::Result;
 
 /// Symbol extractor that uses AST parsing to extract symbols from source files
 pub struct SymbolExtractor {

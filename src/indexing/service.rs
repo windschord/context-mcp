@@ -11,7 +11,6 @@
 /// - Progress tracking with atomic operations
 /// - Error resilience (single file failures don't stop the whole process)
 /// - Batch operations for efficient database writes
-
 use crate::embedding::EmbeddingEngine;
 use crate::error::Result;
 use crate::indexing::file_scanner::FileScanner;
@@ -126,11 +125,7 @@ impl IndexingService {
     ///
     /// # Returns
     /// Result of indexing the file
-    pub async fn index_file(
-        &self,
-        path: &Path,
-        project_id: &str,
-    ) -> Result<FileIndexResult> {
+    pub async fn index_file(&self, path: &Path, project_id: &str) -> Result<FileIndexResult> {
         let start_time = Instant::now();
         let file_path = path.to_string_lossy().to_string();
 
@@ -165,7 +160,9 @@ impl IndexingService {
         if !parse_result.success {
             let error = IndexError::parse(
                 file_path.clone(),
-                parse_result.error.unwrap_or_else(|| "Unknown parse error".to_string()),
+                parse_result
+                    .error
+                    .unwrap_or_else(|| "Unknown parse error".to_string()),
             );
             return Ok(FileIndexResult::error(
                 file_path,
@@ -228,15 +225,14 @@ impl IndexingService {
             // Prepare BM25 document
             let mut bm25_metadata = HashMap::new();
             bm25_metadata.insert("file_path".to_string(), file_path.clone());
-            bm25_metadata.insert("language".to_string(), parse_result.language.as_str().to_string());
+            bm25_metadata.insert(
+                "language".to_string(),
+                parse_result.language.as_str().to_string(),
+            );
             bm25_metadata.insert("symbol_type".to_string(), symbol.kind.as_str().to_string());
             bm25_metadata.insert("symbol_name".to_string(), symbol.name.clone());
 
-            let bm25_doc = Document::with_metadata(
-                record_id,
-                symbol.text.clone(),
-                bm25_metadata,
-            );
+            let bm25_doc = Document::with_metadata(record_id, symbol.text.clone(), bm25_metadata);
             bm25_documents.push(bm25_doc);
         }
 
@@ -386,7 +382,10 @@ impl IndexingService {
 
     /// Get indexing statistics
     pub async fn get_stats(&self) -> Result<IndexStats> {
-        let collection_stats = self.storage.get_collection_stats(&self.collection_name).await?;
+        let collection_stats = self
+            .storage
+            .get_collection_stats(&self.collection_name)
+            .await?;
         let bm25_stats = self.bm25.get_stats()?;
 
         Ok(IndexStats {
@@ -402,7 +401,11 @@ impl IndexingService {
         info!("Clearing index data");
 
         // Clear vector database
-        if self.storage.collection_exists(&self.collection_name).await? {
+        if self
+            .storage
+            .collection_exists(&self.collection_name)
+            .await?
+        {
             self.storage.drop_collection(&self.collection_name).await?;
         }
 
@@ -435,10 +438,7 @@ impl IndexStats {
     pub fn summary(&self) -> String {
         format!(
             "Index stats: {} vectors, {} BM25 documents, {} unique terms (collection: {})",
-            self.vector_count,
-            self.bm25_document_count,
-            self.bm25_term_count,
-            self.collection_name
+            self.vector_count, self.bm25_document_count, self.bm25_term_count, self.collection_name
         )
     }
 }
@@ -463,15 +463,15 @@ mod tests {
         // Test indexing a single Rust file
         let temp_dir = TempDir::new().unwrap();
         let test_file = temp_dir.path().join("test.rs");
-        tokio::fs::write(
-            &test_file,
-            "fn main() { println!(\"Hello\"); }",
-        )
-        .await
-        .unwrap();
+        tokio::fs::write(&test_file, "fn main() { println!(\"Hello\"); }")
+            .await
+            .unwrap();
 
         let service = create_test_service().await.unwrap();
-        let result = service.index_file(&test_file, "test-project").await.unwrap();
+        let result = service
+            .index_file(&test_file, "test-project")
+            .await
+            .unwrap();
 
         assert!(result.success);
         assert!(result.symbol_count > 0);
@@ -485,18 +485,12 @@ mod tests {
         tokio::fs::create_dir_all(temp_dir.path().join("src"))
             .await
             .unwrap();
-        tokio::fs::write(
-            temp_dir.path().join("src/lib.rs"),
-            "pub fn hello() {}",
-        )
-        .await
-        .unwrap();
-        tokio::fs::write(
-            temp_dir.path().join("src/main.rs"),
-            "fn main() {}",
-        )
-        .await
-        .unwrap();
+        tokio::fs::write(temp_dir.path().join("src/lib.rs"), "pub fn hello() {}")
+            .await
+            .unwrap();
+        tokio::fs::write(temp_dir.path().join("src/main.rs"), "fn main() {}")
+            .await
+            .unwrap();
 
         let service = create_test_service().await.unwrap();
         let config = IndexConfig::new(temp_dir.path().to_path_buf());

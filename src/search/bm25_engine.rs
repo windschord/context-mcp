@@ -18,7 +18,6 @@
 /// - N = total number of documents
 /// - df(qi) = number of documents containing qi
 /// ```
-
 use crate::error::{ContextMcpError, Result};
 use crate::search::tokenizer::Tokenizer;
 use crate::search::types::{BM25Config, BM25Result, Document, IndexStats, SearchOptions};
@@ -74,8 +73,9 @@ impl BM25Engine {
     pub fn new_in_memory() -> Result<Self> {
         info!("Creating in-memory BM25 engine");
 
-        let conn = Connection::open_in_memory()
-            .map_err(|e| ContextMcpError::Database(format!("Failed to create in-memory database: {}", e)))?;
+        let conn = Connection::open_in_memory().map_err(|e| {
+            ContextMcpError::Database(format!("Failed to create in-memory database: {}", e))
+        })?;
 
         let engine = Self {
             conn: Arc::new(Mutex::new(conn)),
@@ -96,8 +96,7 @@ impl BM25Engine {
 
     /// Set custom BM25 configuration
     pub fn with_config(mut self, config: BM25Config) -> Result<Self> {
-        config.validate()
-            .map_err(|e| ContextMcpError::Config(e))?;
+        config.validate().map_err(|e| ContextMcpError::Config(e))?;
         self.config = config;
         Ok(self)
     }
@@ -167,13 +166,15 @@ impl BM25Engine {
         }
 
         // Serialize metadata
-        let metadata_json = serde_json::to_string(&doc.metadata)
-            .map_err(|e| ContextMcpError::Database(format!("Failed to serialize metadata: {}", e)))?;
+        let metadata_json = serde_json::to_string(&doc.metadata).map_err(|e| {
+            ContextMcpError::Database(format!("Failed to serialize metadata: {}", e))
+        })?;
 
         // Begin transaction
         let mut conn = self.conn.lock();
-        let tx = conn.transaction()
-            .map_err(|e| ContextMcpError::Database(format!("Failed to begin transaction: {}", e)))?;
+        let tx = conn.transaction().map_err(|e| {
+            ContextMcpError::Database(format!("Failed to begin transaction: {}", e))
+        })?;
 
         // Insert document
         tx.execute(
@@ -191,13 +192,17 @@ impl BM25Engine {
             .map_err(|e| ContextMcpError::Database(format!("Failed to insert term: {}", e)))?;
         }
 
-        tx.commit()
-            .map_err(|e| ContextMcpError::Database(format!("Failed to commit transaction: {}", e)))?;
+        tx.commit().map_err(|e| {
+            ContextMcpError::Database(format!("Failed to commit transaction: {}", e))
+        })?;
 
         // Invalidate cached average document length
         *self.cached_avg_doc_length.lock() = None;
 
-        debug!("Successfully indexed document: {} ({} terms)", doc.id, doc_length);
+        debug!(
+            "Successfully indexed document: {} ({} terms)",
+            doc.id, doc_length
+        );
         Ok(())
     }
 
@@ -245,7 +250,11 @@ impl BM25Engine {
     }
 
     /// Search with custom options
-    pub fn search_with_options(&self, query: &str, options: SearchOptions) -> Result<Vec<BM25Result>> {
+    pub fn search_with_options(
+        &self,
+        query: &str,
+        options: SearchOptions,
+    ) -> Result<Vec<BM25Result>> {
         debug!("Searching for: '{}' (top_k: {})", query, options.top_k);
 
         // Tokenize query
@@ -277,12 +286,8 @@ impl BM25Engine {
         // Calculate BM25 score for each candidate document
         let mut results = Vec::new();
         for doc_id in candidate_docs {
-            let score = self.calculate_bm25_score(
-                &doc_id,
-                &query_terms,
-                &term_idfs,
-                avg_doc_length,
-            )?;
+            let score =
+                self.calculate_bm25_score(&doc_id, &query_terms, &term_idfs, avg_doc_length)?;
 
             if let Some(min_score) = options.min_score {
                 if score < min_score {
@@ -299,8 +304,16 @@ impl BM25Engine {
                 (String::new(), HashMap::new())
             };
 
-            let text = if options.include_text { text } else { String::new() };
-            let metadata = if options.include_metadata { metadata } else { HashMap::new() };
+            let text = if options.include_text {
+                text
+            } else {
+                String::new()
+            };
+            let metadata = if options.include_metadata {
+                metadata
+            } else {
+                HashMap::new()
+            };
 
             results.push(BM25Result::with_metadata(
                 doc_id,
@@ -312,7 +325,11 @@ impl BM25Engine {
         }
 
         // Sort by score (descending)
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         // Truncate to top_k
         results.truncate(options.top_k);
@@ -326,7 +343,8 @@ impl BM25Engine {
         debug!("Removing document: {}", id);
 
         let conn = self.conn.lock();
-        let deleted = conn.execute("DELETE FROM documents WHERE id = ?1", params![id])
+        let deleted = conn
+            .execute("DELETE FROM documents WHERE id = ?1", params![id])
             .map_err(|e| ContextMcpError::Database(format!("Failed to delete document: {}", e)))?;
 
         if deleted > 0 {
@@ -343,7 +361,9 @@ impl BM25Engine {
 
         let conn = self.conn.lock();
         conn.execute("DELETE FROM inverted_index", [])
-            .map_err(|e| ContextMcpError::Database(format!("Failed to clear inverted index: {}", e)))?;
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to clear inverted index: {}", e))
+            })?;
 
         conn.execute("DELETE FROM documents", [])
             .map_err(|e| ContextMcpError::Database(format!("Failed to clear documents: {}", e)))?;
@@ -359,7 +379,9 @@ impl BM25Engine {
         let conn = self.conn.lock();
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM documents", [], |row| row.get(0))
-            .map_err(|e| ContextMcpError::Database(format!("Failed to get document count: {}", e)))?;
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to get document count: {}", e))
+            })?;
 
         Ok(count as usize)
     }
@@ -370,7 +392,11 @@ impl BM25Engine {
 
         let conn = self.conn.lock();
         let term_count: i64 = conn
-            .query_row("SELECT COUNT(DISTINCT term) FROM inverted_index", [], |row| row.get(0))
+            .query_row(
+                "SELECT COUNT(DISTINCT term) FROM inverted_index",
+                [],
+                |row| row.get(0),
+            )
             .map_err(|e| ContextMcpError::Database(format!("Failed to get term count: {}", e)))?;
 
         let total_tokens: i64 = conn
@@ -444,14 +470,19 @@ impl BM25Engine {
 
     /// Get all documents that contain at least one query term
     fn get_candidate_documents(&self, query_terms: &[String]) -> Result<Vec<String>> {
-        let placeholders = query_terms.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let placeholders = query_terms
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
         let sql = format!(
             "SELECT DISTINCT doc_id FROM inverted_index WHERE term IN ({})",
             placeholders
         );
 
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(&sql)
+        let mut stmt = conn
+            .prepare(&sql)
             .map_err(|e| ContextMcpError::Database(format!("Failed to prepare query: {}", e)))?;
 
         let params: Vec<&dyn rusqlite::ToSql> = query_terms
@@ -485,7 +516,9 @@ impl BM25Engine {
                 params![doc_id],
                 |row| row.get(0),
             )
-            .map_err(|e| ContextMcpError::Database(format!("Failed to get document length: {}", e)))?;
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to get document length: {}", e))
+            })?;
 
         let doc_length = doc_length as f32;
 
@@ -503,14 +536,18 @@ impl BM25Engine {
                     |row| row.get(0),
                 )
                 .optional()
-                .map_err(|e| ContextMcpError::Database(format!("Failed to get term frequency: {}", e)))?;
+                .map_err(|e| {
+                    ContextMcpError::Database(format!("Failed to get term frequency: {}", e))
+                })?;
 
             if let Some(tf) = tf {
                 let tf = tf as f32;
 
                 // BM25 formula
                 let numerator = tf * (self.config.k1 + 1.0);
-                let denominator = tf + self.config.k1 * (1.0 - self.config.b + self.config.b * doc_length / avg_doc_length);
+                let denominator = tf
+                    + self.config.k1
+                        * (1.0 - self.config.b + self.config.b * doc_length / avg_doc_length);
 
                 score += idf * (numerator / denominator);
             }
@@ -521,14 +558,19 @@ impl BM25Engine {
 
     /// Get terms from query that matched a document
     fn get_matched_terms(&self, doc_id: &str, query_terms: &[String]) -> Result<Vec<String>> {
-        let placeholders = query_terms.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let placeholders = query_terms
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
         let sql = format!(
             "SELECT DISTINCT term FROM inverted_index WHERE doc_id = ?1 AND term IN ({})",
             placeholders
         );
 
         let conn = self.conn.lock();
-        let mut stmt = conn.prepare(&sql)
+        let mut stmt = conn
+            .prepare(&sql)
             .map_err(|e| ContextMcpError::Database(format!("Failed to prepare query: {}", e)))?;
 
         let mut params: Vec<&dyn rusqlite::ToSql> = vec![&doc_id as &dyn rusqlite::ToSql];
@@ -552,12 +594,14 @@ impl BM25Engine {
                 params![doc_id],
                 |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
             )
-            .map_err(|e| ContextMcpError::Database(format!("Failed to get document data: {}", e)))?;
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to get document data: {}", e))
+            })?;
 
         let (text, metadata_json) = row;
 
-        let metadata: HashMap<String, String> = serde_json::from_str(&metadata_json)
-            .unwrap_or_default();
+        let metadata: HashMap<String, String> =
+            serde_json::from_str(&metadata_json).unwrap_or_default();
 
         Ok((text, metadata))
     }
@@ -578,7 +622,9 @@ mod tests {
         let engine = BM25Engine::new_in_memory().unwrap();
 
         // Index some documents
-        engine.index_document("doc1", "fn parse_config() {}").unwrap();
+        engine
+            .index_document("doc1", "fn parse_config() {}")
+            .unwrap();
         engine.index_document("doc2", "fn get_user() {}").unwrap();
         engine.index_document("doc3", "struct Config {}").unwrap();
 
@@ -622,7 +668,9 @@ mod tests {
         let engine = BM25Engine::new_in_memory().unwrap();
 
         // Index documents with different term frequencies
-        engine.index_document("doc1", "rust rust rust programming").unwrap();
+        engine
+            .index_document("doc1", "rust rust rust programming")
+            .unwrap();
         engine.index_document("doc2", "rust programming").unwrap();
         engine.index_document("doc3", "python programming").unwrap();
 
@@ -640,9 +688,7 @@ mod tests {
         engine.index_document("doc1", "rust programming").unwrap();
         engine.index_document("doc2", "python programming").unwrap();
 
-        let options = SearchOptions::new()
-            .with_top_k(1)
-            .with_min_score(0.01);
+        let options = SearchOptions::new().with_top_k(1).with_min_score(0.01);
 
         let results = engine.search_with_options("programming", options).unwrap();
         assert!(results.len() <= 1);
@@ -668,11 +714,7 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("lang".to_string(), "rust".to_string());
 
-        let doc = Document::with_metadata(
-            "doc1".to_string(),
-            "fn main() {}".to_string(),
-            metadata,
-        );
+        let doc = Document::with_metadata("doc1".to_string(), "fn main() {}".to_string(), metadata);
 
         engine.index_document_with_metadata(doc).unwrap();
 

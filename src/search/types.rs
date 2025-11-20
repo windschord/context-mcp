@@ -3,7 +3,6 @@
 /// This module defines the core types used in the BM25 search implementation,
 /// including configuration, document representation, and search results.
 /// It also includes types for hybrid search that combines BM25 with vector search.
-
 use crate::storage::types::VectorRecord;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -34,11 +33,7 @@ impl Document {
 
     /// Create a new document with metadata
     pub fn with_metadata(id: String, text: String, metadata: HashMap<String, String>) -> Self {
-        Self {
-            id,
-            text,
-            metadata,
-        }
+        Self { id, text, metadata }
     }
 
     /// Add or update a metadata field
@@ -112,10 +107,7 @@ pub struct BM25Config {
 
 impl Default for BM25Config {
     fn default() -> Self {
-        Self {
-            k1: 1.2,
-            b: 0.75,
-        }
+        Self { k1: 1.2, b: 0.75 }
     }
 }
 
@@ -348,7 +340,10 @@ impl HybridConfig {
     /// Validate configuration
     pub fn validate(&self) -> Result<(), String> {
         if self.alpha < 0.0 || self.alpha > 1.0 {
-            return Err(format!("alpha must be between 0.0 and 1.0, got {}", self.alpha));
+            return Err(format!(
+                "alpha must be between 0.0 and 1.0, got {}",
+                self.alpha
+            ));
         }
         if self.top_k == 0 {
             return Err("top_k must be greater than 0".to_string());
@@ -438,11 +433,7 @@ mod tests {
         let mut metadata = HashMap::new();
         metadata.insert("lang".to_string(), "rust".to_string());
 
-        let doc = Document::with_metadata(
-            "doc1".to_string(),
-            "fn main() {}".to_string(),
-            metadata,
-        );
+        let doc = Document::with_metadata("doc1".to_string(), "fn main() {}".to_string(), metadata);
 
         assert_eq!(doc.metadata.get("lang"), Some(&"rust".to_string()));
     }

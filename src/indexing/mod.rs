@@ -11,13 +11,10 @@
 /// - Progress tracking and error collection
 /// - Batch operations for efficient database writes
 /// - Resilient error handling (single file failures don't stop the whole process)
-
 pub mod file_scanner;
 pub mod service;
 pub mod types;
 
 pub use file_scanner::FileScanner;
 pub use service::IndexingService;
-pub use types::{
-    FileIndexResult, IndexConfig, IndexError, IndexProgress, IndexResult, ScanConfig,
-};
+pub use types::{FileIndexResult, IndexConfig, IndexError, IndexProgress, IndexResult, ScanConfig};

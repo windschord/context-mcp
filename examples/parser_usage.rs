@@ -1,10 +1,9 @@
+#![allow(dead_code)]
+
 /// Example usage of the Context-MCP parser module
 ///
 /// This file demonstrates how to use the Tree-sitter AST parser
 /// and symbol extractor to analyze source code.
-
-#![allow(dead_code)]
-
 use context_mcp::parser::{Language, ParseResult, Symbol, SymbolExtractor, SymbolKind};
 
 /// Example 1: Basic symbol extraction from a Rust file
@@ -39,7 +38,11 @@ impl Point {
 
     println!("Parsed {} successfully", result.file_path);
     println!("Language: {}", result.language);
-    println!("Found {} symbols in {}ms\n", result.symbols.len(), result.parse_time_ms);
+    println!(
+        "Found {} symbols in {}ms\n",
+        result.symbols.len(),
+        result.parse_time_ms
+    );
 
     // Print all symbols
     for symbol in &result.symbols {
@@ -100,10 +103,7 @@ const DEFAULT_TIMEOUT = 5000;
     let result = extractor.extract_from_file("user-service.ts", typescript_code)?;
 
     // Filter only classes
-    let classes = SymbolExtractor::filter_symbols_by_kind(
-        &result.symbols,
-        &[SymbolKind::Class],
-    );
+    let classes = SymbolExtractor::filter_symbols_by_kind(&result.symbols, &[SymbolKind::Class]);
     println!("Classes found:");
     for class in classes {
         println!("  - {}", class.name);
@@ -173,11 +173,31 @@ fn example_multi_language() -> context_mcp::Result<()> {
     let extractor = SymbolExtractor::new();
 
     let files = vec![
-        ("main.rs", "fn main() { println!(\"Hello\"); }", Language::Rust),
-        ("app.py", "def hello():\n    print('Hello')", Language::Python),
-        ("app.js", "function hello() { console.log('Hello'); }", Language::JavaScript),
-        ("Main.java", "class Main { public static void main(String[] args) {} }", Language::Java),
-        ("main.go", "func main() { fmt.Println(\"Hello\") }", Language::Go),
+        (
+            "main.rs",
+            "fn main() { println!(\"Hello\"); }",
+            Language::Rust,
+        ),
+        (
+            "app.py",
+            "def hello():\n    print('Hello')",
+            Language::Python,
+        ),
+        (
+            "app.js",
+            "function hello() { console.log('Hello'); }",
+            Language::JavaScript,
+        ),
+        (
+            "Main.java",
+            "class Main { public static void main(String[] args) {} }",
+            Language::Java,
+        ),
+        (
+            "main.go",
+            "func main() { fmt.Println(\"Hello\") }",
+            Language::Go,
+        ),
     ];
 
     for (filename, code, expected_lang) in files {
@@ -248,7 +268,8 @@ fn function_c() {  // Line 12
 
     println!("Symbols in lines 8-15:");
     for symbol in symbols_in_range {
-        println!("  - {} at lines {}-{}",
+        println!(
+            "  - {} at lines {}-{}",
             symbol.name,
             symbol.range.start.line + 1,
             symbol.range.end.line + 1
@@ -271,15 +292,23 @@ fn example_file_type_detection() {
         "main.go",
         "program.c",
         "program.cpp",
-        "sketch.ino",  // Arduino
-        "README.md",   // Not supported
-        "data.json",   // Not supported
+        "sketch.ino", // Arduino
+        "README.md",  // Not supported
+        "data.json",  // Not supported
     ];
 
     println!("File support check:");
     for file in files {
         let supported = extractor.should_parse_file(file);
-        println!("  {} - {}", file, if supported { "✓ Supported" } else { "✗ Not supported" });
+        println!(
+            "  {} - {}",
+            file,
+            if supported {
+                "✓ Supported"
+            } else {
+                "✗ Not supported"
+            }
+        );
     }
 
     println!("\nAll supported extensions:");
@@ -297,13 +326,13 @@ fn example_explicit_language() -> context_mcp::Result<()> {
     let code = "def hello(): print('Hello')";
 
     // Force Python parsing even though filename doesn't suggest it
-    let result = extractor.extract_with_language(
-        "code_snippet.txt",
-        code,
-        Language::Python,
-    )?;
+    let result = extractor.extract_with_language("code_snippet.txt", code, Language::Python)?;
 
-    println!("Parsed as {}: {} symbols found", result.language, result.symbols.len());
+    println!(
+        "Parsed as {}: {} symbols found",
+        result.language,
+        result.symbols.len()
+    );
 
     Ok(())
 }
