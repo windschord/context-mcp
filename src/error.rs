@@ -118,3 +118,267 @@ impl From<ContextMcpError> for rmcp::ErrorData {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rmcp::model::ErrorCode;
+    use std::io;
+
+    // ============================================================================
+    // Task 12.11: Error Type Comprehensive Tests
+    // ============================================================================
+
+    #[test]
+    fn test_config_error_variant() {
+        let err = ContextMcpError::Config("Invalid configuration".to_string());
+        assert_eq!(err.to_string(), "Configuration error: Invalid configuration");
+    }
+
+    #[test]
+    fn test_mcp_error_variant() {
+        let err = ContextMcpError::Mcp("Protocol error".to_string());
+        assert_eq!(err.to_string(), "MCP protocol error: Protocol error");
+    }
+
+    #[test]
+    fn test_parse_error_variant() {
+        let err = ContextMcpError::Parse("JSON parsing failed".to_string());
+        assert_eq!(err.to_string(), "Parse error: JSON parsing failed");
+    }
+
+    #[test]
+    fn test_database_error_variant() {
+        let err = ContextMcpError::Database("Connection failed".to_string());
+        assert_eq!(err.to_string(), "Database error: Connection failed");
+    }
+
+    #[test]
+    fn test_embedding_error_variant() {
+        let err = ContextMcpError::Embedding("Model load failed".to_string());
+        assert_eq!(err.to_string(), "Embedding error: Model load failed");
+    }
+
+    #[test]
+    fn test_indexing_error_variant() {
+        let err = ContextMcpError::Indexing("Index creation failed".to_string());
+        assert_eq!(err.to_string(), "Indexing error: Index creation failed");
+    }
+
+    #[test]
+    fn test_search_error_variant() {
+        let err = ContextMcpError::Search("Search query failed".to_string());
+        assert_eq!(err.to_string(), "Search error: Search query failed");
+    }
+
+    #[test]
+    fn test_tree_sitter_error_variant() {
+        let err = ContextMcpError::TreeSitter("Parser error".to_string());
+        assert_eq!(err.to_string(), "Tree-sitter error: Parser error");
+    }
+
+    #[test]
+    fn test_file_system_error_variant() {
+        let err = ContextMcpError::FileSystem("File not found".to_string());
+        assert_eq!(err.to_string(), "File system error: File not found");
+    }
+
+    #[test]
+    fn test_internal_error_variant() {
+        let err = ContextMcpError::Internal("Internal error occurred".to_string());
+        assert_eq!(err.to_string(), "Internal error: Internal error occurred");
+    }
+
+    #[test]
+    fn test_io_error_conversion() {
+        let io_err = io::Error::new(io::ErrorKind::NotFound, "file not found");
+        let err: ContextMcpError = io_err.into();
+        assert!(err.to_string().contains("I/O error"));
+        assert!(err.to_string().contains("file not found"));
+    }
+
+    #[test]
+    fn test_anyhow_error_conversion() {
+        let anyhow_err = anyhow::anyhow!("generic error");
+        let err: ContextMcpError = anyhow_err.into();
+        assert!(err.to_string().contains("generic error"));
+    }
+
+    // ============================================================================
+    // Error Conversion to rmcp::ErrorData Tests
+    // ============================================================================
+
+    #[test]
+    fn test_config_error_to_error_data() {
+        let err = ContextMcpError::Config("test config error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INVALID_PARAMS);
+        assert!(error_data.message.contains("Configuration error"));
+        assert!(error_data.message.contains("test config error"));
+    }
+
+    #[test]
+    fn test_mcp_error_to_error_data() {
+        let err = ContextMcpError::Mcp("test mcp error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert_eq!(&*error_data.message, "test mcp error");
+    }
+
+    #[test]
+    fn test_parse_error_to_error_data() {
+        let err = ContextMcpError::Parse("test parse error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::PARSE_ERROR);
+        assert!(error_data.message.contains("Parse error"));
+        assert!(error_data.message.contains("test parse error"));
+    }
+
+    #[test]
+    fn test_database_error_to_error_data() {
+        let err = ContextMcpError::Database("test db error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("Database error"));
+        assert!(error_data.message.contains("test db error"));
+    }
+
+    #[test]
+    fn test_embedding_error_to_error_data() {
+        let err = ContextMcpError::Embedding("test embedding error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("test embedding error"));
+    }
+
+    #[test]
+    fn test_indexing_error_to_error_data() {
+        let err = ContextMcpError::Indexing("test indexing error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("test indexing error"));
+    }
+
+    #[test]
+    fn test_search_error_to_error_data() {
+        let err = ContextMcpError::Search("test search error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("test search error"));
+    }
+
+    #[test]
+    fn test_tree_sitter_error_to_error_data() {
+        let err = ContextMcpError::TreeSitter("test tree-sitter error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("Tree-sitter error"));
+        assert!(error_data.message.contains("test tree-sitter error"));
+    }
+
+    #[test]
+    fn test_file_system_error_to_error_data() {
+        let err = ContextMcpError::FileSystem("test fs error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("File system error"));
+        assert!(error_data.message.contains("test fs error"));
+    }
+
+    #[test]
+    fn test_io_error_to_error_data() {
+        let io_err = io::Error::new(io::ErrorKind::NotFound, "test io error");
+        let err: ContextMcpError = io_err.into();
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("I/O error"));
+        assert!(error_data.message.contains("test io error"));
+    }
+
+    #[test]
+    fn test_internal_error_to_error_data() {
+        let err = ContextMcpError::Internal("test internal error".to_string());
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("Internal error"));
+        assert!(error_data.message.contains("test internal error"));
+    }
+
+    #[test]
+    fn test_other_error_to_error_data() {
+        let anyhow_err = anyhow::anyhow!("test other error");
+        let err: ContextMcpError = anyhow_err.into();
+        let error_data: rmcp::ErrorData = err.into();
+        assert_eq!(error_data.code, ErrorCode::INTERNAL_ERROR);
+        assert!(error_data.message.contains("Error"));
+        assert!(error_data.message.contains("test other error"));
+    }
+
+    // ============================================================================
+    // Error Message Content Validation
+    // ============================================================================
+
+    #[test]
+    fn test_error_messages_contain_context() {
+        // Test that error messages provide meaningful context
+        let test_cases = vec![
+            (
+                ContextMcpError::Config("Missing API key".to_string()),
+                vec!["Configuration error", "Missing API key"],
+            ),
+            (
+                ContextMcpError::Database("Connection timeout".to_string()),
+                vec!["Database error", "Connection timeout"],
+            ),
+            (
+                ContextMcpError::TreeSitter("Invalid syntax".to_string()),
+                vec!["Tree-sitter error", "Invalid syntax"],
+            ),
+        ];
+
+        for (error, expected_fragments) in test_cases {
+            let error_data: rmcp::ErrorData = error.into();
+            for fragment in expected_fragments {
+                assert!(
+                    error_data.message.contains(fragment),
+                    "Error message '{}' should contain '{}'",
+                    error_data.message,
+                    fragment
+                );
+            }
+        }
+    }
+
+    // ============================================================================
+    // Error Code Mapping Tests
+    // ============================================================================
+
+    #[test]
+    fn test_error_code_mappings() {
+        // Test that error variants map to appropriate error codes
+        let test_cases = vec![
+            (
+                ContextMcpError::Config("test".to_string()),
+                ErrorCode::INVALID_PARAMS,
+            ),
+            (
+                ContextMcpError::Parse("test".to_string()),
+                ErrorCode::PARSE_ERROR,
+            ),
+            (
+                ContextMcpError::Database("test".to_string()),
+                ErrorCode::INTERNAL_ERROR,
+            ),
+            (
+                ContextMcpError::Indexing("test".to_string()),
+                ErrorCode::INTERNAL_ERROR,
+            ),
+        ];
+
+        for (error, expected_code) in test_cases {
+            let error_data: rmcp::ErrorData = error.into();
+            assert_eq!(error_data.code, expected_code);
+        }
+    }
+}
+
