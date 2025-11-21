@@ -742,7 +742,11 @@ mod tests {
         engine.index_document("doc1", "test content").unwrap();
 
         let results = engine.search("   \t\n  ", 10).unwrap();
-        assert_eq!(results.len(), 0, "Whitespace-only query should return no results");
+        assert_eq!(
+            results.len(),
+            0,
+            "Whitespace-only query should return no results"
+        );
     }
 
     #[test]
@@ -884,7 +888,9 @@ mod tests {
     fn test_search_with_min_score() {
         let engine = BM25Engine::new_in_memory().unwrap();
 
-        engine.index_document("doc1", "rust rust rust programming").unwrap();
+        engine
+            .index_document("doc1", "rust rust rust programming")
+            .unwrap();
         engine.index_document("doc2", "rust programming").unwrap();
         engine.index_document("doc3", "python programming").unwrap();
 
@@ -931,7 +937,9 @@ mod tests {
 
         // Index documents where "rust" appears in all docs (low IDF)
         // and "unique" appears in only one doc (high IDF)
-        engine.index_document("doc1", "rust programming unique").unwrap();
+        engine
+            .index_document("doc1", "rust programming unique")
+            .unwrap();
         engine.index_document("doc2", "rust development").unwrap();
         engine.index_document("doc3", "rust coding").unwrap();
 
@@ -946,7 +954,9 @@ mod tests {
         let engine = BM25Engine::new_in_memory().unwrap();
 
         // doc1 has "test" 5 times
-        engine.index_document("doc1", "test test test test test").unwrap();
+        engine
+            .index_document("doc1", "test test test test test")
+            .unwrap();
         // doc2 has "test" 1 time
         engine.index_document("doc2", "test").unwrap();
 
@@ -964,7 +974,9 @@ mod tests {
         // Short document with term
         engine.index_document("doc1", "rust").unwrap();
         // Long document with same term
-        engine.index_document("doc2", &format!("rust {}", "filler ".repeat(100))).unwrap();
+        engine
+            .index_document("doc2", &format!("rust {}", "filler ".repeat(100)))
+            .unwrap();
 
         let results = engine.search("rust", 10).unwrap();
 
@@ -978,7 +990,9 @@ mod tests {
     fn test_multiple_query_terms() {
         let engine = BM25Engine::new_in_memory().unwrap();
 
-        engine.index_document("doc1", "rust programming language").unwrap();
+        engine
+            .index_document("doc1", "rust programming language")
+            .unwrap();
         engine.index_document("doc2", "rust only").unwrap();
         engine.index_document("doc3", "programming only").unwrap();
 
@@ -986,20 +1000,30 @@ mod tests {
 
         // doc1 should score highest (has both terms)
         assert_eq!(results[0].id, "doc1");
-        assert!(results[0].matched_terms.len() >= 2 || results[0].matched_terms.contains(&"rust".to_string()) || results[0].matched_terms.contains(&"programming".to_string()));
+        assert!(
+            results[0].matched_terms.len() >= 2
+                || results[0].matched_terms.contains(&"rust".to_string())
+                || results[0]
+                    .matched_terms
+                    .contains(&"programming".to_string())
+        );
     }
 
     #[test]
     fn test_matched_terms() {
         let engine = BM25Engine::new_in_memory().unwrap();
 
-        engine.index_document("doc1", "rust programming language").unwrap();
+        engine
+            .index_document("doc1", "rust programming language")
+            .unwrap();
 
         let results = engine.search("rust language", 10).unwrap();
 
         assert_eq!(results.len(), 1);
-        assert!(results[0].matched_terms.contains(&"rust".to_string()) ||
-                results[0].matched_terms.contains(&"language".to_string()));
+        assert!(
+            results[0].matched_terms.contains(&"rust".to_string())
+                || results[0].matched_terms.contains(&"language".to_string())
+        );
     }
 
     #[test]
@@ -1062,8 +1086,10 @@ mod tests {
 
         // Verify descending score order
         for i in 1..results.len() {
-            assert!(results[i-1].score >= results[i].score,
-                    "Results should be in descending score order");
+            assert!(
+                results[i - 1].score >= results[i].score,
+                "Results should be in descending score order"
+            );
         }
     }
 
@@ -1073,7 +1099,9 @@ mod tests {
 
         // Index many documents
         for i in 1..=20 {
-            engine.index_document(&format!("doc{}", i), "test document").unwrap();
+            engine
+                .index_document(&format!("doc{}", i), "test document")
+                .unwrap();
         }
 
         // Request only top 5
@@ -1175,7 +1203,9 @@ mod tests {
             .unwrap()
             .with_tokenizer(Tokenizer::code());
 
-        engine.index_document("doc1", "fn main() { println!(\"hello\"); }").unwrap();
+        engine
+            .index_document("doc1", "fn main() { println!(\"hello\"); }")
+            .unwrap();
 
         let results = engine.search("main", 10).unwrap();
         assert_eq!(results.len(), 1);

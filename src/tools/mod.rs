@@ -644,18 +644,16 @@ mod tests {
     #[test]
     fn test_search_code_response_serialization() {
         let response = SearchCodeResponse {
-            results: vec![
-                SearchResult {
-                    file_path: "/src/lib.rs".to_string(),
-                    snippet: "pub fn foo() {}".to_string(),
-                    score: 0.9,
-                    language: "rust".to_string(),
-                    symbol_type: Some("function".to_string()),
-                    symbol_name: Some("foo".to_string()),
-                    line_range: (1, 5),
-                    metadata: None,
-                },
-            ],
+            results: vec![SearchResult {
+                file_path: "/src/lib.rs".to_string(),
+                snippet: "pub fn foo() {}".to_string(),
+                score: 0.9,
+                language: "rust".to_string(),
+                symbol_type: Some("function".to_string()),
+                symbol_name: Some("foo".to_string()),
+                line_range: (1, 5),
+                metadata: None,
+            }],
             total_found: 1,
             search_time_ms: 50,
         };

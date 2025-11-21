@@ -496,11 +496,7 @@ pub trait MilvusClientTrait: Send + Sync {
     ) -> Result<Vec<String>>;
 
     /// Search for similar vectors
-    async fn search(
-        &self,
-        collection_name: &str,
-        query: SearchQuery,
-    ) -> Result<Vec<SearchResult>>;
+    async fn search(&self, collection_name: &str, query: SearchQuery) -> Result<Vec<SearchResult>>;
 
     /// Delete records by IDs
     async fn delete(&self, collection_name: &str, ids: Vec<String>) -> Result<()>;
@@ -937,11 +933,7 @@ impl MilvusClientTrait for MilvusClient {
         self.insert(collection_name, records).await
     }
 
-    async fn search(
-        &self,
-        collection_name: &str,
-        query: SearchQuery,
-    ) -> Result<Vec<SearchResult>> {
+    async fn search(&self, collection_name: &str, query: SearchQuery) -> Result<Vec<SearchResult>> {
         self.search(collection_name, query).await
     }
 
@@ -1086,7 +1078,10 @@ mod tests {
             .returning(|_, _| Ok(()));
 
         let result = mock
-            .delete("test_collection", vec!["id1".to_string(), "id2".to_string()])
+            .delete(
+                "test_collection",
+                vec!["id1".to_string(), "id2".to_string()],
+            )
             .await;
         assert!(result.is_ok());
     }
@@ -1222,7 +1217,11 @@ mod tests {
             .withf(|name, query| {
                 name == "test_collection"
                     && query.top_k == 5
-                    && query.filters.as_ref().map(|f| f.contains("language")).unwrap_or(false)
+                    && query
+                        .filters
+                        .as_ref()
+                        .map(|f| f.contains("language"))
+                        .unwrap_or(false)
             })
             .times(1)
             .returning(|_, _| Ok(vec![]));
@@ -1299,9 +1298,11 @@ mod tests {
     #[tokio::test]
     async fn test_mock_error_collection_not_found() {
         let mut mock = MockMilvusClientTrait::new();
-        mock.expect_get_collection_stats()
-            .times(1)
-            .returning(|_| Err(ContextMcpError::Database("Collection not found".to_string())));
+        mock.expect_get_collection_stats().times(1).returning(|_| {
+            Err(ContextMcpError::Database(
+                "Collection not found".to_string(),
+            ))
+        });
 
         let result = mock.get_collection_stats("nonexistent").await;
         assert!(result.is_err());
@@ -1314,9 +1315,11 @@ mod tests {
     #[tokio::test]
     async fn test_mock_error_insert_failure() {
         let mut mock = MockMilvusClientTrait::new();
-        mock.expect_insert()
-            .times(1)
-            .returning(|_, _| Err(ContextMcpError::Database("Insert failed: quota exceeded".to_string())));
+        mock.expect_insert().times(1).returning(|_, _| {
+            Err(ContextMcpError::Database(
+                "Insert failed: quota exceeded".to_string(),
+            ))
+        });
 
         let record = VectorRecord::new(
             "test.rs:1".to_string(),
@@ -1339,9 +1342,11 @@ mod tests {
     #[tokio::test]
     async fn test_mock_error_search_failure() {
         let mut mock = MockMilvusClientTrait::new();
-        mock.expect_search()
-            .times(1)
-            .returning(|_, _| Err(ContextMcpError::Search("Search failed: invalid vector dimension".to_string())));
+        mock.expect_search().times(1).returning(|_, _| {
+            Err(ContextMcpError::Search(
+                "Search failed: invalid vector dimension".to_string(),
+            ))
+        });
 
         let query = SearchQuery::new(vec![0.1; 384], 10);
         let result = mock.search("test_collection", query).await;
@@ -1360,11 +1365,7 @@ mod tests {
         mock.expect_insert()
             .withf(|_, records| records.len() == 100)
             .times(1)
-            .returning(|_, records| {
-                Ok((0..records.len())
-                    .map(|i| format!("id_{}", i))
-                    .collect())
-            });
+            .returning(|_, records| Ok((0..records.len()).map(|i| format!("id_{}", i)).collect()));
 
         let records: Vec<VectorRecord> = (0..100)
             .map(|i| {
@@ -1480,9 +1481,7 @@ mod tests {
     async fn test_mock_search_no_results() {
         let mut mock = MockMilvusClientTrait::new();
 
-        mock.expect_search()
-            .times(1)
-            .returning(|_, _| Ok(vec![]));
+        mock.expect_search().times(1).returning(|_, _| Ok(vec![]));
 
         let query = SearchQuery::new(vec![0.9; 384], 10);
         let result = mock.search("test_collection", query).await;
@@ -1498,25 +1497,23 @@ mod tests {
             .withf(|_, query| query.top_k == 5)
             .times(1)
             .returning(|_, _| {
-                Ok(vec![
-                    SearchResult {
-                        id: "high_score".to_string(),
-                        score: 0.95,
-                        record: VectorRecord::new(
-                            "high_score".to_string(),
-                            vec![],
-                            "proj1".to_string(),
-                            "file1.rs".to_string(),
-                            "rust".to_string(),
-                            "function".to_string(),
-                            "high_fn".to_string(),
-                            1,
-                            5,
-                            "code".to_string(),
-                            "doc".to_string(),
-                        ),
-                    },
-                ])
+                Ok(vec![SearchResult {
+                    id: "high_score".to_string(),
+                    score: 0.95,
+                    record: VectorRecord::new(
+                        "high_score".to_string(),
+                        vec![],
+                        "proj1".to_string(),
+                        "file1.rs".to_string(),
+                        "rust".to_string(),
+                        "function".to_string(),
+                        "high_fn".to_string(),
+                        1,
+                        5,
+                        "code".to_string(),
+                        "doc".to_string(),
+                    ),
+                }])
             });
 
         let query = SearchQuery::new(vec![0.1; 384], 5);
@@ -1536,7 +1533,9 @@ mod tests {
             .times(1)
             .returning(|_, _| Ok(()));
 
-        let result = mock.delete("test_collection", vec!["single_id".to_string()]).await;
+        let result = mock
+            .delete("test_collection", vec!["single_id".to_string()])
+            .await;
         assert!(result.is_ok());
     }
 
@@ -1560,14 +1559,7 @@ mod tests {
 
         mock.expect_get_collection_stats()
             .times(1)
-            .returning(|name| {
-                Ok(CollectionStats::new(
-                    name.to_string(),
-                    0,
-                    false,
-                    0,
-                ))
-            });
+            .returning(|name| Ok(CollectionStats::new(name.to_string(), 0, false, 0)));
 
         let result = mock.get_collection_stats("empty_collection").await;
         assert!(result.is_ok());
@@ -1618,9 +1610,11 @@ mod tests {
     async fn test_mock_create_collection_already_exists() {
         let mut mock = MockMilvusClientTrait::new();
 
-        mock.expect_create_collection()
-            .times(1)
-            .returning(|_| Err(ContextMcpError::Database("Collection already exists".to_string())));
+        mock.expect_create_collection().times(1).returning(|_| {
+            Err(ContextMcpError::Database(
+                "Collection already exists".to_string(),
+            ))
+        });
 
         let config = CollectionConfig::code_vectors(384);
         let result = mock.create_collection(config).await;
@@ -1632,13 +1626,9 @@ mod tests {
         let mut mock = MockMilvusClientTrait::new();
 
         mock.expect_insert()
-            .withf(|_, records| {
-                !records.is_empty() && !records[0].metadata.is_empty()
-            })
+            .withf(|_, records| !records.is_empty() && !records[0].metadata.is_empty())
             .times(1)
-            .returning(|_, records| {
-                Ok(records.iter().map(|r| r.id.clone()).collect())
-            });
+            .returning(|_, records| Ok(records.iter().map(|r| r.id.clone()).collect()));
 
         let mut metadata = std::collections::HashMap::new();
         metadata.insert("key1".to_string(), "value1".to_string());
@@ -1669,9 +1659,11 @@ mod tests {
 
         mock.expect_search()
             .withf(|_, query| {
-                query.filters.as_ref().map(|f|
-                    f.contains("language") && f.contains("rust")
-                ).unwrap_or(false)
+                query
+                    .filters
+                    .as_ref()
+                    .map(|f| f.contains("language") && f.contains("rust"))
+                    .unwrap_or(false)
             })
             .times(1)
             .returning(|_, _| Ok(vec![]));
@@ -1698,28 +1690,20 @@ mod tests {
 
         mock.expect_insert()
             .times(1)
-            .returning(|_, records| {
-                Ok(records.iter().map(|r| r.id.clone()).collect())
-            });
+            .returning(|_, records| Ok(records.iter().map(|r| r.id.clone()).collect()));
 
-        mock.expect_flush()
-            .times(1)
-            .returning(|_| Ok(()));
+        mock.expect_flush().times(1).returning(|_| Ok(()));
 
         mock.expect_get_collection_stats()
             .times(1)
-            .returning(|name| {
-                Ok(CollectionStats::new(
-                    name.to_string(),
-                    100,
-                    true,
-                    1024,
-                ))
-            });
+            .returning(|name| Ok(CollectionStats::new(name.to_string(), 100, true, 1024)));
 
         // Execute sequence
         assert!(!mock.collection_exists("test").await.unwrap());
-        assert!(mock.create_collection(CollectionConfig::code_vectors(384)).await.is_ok());
+        assert!(mock
+            .create_collection(CollectionConfig::code_vectors(384))
+            .await
+            .is_ok());
 
         let record = VectorRecord::new(
             "test.rs:1".to_string(),
@@ -1745,63 +1729,61 @@ mod tests {
     async fn test_mock_search_multiple_results_sorted() {
         let mut mock = MockMilvusClientTrait::new();
 
-        mock.expect_search()
-            .times(1)
-            .returning(|_, _| {
-                Ok(vec![
-                    SearchResult {
-                        id: "result1".to_string(),
-                        score: 0.99,
-                        record: VectorRecord::new(
-                            "result1".to_string(),
-                            vec![],
-                            "proj1".to_string(),
-                            "file1.rs".to_string(),
-                            "rust".to_string(),
-                            "function".to_string(),
-                            "fn1".to_string(),
-                            1,
-                            5,
-                            "code1".to_string(),
-                            "doc1".to_string(),
-                        ),
-                    },
-                    SearchResult {
-                        id: "result2".to_string(),
-                        score: 0.95,
-                        record: VectorRecord::new(
-                            "result2".to_string(),
-                            vec![],
-                            "proj1".to_string(),
-                            "file2.rs".to_string(),
-                            "rust".to_string(),
-                            "function".to_string(),
-                            "fn2".to_string(),
-                            1,
-                            5,
-                            "code2".to_string(),
-                            "doc2".to_string(),
-                        ),
-                    },
-                    SearchResult {
-                        id: "result3".to_string(),
-                        score: 0.90,
-                        record: VectorRecord::new(
-                            "result3".to_string(),
-                            vec![],
-                            "proj1".to_string(),
-                            "file3.rs".to_string(),
-                            "rust".to_string(),
-                            "function".to_string(),
-                            "fn3".to_string(),
-                            1,
-                            5,
-                            "code3".to_string(),
-                            "doc3".to_string(),
-                        ),
-                    },
-                ])
-            });
+        mock.expect_search().times(1).returning(|_, _| {
+            Ok(vec![
+                SearchResult {
+                    id: "result1".to_string(),
+                    score: 0.99,
+                    record: VectorRecord::new(
+                        "result1".to_string(),
+                        vec![],
+                        "proj1".to_string(),
+                        "file1.rs".to_string(),
+                        "rust".to_string(),
+                        "function".to_string(),
+                        "fn1".to_string(),
+                        1,
+                        5,
+                        "code1".to_string(),
+                        "doc1".to_string(),
+                    ),
+                },
+                SearchResult {
+                    id: "result2".to_string(),
+                    score: 0.95,
+                    record: VectorRecord::new(
+                        "result2".to_string(),
+                        vec![],
+                        "proj1".to_string(),
+                        "file2.rs".to_string(),
+                        "rust".to_string(),
+                        "function".to_string(),
+                        "fn2".to_string(),
+                        1,
+                        5,
+                        "code2".to_string(),
+                        "doc2".to_string(),
+                    ),
+                },
+                SearchResult {
+                    id: "result3".to_string(),
+                    score: 0.90,
+                    record: VectorRecord::new(
+                        "result3".to_string(),
+                        vec![],
+                        "proj1".to_string(),
+                        "file3.rs".to_string(),
+                        "rust".to_string(),
+                        "function".to_string(),
+                        "fn3".to_string(),
+                        1,
+                        5,
+                        "code3".to_string(),
+                        "doc3".to_string(),
+                    ),
+                },
+            ])
+        });
 
         let query = SearchQuery::new(vec![0.1; 384], 10);
         let results = mock.search("test_collection", query).await.unwrap();
@@ -1831,7 +1813,10 @@ mod tests {
 
         assert!(mock.collection_exists("test").await.is_err());
         assert!(mock.insert("test", vec![]).await.is_err());
-        assert!(mock.search("test", SearchQuery::new(vec![0.1; 384], 10)).await.is_err());
+        assert!(mock
+            .search("test", SearchQuery::new(vec![0.1; 384], 10))
+            .await
+            .is_err());
     }
 
     // ========================================
@@ -2220,13 +2205,9 @@ mod tests {
         let mut mock = MockMilvusClientTrait::new();
 
         mock.expect_insert()
-            .withf(|_, records| {
-                !records.is_empty() && records[0].snippet.contains("特殊文字")
-            })
+            .withf(|_, records| !records.is_empty() && records[0].snippet.contains("特殊文字"))
             .times(1)
-            .returning(|_, records| {
-                Ok(records.iter().map(|r| r.id.clone()).collect())
-            });
+            .returning(|_, records| Ok(records.iter().map(|r| r.id.clone()).collect()));
 
         let record = VectorRecord::new(
             "test.rs:1".to_string(),
@@ -2278,7 +2259,12 @@ mod tests {
                 .returning(|_| Ok(true));
         }
 
-        for name in &["collection-with-dashes", "collection_with_underscores", "collection123", "UPPERCASE_COLLECTION"] {
+        for name in &[
+            "collection-with-dashes",
+            "collection_with_underscores",
+            "collection123",
+            "UPPERCASE_COLLECTION",
+        ] {
             assert!(mock.collection_exists(name).await.unwrap());
         }
     }
@@ -2288,13 +2274,9 @@ mod tests {
         let mut mock = MockMilvusClientTrait::new();
 
         mock.expect_insert()
-            .withf(|_, records| {
-                !records.is_empty() && records[0].docstring.is_empty()
-            })
+            .withf(|_, records| !records.is_empty() && records[0].docstring.is_empty())
             .times(1)
-            .returning(|_, records| {
-                Ok(records.iter().map(|r| r.id.clone()).collect())
-            });
+            .returning(|_, records| Ok(records.iter().map(|r| r.id.clone()).collect()));
 
         let record = VectorRecord::new(
             "test.rs:1".to_string(),
@@ -2370,9 +2352,7 @@ mod tests {
     async fn test_mock_flush_multiple_times() {
         let mut mock = MockMilvusClientTrait::new();
 
-        mock.expect_flush()
-            .times(5)
-            .returning(|_| Ok(()));
+        mock.expect_flush().times(5).returning(|_| Ok(()));
 
         for _ in 0..5 {
             assert!(mock.flush("test_collection").await.is_ok());
@@ -2421,11 +2401,11 @@ mod tests {
     async fn test_mock_insert_serialization_error() {
         let mut mock = MockMilvusClientTrait::new();
 
-        mock.expect_insert()
-            .times(1)
-            .returning(|_, _| {
-                Err(ContextMcpError::Parse("Failed to serialize metadata".to_string()))
-            });
+        mock.expect_insert().times(1).returning(|_, _| {
+            Err(ContextMcpError::Parse(
+                "Failed to serialize metadata".to_string(),
+            ))
+        });
 
         let record = VectorRecord::new(
             "test.rs:1".to_string(),
@@ -2444,7 +2424,7 @@ mod tests {
         let result = mock.insert("test_collection", vec![record]).await;
         assert!(result.is_err());
         match result {
-            Err(ContextMcpError::Parse(_)) => {},
+            Err(ContextMcpError::Parse(_)) => {}
             _ => panic!("Expected Parse error"),
         }
     }
@@ -2455,7 +2435,11 @@ mod tests {
 
         mock.expect_search()
             .withf(|_, query| {
-                query.filters.as_ref().map(|f| f.len() > 100).unwrap_or(false)
+                query
+                    .filters
+                    .as_ref()
+                    .map(|f| f.len() > 100)
+                    .unwrap_or(false)
             })
             .times(1)
             .returning(|_, _| Ok(vec![]));

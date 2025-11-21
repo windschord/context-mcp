@@ -503,26 +503,19 @@ mod tests {
     async fn test_mock_normalized_vector() {
         let mut mock = MockEmbeddingEngineTrait::new();
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|text| {
-                // Create a normalized vector (L2 norm = 1.0)
-                let dim = 384;
-                let value = 1.0 / (dim as f32).sqrt();
-                Ok(Embedding::new(vec![value; dim], text.to_string(), 2))
-            });
+        mock.expect_embed().times(1).returning(|text| {
+            // Create a normalized vector (L2 norm = 1.0)
+            let dim = 384;
+            let value = 1.0 / (dim as f32).sqrt();
+            Ok(Embedding::new(vec![value; dim], text.to_string(), 2))
+        });
 
         let result = mock.embed("test").await;
         assert!(result.is_ok());
         let embedding = result.unwrap();
 
         // Verify L2 norm is approximately 1.0
-        let norm: f32 = embedding
-            .vector
-            .iter()
-            .map(|x| x * x)
-            .sum::<f32>()
-            .sqrt();
+        let norm: f32 = embedding.vector.iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!((norm - 1.0).abs() < 1e-5);
     }
 
@@ -580,15 +573,13 @@ mod tests {
         // Long text with 1000+ characters
         let long_text = "a".repeat(1000);
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|text| {
-                Ok(Embedding::new(
-                    vec![0.1; 384],
-                    text.to_string(),
-                    256, // Typically truncated to max_length
-                ))
-            });
+        mock.expect_embed().times(1).returning(|text| {
+            Ok(Embedding::new(
+                vec![0.1; 384],
+                text.to_string(),
+                256, // Typically truncated to max_length
+            ))
+        });
 
         let result = mock.embed(&long_text).await;
         assert!(result.is_ok());
@@ -609,13 +600,7 @@ mod tests {
                 let mut mock = MockEmbeddingEngineTrait::new();
                 mock.expect_embed()
                     .times(1)
-                    .returning(|text| {
-                        Ok(Embedding::new(
-                            vec![0.1; 384],
-                            text.to_string(),
-                            2,
-                        ))
-                    });
+                    .returning(|text| Ok(Embedding::new(vec![0.1; 384], text.to_string(), 2)));
 
                 let text = format!("text {}", i);
                 mock.embed(&text).await
@@ -671,12 +656,7 @@ mod tests {
         assert_eq!(embedding.dimension(), 384);
 
         // Verify normalization (L2 norm should be ~1.0)
-        let norm: f32 = embedding
-            .vector
-            .iter()
-            .map(|x| x * x)
-            .sum::<f32>()
-            .sqrt();
+        let norm: f32 = embedding.vector.iter().map(|x| x * x).sum::<f32>().sqrt();
         assert!((norm - 1.0).abs() < 1e-3);
     }
 
@@ -770,12 +750,7 @@ mod tests {
             assert_eq!(embedding.dimension(), 384);
 
             // Verify normalization
-            let norm: f32 = embedding
-                .vector
-                .iter()
-                .map(|x| x * x)
-                .sum::<f32>()
-                .sqrt();
+            let norm: f32 = embedding.vector.iter().map(|x| x * x).sum::<f32>().sqrt();
             assert!((norm - 1.0).abs() < 1e-3);
         }
     }
@@ -970,10 +945,7 @@ mod tests {
 
     #[test]
     fn test_model_info_properties() {
-        let model_info = ModelInfo::all_mini_lm_l6_v2(
-            PathBuf::from("test.onnx"),
-            256,
-        );
+        let model_info = ModelInfo::all_mini_lm_l6_v2(PathBuf::from("test.onnx"), 256);
 
         assert_eq!(model_info.name, "all-MiniLM-L6-v2");
         assert_eq!(model_info.version, "1.0.0");
@@ -1051,15 +1023,13 @@ mod tests {
 
         let special_text = "Hello! @#$%^&*() 世界 🌍";
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|text| {
-                Ok(Embedding::new(
-                    vec![0.1; 384],
-                    text.to_string(),
-                    10, // Approximate token count
-                ))
-            });
+        mock.expect_embed().times(1).returning(|text| {
+            Ok(Embedding::new(
+                vec![0.1; 384],
+                text.to_string(),
+                10, // Approximate token count
+            ))
+        });
 
         let result = mock.embed(special_text).await;
         assert!(result.is_ok());
@@ -1079,20 +1049,18 @@ mod tests {
             "النص العربي",
         ];
 
-        mock.expect_embed_batch()
-            .times(1)
-            .returning(|texts| {
-                Ok(texts
-                    .iter()
-                    .map(|text| {
-                        Embedding::new(
-                            vec![0.1; 384],
-                            text.to_string(),
-                            5, // Approximate token count
-                        )
-                    })
-                    .collect())
-            });
+        mock.expect_embed_batch().times(1).returning(|texts| {
+            Ok(texts
+                .iter()
+                .map(|text| {
+                    Embedding::new(
+                        vec![0.1; 384],
+                        text.to_string(),
+                        5, // Approximate token count
+                    )
+                })
+                .collect())
+        });
 
         let text_refs: Vec<&str> = unicode_texts.iter().map(|s| s.as_ref()).collect();
         let result = mock.embed_batch(&text_refs).await;
@@ -1108,15 +1076,13 @@ mod tests {
         // Create a text with 10,000 characters
         let long_text = "a".repeat(10000);
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|text| {
-                Ok(Embedding::new(
-                    vec![0.1; 384],
-                    text.to_string(),
-                    256, // Truncated to max_length
-                ))
-            });
+        mock.expect_embed().times(1).returning(|text| {
+            Ok(Embedding::new(
+                vec![0.1; 384],
+                text.to_string(),
+                256, // Truncated to max_length
+            ))
+        });
 
         let result = mock.embed(&long_text).await;
         assert!(result.is_ok());
@@ -1135,27 +1101,21 @@ mod tests {
             "This is a very long text that contains many words and should be truncated",
         ];
 
-        mock.expect_embed_batch()
-            .times(1)
-            .returning(|texts| {
-                Ok(texts
-                    .iter()
-                    .enumerate()
-                    .map(|(i, text)| {
-                        let token_count = match i {
-                            0 => 2,
-                            1 => 5,
-                            2 => 15,
-                            _ => 0,
-                        };
-                        Embedding::new(
-                            vec![0.1; 384],
-                            text.to_string(),
-                            token_count,
-                        )
-                    })
-                    .collect())
-            });
+        mock.expect_embed_batch().times(1).returning(|texts| {
+            Ok(texts
+                .iter()
+                .enumerate()
+                .map(|(i, text)| {
+                    let token_count = match i {
+                        0 => 2,
+                        1 => 5,
+                        2 => 15,
+                        _ => 0,
+                    };
+                    Embedding::new(vec![0.1; 384], text.to_string(), token_count)
+                })
+                .collect())
+        });
 
         let result = mock.embed_batch(&texts).await;
         assert!(result.is_ok());
@@ -1174,13 +1134,11 @@ mod tests {
     async fn test_mock_tokenization_error() {
         let mut mock = MockEmbeddingEngineTrait::new();
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|_| {
-                Err(ContextMcpError::Embedding(
-                    "Tokenization failed: invalid input".to_string(),
-                ))
-            });
+        mock.expect_embed().times(1).returning(|_| {
+            Err(ContextMcpError::Embedding(
+                "Tokenization failed: invalid input".to_string(),
+            ))
+        });
 
         let result = mock.embed("test").await;
         assert!(result.is_err());
@@ -1196,13 +1154,11 @@ mod tests {
     async fn test_mock_inference_error() {
         let mut mock = MockEmbeddingEngineTrait::new();
 
-        mock.expect_embed_batch()
-            .times(1)
-            .returning(|_| {
-                Err(ContextMcpError::Embedding(
-                    "ONNX inference failed: model error".to_string(),
-                ))
-            });
+        mock.expect_embed_batch().times(1).returning(|_| {
+            Err(ContextMcpError::Embedding(
+                "ONNX inference failed: model error".to_string(),
+            ))
+        });
 
         let result = mock.embed_batch(&["text1", "text2"]).await;
         assert!(result.is_err());
@@ -1220,13 +1176,11 @@ mod tests {
         // which causes embed() to fail with "No embedding generated" error
         let mut mock = MockEmbeddingEngineTrait::new();
 
-        mock.expect_embed()
-            .times(1)
-            .returning(|_| {
-                Err(ContextMcpError::Embedding(
-                    "No embedding generated".to_string(),
-                ))
-            });
+        mock.expect_embed().times(1).returning(|_| {
+            Err(ContextMcpError::Embedding(
+                "No embedding generated".to_string(),
+            ))
+        });
 
         let result = mock.embed("test").await;
         assert!(result.is_err());
@@ -1255,13 +1209,7 @@ mod tests {
             mock_guard
                 .expect_embed()
                 .times(10)
-                .returning(|text| {
-                    Ok(Embedding::new(
-                        vec![0.1; 384],
-                        text.to_string(),
-                        2,
-                    ))
-                });
+                .returning(|text| Ok(Embedding::new(vec![0.1; 384], text.to_string(), 2)));
         }
 
         let handles: Vec<_> = (0..10)
@@ -1295,10 +1243,11 @@ mod tests {
         let mut mock = MockEmbeddingEngineTrait::new();
 
         mock.expect_dimension().return_const(384_usize);
-        mock.expect_model_info().return_const(ModelInfo::all_mini_lm_l6_v2(
-            PathBuf::from("test.onnx"),
-            256,
-        ));
+        mock.expect_model_info()
+            .return_const(ModelInfo::all_mini_lm_l6_v2(
+                PathBuf::from("test.onnx"),
+                256,
+            ));
         mock.expect_config().return_const(EmbeddingConfig {
             model_path: PathBuf::from("test.onnx"),
             tokenizer_path: PathBuf::from("tokenizer.json"),

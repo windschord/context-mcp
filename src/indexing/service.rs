@@ -517,7 +517,6 @@ mod tests {
         assert_eq!(progress.total_symbols(), 5);
     }
 
-
     // ==================================================================
     // Integration tests with IndexingService (requires real components)
     // ==================================================================
@@ -549,14 +548,7 @@ mod tests {
         let start = std::time::Instant::now();
         std::thread::sleep(std::time::Duration::from_millis(10));
 
-        let result = IndexResult::new(
-            true,
-            10,
-            8,
-            100,
-            Vec::new(),
-            start.elapsed(),
-        );
+        let result = IndexResult::new(true, 10, 8, 100, Vec::new(), start.elapsed());
 
         assert!(result.success);
         assert_eq!(result.total_files, 10);
@@ -567,11 +559,7 @@ mod tests {
 
     #[test]
     fn test_file_index_result_success() {
-        let result = FileIndexResult::success(
-            "/path/to/file.rs".to_string(),
-            5,
-            100,
-        );
+        let result = FileIndexResult::success("/path/to/file.rs".to_string(), 5, 100);
 
         assert!(result.success);
         assert_eq!(result.file_path, "/path/to/file.rs");
@@ -582,16 +570,9 @@ mod tests {
 
     #[test]
     fn test_file_index_result_error() {
-        let error = IndexError::parse(
-            "/path/to/file.rs".to_string(),
-            "Parse error".to_string(),
-        );
+        let error = IndexError::parse("/path/to/file.rs".to_string(), "Parse error".to_string());
 
-        let result = FileIndexResult::error(
-            "/path/to/file.rs".to_string(),
-            error.clone(),
-            50,
-        );
+        let result = FileIndexResult::error("/path/to/file.rs".to_string(), error.clone(), 50);
 
         assert!(!result.success);
         assert_eq!(result.symbol_count, 0);
@@ -628,11 +609,7 @@ mod tests {
         progress.add_symbols(10);
         assert_eq!(progress.total_symbols(), 10);
 
-        let error = IndexError::new(
-            "file.rs".to_string(),
-            "Error".to_string(),
-            ErrorKind::Io,
-        );
+        let error = IndexError::new("file.rs".to_string(), "Error".to_string(), ErrorKind::Io);
         progress.add_error(error);
         assert_eq!(progress.error_count(), 1);
     }
@@ -689,8 +666,14 @@ mod tests {
         for _ in 0..5 {
             progress.increment_processed();
         }
-        progress.add_error(IndexError::io("file1.rs".to_string(), "Error 1".to_string()));
-        progress.add_error(IndexError::io("file2.rs".to_string(), "Error 2".to_string()));
+        progress.add_error(IndexError::io(
+            "file1.rs".to_string(),
+            "Error 1".to_string(),
+        ));
+        progress.add_error(IndexError::io(
+            "file2.rs".to_string(),
+            "Error 2".to_string(),
+        ));
 
         let result = IndexResult::from_progress(&progress);
 
@@ -720,12 +703,9 @@ mod tests {
         // Create test file
         let temp_dir = std::env::temp_dir();
         let test_file = temp_dir.join("test_index_file.rs");
-        tokio::fs::write(
-            &test_file,
-            "fn hello() {\n    println!(\"Hello\");\n}\n",
-        )
-        .await
-        .expect("Failed to write test file");
+        tokio::fs::write(&test_file, "fn hello() {\n    println!(\"Hello\");\n}\n")
+            .await
+            .expect("Failed to write test file");
 
         // Setup mocks
         let mut mock_embedding = MockEmbeddingEngineTrait::new();
@@ -804,19 +784,17 @@ mod tests {
         // Create test file
         let temp_dir = std::env::temp_dir();
         let test_file = temp_dir.join("test_embedding_error.rs");
-        tokio::fs::write(
-            &test_file,
-            "fn test() {\n    println!(\"test\");\n}\n",
-        )
-        .await
-        .expect("Failed to write test file");
+        tokio::fs::write(&test_file, "fn test() {\n    println!(\"test\");\n}\n")
+            .await
+            .expect("Failed to write test file");
 
         // Setup mocks
         let mut mock_embedding = MockEmbeddingEngineTrait::new();
-        mock_embedding
-            .expect_embed_batch()
-            .times(1)
-            .returning(|_| Err(crate::error::ContextMcpError::Embedding("Model error".to_string())));
+        mock_embedding.expect_embed_batch().times(1).returning(|_| {
+            Err(crate::error::ContextMcpError::Embedding(
+                "Model error".to_string(),
+            ))
+        });
 
         let mock_storage = Arc::new(MockMilvusClientTrait::new());
         let service = create_test_service(Arc::new(mock_embedding), mock_storage);
@@ -840,12 +818,9 @@ mod tests {
         // Create test file
         let temp_dir = std::env::temp_dir();
         let test_file = temp_dir.join("test_storage_error.rs");
-        tokio::fs::write(
-            &test_file,
-            "fn test() {\n    println!(\"test\");\n}\n",
-        )
-        .await
-        .expect("Failed to write test file");
+        tokio::fs::write(&test_file, "fn test() {\n    println!(\"test\");\n}\n")
+            .await
+            .expect("Failed to write test file");
 
         // Setup mocks
         let mut mock_embedding = MockEmbeddingEngineTrait::new();
@@ -911,7 +886,8 @@ mod tests {
         let test_files: Vec<PathBuf> = (0..3)
             .map(|i| {
                 let path = temp_dir.join(format!("test_parallel_{}.rs", i));
-                std::fs::write(&path, format!("fn func_{}() {{}}", i)).expect("Failed to write file");
+                std::fs::write(&path, format!("fn func_{}() {{}}", i))
+                    .expect("Failed to write file");
                 path
             })
             .collect();
@@ -1077,7 +1053,9 @@ struct MyStruct {}
     #[tokio::test]
     async fn test_index_project_empty_directory() {
         let temp_dir = std::env::temp_dir().join(format!("empty_dir_{}", uuid::Uuid::new_v4()));
-        tokio::fs::create_dir(&temp_dir).await.expect("Failed to create temp dir");
+        tokio::fs::create_dir(&temp_dir)
+            .await
+            .expect("Failed to create temp dir");
 
         let mock_embedding = Arc::new(MockEmbeddingEngineTrait::new());
         let mock_storage = Arc::new(MockMilvusClientTrait::new());
@@ -1127,8 +1105,7 @@ struct MyStruct {}
 
         let service = create_test_service(Arc::new(mock_embedding), Arc::new(mock_storage));
 
-        let config = IndexConfig::new(temp_dir.clone())
-            .with_project_id("test-errors".to_string());
+        let config = IndexConfig::new(temp_dir.clone()).with_project_id("test-errors".to_string());
 
         let result = service
             .index_files(vec![valid_file.clone(), invalid_file], &config)
@@ -1317,7 +1294,9 @@ fn documented_func() {
     async fn test_index_project_with_scan_config() {
         // Create test directory
         let temp_dir = std::env::temp_dir().join(format!("scan_test_{}", uuid::Uuid::new_v4()));
-        tokio::fs::create_dir(&temp_dir).await.expect("Failed to create temp dir");
+        tokio::fs::create_dir(&temp_dir)
+            .await
+            .expect("Failed to create temp dir");
 
         // Create test file
         let test_file = temp_dir.join("test.rs");
@@ -1327,19 +1306,15 @@ fn documented_func() {
 
         // Setup mocks
         let mut mock_embedding = MockEmbeddingEngineTrait::new();
-        mock_embedding
-            .expect_embed_batch()
-            .returning(|texts| {
-                Ok(texts
-                    .iter()
-                    .map(|text| Embedding::new(vec![0.1; 384], text.to_string(), 10))
-                    .collect())
-            });
+        mock_embedding.expect_embed_batch().returning(|texts| {
+            Ok(texts
+                .iter()
+                .map(|text| Embedding::new(vec![0.1; 384], text.to_string(), 10))
+                .collect())
+        });
 
         let mut mock_storage = MockMilvusClientTrait::new();
-        mock_storage
-            .expect_insert()
-            .returning(|_, _| Ok(vec![]));
+        mock_storage.expect_insert().returning(|_, _| Ok(vec![]));
 
         let service = create_test_service(Arc::new(mock_embedding), Arc::new(mock_storage));
 

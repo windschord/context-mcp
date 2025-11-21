@@ -132,7 +132,10 @@ mod tests {
     #[test]
     fn test_config_error_variant() {
         let err = ContextMcpError::Config("Invalid configuration".to_string());
-        assert_eq!(err.to_string(), "Configuration error: Invalid configuration");
+        assert_eq!(
+            err.to_string(),
+            "Configuration error: Invalid configuration"
+        );
     }
 
     #[test]
@@ -381,4 +384,3 @@ mod tests {
         }
     }
 }
-

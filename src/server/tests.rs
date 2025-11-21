@@ -587,8 +587,8 @@ async fn test_server_double_initialization() {
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
     config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
 
     let server = ContextMcpServer::with_config(config);
 
@@ -601,7 +601,10 @@ async fn test_server_double_initialization() {
 
     // Second initialization should be skipped (returns Ok without reinitializing)
     let second_result = server.initialize().await;
-    assert!(second_result.is_ok(), "Second initialization should succeed (skip)");
+    assert!(
+        second_result.is_ok(),
+        "Second initialization should succeed (skip)"
+    );
 }
 
 // Error Response Format Tests
@@ -1168,7 +1171,7 @@ async fn test_search_code_none_values() {
         project_id: None,
         collection_name: None,
         file_types: None,
-        top_k: None, // Should default to 10
+        top_k: None,     // Should default to 10
         min_score: None, // Should default to 0.5
     };
 
@@ -1379,7 +1382,10 @@ async fn test_server_with_config_basic() {
 
 #[tokio::test]
 async fn test_server_from_config_file_not_found() {
-    let result = ContextMcpServer::from_config_file("/nonexistent/path/that/definitely/does/not/exist/config.json").await;
+    let result = ContextMcpServer::from_config_file(
+        "/nonexistent/path/that/definitely/does/not/exist/config.json",
+    )
+    .await;
     assert!(result.is_err() || result.is_ok()); // May return default config
 }
 
@@ -1929,8 +1935,8 @@ async fn test_server_full_initialization() {
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
 
     // Use Milvus address from environment or default
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
 
     let server = ContextMcpServer::with_config(config);
 
@@ -1950,11 +1956,20 @@ async fn test_server_full_initialization() {
     let state = server.state.read().await;
     assert!(state.initialized, "Server should be marked as initialized");
     assert!(state.parser.is_some(), "Parser should be initialized");
-    assert!(state.embedding.is_some(), "Embedding engine should be initialized");
+    assert!(
+        state.embedding.is_some(),
+        "Embedding engine should be initialized"
+    );
     assert!(state.storage.is_some(), "Storage should be initialized");
     assert!(state.bm25.is_some(), "BM25 engine should be initialized");
-    assert!(state.hybrid.is_some(), "Hybrid search engine should be initialized");
-    assert!(state.indexing.is_some(), "Indexing service should be initialized");
+    assert!(
+        state.hybrid.is_some(),
+        "Hybrid search engine should be initialized"
+    );
+    assert!(
+        state.indexing.is_some(),
+        "Indexing service should be initialized"
+    );
 }
 
 #[tokio::test]
@@ -1968,8 +1983,8 @@ async fn test_index_project_real_integration() {
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
     config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
     config.indexing.collection_name = format!("test_collection_{}", chrono::Utc::now().timestamp());
 
     let server = ContextMcpServer::with_config(config);
@@ -1994,7 +2009,8 @@ fn add(a: i32, b: i32) -> i32 {
     a + b
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Index the project
     let params = IndexProjectParams {
@@ -2028,9 +2044,10 @@ async fn test_search_code_real_integration() {
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
     config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
-    config.indexing.collection_name = format!("test_search_collection_{}", chrono::Utc::now().timestamp());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name =
+        format!("test_search_collection_{}", chrono::Utc::now().timestamp());
 
     let server = ContextMcpServer::with_config(config);
 
@@ -2056,7 +2073,8 @@ fn main() {
     println!("Sum: {}", total);
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Index the project first
     let index_params = IndexProjectParams {
@@ -2068,7 +2086,10 @@ fn main() {
     };
 
     let index_result = server.index_project(Parameters(index_params)).await;
-    assert!(index_result.is_ok(), "Indexing should succeed before search");
+    assert!(
+        index_result.is_ok(),
+        "Indexing should succeed before search"
+    );
 
     // Wait a bit for indexing to complete
     tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
@@ -2102,9 +2123,10 @@ async fn test_get_symbol_real_integration() {
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
     config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
-    config.indexing.collection_name = format!("test_symbol_collection_{}", chrono::Utc::now().timestamp());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name =
+        format!("test_symbol_collection_{}", chrono::Utc::now().timestamp());
 
     let server = ContextMcpServer::with_config(config);
 
@@ -2134,7 +2156,8 @@ impl MyStruct {
     }
 }
 "#,
-    ).unwrap();
+    )
+    .unwrap();
 
     // Index the project
     let index_params = IndexProjectParams {
@@ -2177,9 +2200,10 @@ async fn test_clear_index_real_integration() {
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
     config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
     config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
-    config.milvus.address = std::env::var("MILVUS_ADDRESS")
-        .unwrap_or_else(|_| "localhost:19530".to_string());
-    config.indexing.collection_name = format!("test_clear_collection_{}", chrono::Utc::now().timestamp());
+    config.milvus.address =
+        std::env::var("MILVUS_ADDRESS").unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name =
+        format!("test_clear_collection_{}", chrono::Utc::now().timestamp());
 
     let server = ContextMcpServer::with_config(config);
 

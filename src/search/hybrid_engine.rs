@@ -626,14 +626,7 @@ mod tests {
     #[test]
     fn test_hybrid_result_vector_only() {
         let record = create_test_vector_record("test_id", "test.rs");
-        let result = HybridResult::new(
-            "test_id".to_string(),
-            0.9,
-            None,
-            Some(0.9),
-            record,
-            vec![],
-        );
+        let result = HybridResult::new("test_id".to_string(), 0.9, None, Some(0.9), record, vec![]);
 
         assert!(!result.has_bm25());
         assert!(result.has_vector());
@@ -741,13 +734,14 @@ mod tests {
 
             // Create engine with dummy components (we're only testing merge_results)
             let bm25 = Arc::new(BM25Engine::new_in_memory().unwrap());
-            let embedding = Arc::new(
-                crate::embedding::EmbeddingEngine::new(
-                    crate::embedding::EmbeddingConfig::default(),
-                )
-                .await
-                .unwrap(),
-            );
+            let embedding =
+                Arc::new(
+                    crate::embedding::EmbeddingEngine::new(
+                        crate::embedding::EmbeddingConfig::default(),
+                    )
+                    .await
+                    .unwrap(),
+                );
             let milvus = Arc::new(
                 crate::storage::MilvusClient::new("http://localhost:19530")
                     .await
@@ -839,11 +833,7 @@ mod tests {
             // Test various valid alpha values
             for alpha in [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0] {
                 let config = HybridConfig::new(alpha, 10);
-                assert!(
-                    config.validate().is_ok(),
-                    "Alpha {} should be valid",
-                    alpha
-                );
+                assert!(config.validate().is_ok(), "Alpha {} should be valid", alpha);
             }
 
             // Test invalid alpha values
@@ -862,11 +852,7 @@ mod tests {
             // Test various top_k values
             for top_k in [1, 5, 10, 20, 50, 100] {
                 let config = HybridConfig::new(0.3, top_k);
-                assert!(
-                    config.validate().is_ok(),
-                    "top_k {} should be valid",
-                    top_k
-                );
+                assert!(config.validate().is_ok(), "top_k {} should be valid", top_k);
                 assert_eq!(config.top_k, top_k);
                 assert_eq!(config.bm25_top_k, top_k * 3);
                 assert_eq!(config.vector_top_k, top_k * 3);
@@ -983,16 +969,13 @@ mod tests {
 
         #[test]
         fn test_hybrid_config_normalization_types() {
-            let config = HybridConfig::new(0.3, 10)
-                .with_normalization(NormalizationType::MinMax);
+            let config = HybridConfig::new(0.3, 10).with_normalization(NormalizationType::MinMax);
             assert_eq!(config.normalization, NormalizationType::MinMax);
 
-            let config = HybridConfig::new(0.3, 10)
-                .with_normalization(NormalizationType::ZScore);
+            let config = HybridConfig::new(0.3, 10).with_normalization(NormalizationType::ZScore);
             assert_eq!(config.normalization, NormalizationType::ZScore);
 
-            let config = HybridConfig::new(0.3, 10)
-                .with_normalization(NormalizationType::None);
+            let config = HybridConfig::new(0.3, 10).with_normalization(NormalizationType::None);
             assert_eq!(config.normalization, NormalizationType::None);
         }
 
