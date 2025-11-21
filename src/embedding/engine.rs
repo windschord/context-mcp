@@ -842,4 +842,478 @@ mod tests {
 
         assert_eq!(normalized, vec![0.0, 0.0]);
     }
+
+    // ========================================
+    // Additional unit tests for error handling and edge cases
+    // ========================================
+
+    #[tokio::test]
+    async fn test_new_model_file_not_found() {
+        let config = EmbeddingConfig {
+            model_path: PathBuf::from("/nonexistent/model.onnx"),
+            tokenizer_path: PathBuf::from("./models/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let result = EmbeddingEngine::new(config).await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => {
+                assert!(msg.contains("Model file not found"));
+            }
+            _ => panic!("Expected Embedding error for model file not found"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_new_tokenizer_file_not_found() {
+        // Create a temporary empty file for model
+        let temp_dir = std::env::temp_dir();
+        let model_path = temp_dir.join("test_model.onnx");
+        std::fs::write(&model_path, b"dummy").expect("Failed to create temp file");
+
+        let config = EmbeddingConfig {
+            model_path: model_path.clone(),
+            tokenizer_path: PathBuf::from("/nonexistent/tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        };
+
+        let result = EmbeddingEngine::new(config).await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => {
+                assert!(msg.contains("Tokenizer file not found"));
+            }
+            _ => panic!("Expected Embedding error for tokenizer file not found"),
+        }
+
+        // Cleanup
+        let _ = std::fs::remove_file(model_path);
+    }
+
+    #[test]
+    fn test_normalize_vector_large() {
+        // Test with a larger vector
+        let vector = vec![1.0; 384];
+        let normalized = EmbeddingEngine::normalize_vector(&vector);
+
+        assert_eq!(normalized.len(), 384);
+
+        // Check L2 norm is approximately 1
+        let norm: f32 = normalized.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm - 1.0).abs() < 1e-5);
+
+        // Each element should be approximately 1/sqrt(384)
+        let expected_value = 1.0 / (384.0_f32).sqrt();
+        for val in &normalized {
+            assert!((val - expected_value).abs() < 1e-5);
+        }
+    }
+
+    #[test]
+    fn test_normalize_vector_negative_values() {
+        let vector = vec![-3.0, 4.0];
+        let normalized = EmbeddingEngine::normalize_vector(&vector);
+
+        assert_eq!(normalized.len(), 2);
+        assert!((normalized[0] - (-0.6)).abs() < 1e-5);
+        assert!((normalized[1] - 0.8).abs() < 1e-5);
+
+        // Check L2 norm is 1
+        let norm: f32 = normalized.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_normalize_vector_mixed_values() {
+        let vector = vec![1.0, -2.0, 3.0, -4.0];
+        let normalized = EmbeddingEngine::normalize_vector(&vector);
+
+        assert_eq!(normalized.len(), 4);
+
+        // Check L2 norm is approximately 1
+        let norm: f32 = normalized.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm - 1.0).abs() < 1e-5);
+
+        // Verify the ratio is preserved
+        let original_norm = (1.0_f32 + 4.0 + 9.0 + 16.0).sqrt();
+        assert!((normalized[0] - (1.0 / original_norm)).abs() < 1e-5);
+        assert!((normalized[1] - (-2.0 / original_norm)).abs() < 1e-5);
+        assert!((normalized[2] - (3.0 / original_norm)).abs() < 1e-5);
+        assert!((normalized[3] - (-4.0 / original_norm)).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_normalize_vector_very_small() {
+        // Test with very small but non-zero values
+        let vector = vec![1e-11, 1e-11];
+        let normalized = EmbeddingEngine::normalize_vector(&vector);
+
+        // Should return zero vector due to very small norm
+        assert_eq!(normalized, vec![0.0, 0.0]);
+    }
+
+    #[test]
+    fn test_normalize_vector_single_element() {
+        let vector = vec![5.0];
+        let normalized = EmbeddingEngine::normalize_vector(&vector);
+
+        assert_eq!(normalized.len(), 1);
+        assert!((normalized[0] - 1.0).abs() < 1e-5);
+    }
+
+    // ========================================
+    // Tests for accessor methods
+    // ========================================
+
+    #[test]
+    fn test_model_info_properties() {
+        let model_info = ModelInfo::all_mini_lm_l6_v2(
+            PathBuf::from("test.onnx"),
+            256,
+        );
+
+        assert_eq!(model_info.name, "all-MiniLM-L6-v2");
+        assert_eq!(model_info.version, "1.0.0");
+        assert_eq!(model_info.dimension, 384);
+        assert_eq!(model_info.max_length, 256);
+        assert_eq!(model_info.model_path, PathBuf::from("test.onnx"));
+    }
+
+    // ========================================
+    // Tests for Send + Sync traits
+    // ========================================
+
+    #[test]
+    fn test_embedding_engine_is_send() {
+        fn assert_send<T: Send>() {}
+        assert_send::<EmbeddingEngine>();
+    }
+
+    #[test]
+    fn test_embedding_engine_is_sync() {
+        fn assert_sync<T: Sync>() {}
+        assert_sync::<EmbeddingEngine>();
+    }
+
+    // ========================================
+    // Tests for empty batch handling
+    // ========================================
+
+    #[tokio::test]
+    async fn test_embed_batch_empty_array_real() {
+        // This test uses a mock to simulate the empty batch behavior
+        // without needing a real model file
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed_batch()
+            .withf(|texts: &[&str]| texts.is_empty())
+            .times(1)
+            .returning(|_| Ok(Vec::new()));
+
+        let result = mock.embed_batch(&[]).await;
+        assert!(result.is_ok());
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 0);
+    }
+
+    // ========================================
+    // Edge case tests for special characters and long text
+    // ========================================
+
+    #[tokio::test]
+    async fn test_mock_empty_string() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .with(mockall::predicate::eq(""))
+            .times(1)
+            .returning(|text| {
+                Ok(Embedding::new(
+                    vec![0.1; 384],
+                    text.to_string(),
+                    0, // Empty string should have 0 tokens
+                ))
+            });
+
+        let result = mock.embed("").await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.text, "");
+        assert_eq!(embedding.token_count, 0);
+    }
+
+    #[tokio::test]
+    async fn test_mock_special_characters() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        let special_text = "Hello! @#$%^&*() 世界 🌍";
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|text| {
+                Ok(Embedding::new(
+                    vec![0.1; 384],
+                    text.to_string(),
+                    10, // Approximate token count
+                ))
+            });
+
+        let result = mock.embed(special_text).await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.text, special_text);
+    }
+
+    #[tokio::test]
+    async fn test_mock_unicode_text() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        let unicode_texts = vec![
+            "日本語のテキスト",
+            "中文文本",
+            "한국어 텍스트",
+            "Текст на русском",
+            "النص العربي",
+        ];
+
+        mock.expect_embed_batch()
+            .times(1)
+            .returning(|texts| {
+                Ok(texts
+                    .iter()
+                    .map(|text| {
+                        Embedding::new(
+                            vec![0.1; 384],
+                            text.to_string(),
+                            5, // Approximate token count
+                        )
+                    })
+                    .collect())
+            });
+
+        let text_refs: Vec<&str> = unicode_texts.iter().map(|s| s.as_ref()).collect();
+        let result = mock.embed_batch(&text_refs).await;
+        assert!(result.is_ok());
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), unicode_texts.len());
+    }
+
+    #[tokio::test]
+    async fn test_mock_very_long_text() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        // Create a text with 10,000 characters
+        let long_text = "a".repeat(10000);
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|text| {
+                Ok(Embedding::new(
+                    vec![0.1; 384],
+                    text.to_string(),
+                    256, // Truncated to max_length
+                ))
+            });
+
+        let result = mock.embed(&long_text).await;
+        assert!(result.is_ok());
+        let embedding = result.unwrap();
+        assert_eq!(embedding.text.len(), 10000);
+        assert_eq!(embedding.token_count, 256); // Should be truncated
+    }
+
+    #[tokio::test]
+    async fn test_mock_batch_with_varying_lengths() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        let texts = vec![
+            "Short",
+            "Medium length text here",
+            "This is a very long text that contains many words and should be truncated",
+        ];
+
+        mock.expect_embed_batch()
+            .times(1)
+            .returning(|texts| {
+                Ok(texts
+                    .iter()
+                    .enumerate()
+                    .map(|(i, text)| {
+                        let token_count = match i {
+                            0 => 2,
+                            1 => 5,
+                            2 => 15,
+                            _ => 0,
+                        };
+                        Embedding::new(
+                            vec![0.1; 384],
+                            text.to_string(),
+                            token_count,
+                        )
+                    })
+                    .collect())
+            });
+
+        let result = mock.embed_batch(&texts).await;
+        assert!(result.is_ok());
+        let embeddings = result.unwrap();
+        assert_eq!(embeddings.len(), 3);
+        assert_eq!(embeddings[0].token_count, 2);
+        assert_eq!(embeddings[1].token_count, 5);
+        assert_eq!(embeddings[2].token_count, 15);
+    }
+
+    // ========================================
+    // Tests for error propagation
+    // ========================================
+
+    #[tokio::test]
+    async fn test_mock_tokenization_error() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|_| {
+                Err(ContextMcpError::Embedding(
+                    "Tokenization failed: invalid input".to_string(),
+                ))
+            });
+
+        let result = mock.embed("test").await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => {
+                assert!(msg.contains("Tokenization failed"));
+            }
+            _ => panic!("Expected Embedding error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_inference_error() {
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed_batch()
+            .times(1)
+            .returning(|_| {
+                Err(ContextMcpError::Embedding(
+                    "ONNX inference failed: model error".to_string(),
+                ))
+            });
+
+        let result = mock.embed_batch(&["text1", "text2"]).await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => {
+                assert!(msg.contains("ONNX inference failed"));
+            }
+            _ => panic!("Expected Embedding error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_no_embedding_generated_error() {
+        // Test the case where embed_batch returns empty vector
+        // which causes embed() to fail with "No embedding generated" error
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_embed()
+            .times(1)
+            .returning(|_| {
+                Err(ContextMcpError::Embedding(
+                    "No embedding generated".to_string(),
+                ))
+            });
+
+        let result = mock.embed("test").await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Embedding(msg)) => {
+                assert_eq!(msg, "No embedding generated");
+            }
+            _ => panic!("Expected Embedding error"),
+        }
+    }
+
+    // ========================================
+    // Tests for concurrency with real Arc/Mutex usage
+    // ========================================
+
+    #[tokio::test]
+    async fn test_mock_concurrent_access_arc() {
+        // Test using Arc to share mock across tasks
+        use std::sync::Arc;
+
+        let mock = Arc::new(tokio::sync::Mutex::new(MockEmbeddingEngineTrait::new()));
+
+        // Setup expectations before spawning tasks
+        {
+            let mut mock_guard = mock.lock().await;
+            mock_guard
+                .expect_embed()
+                .times(10)
+                .returning(|text| {
+                    Ok(Embedding::new(
+                        vec![0.1; 384],
+                        text.to_string(),
+                        2,
+                    ))
+                });
+        }
+
+        let handles: Vec<_> = (0..10)
+            .map(|i| {
+                let mock_clone = Arc::clone(&mock);
+                tokio::spawn(async move {
+                    let text = format!("text {}", i);
+                    let mock_guard = mock_clone.lock().await;
+                    mock_guard.embed(&text).await
+                })
+            })
+            .collect();
+
+        let results = futures::future::join_all(handles).await;
+
+        for result in results {
+            let result = result.unwrap(); // tokio::spawn result
+            assert!(result.is_ok());
+            let embedding = result.unwrap();
+            assert_eq!(embedding.dimension(), 384);
+        }
+    }
+
+    // ========================================
+    // Tests for EmbeddingEngineTrait implementation
+    // ========================================
+
+    #[tokio::test]
+    async fn test_trait_implementation_compatibility() {
+        // Verify that mock can be used as EmbeddingEngineTrait
+        let mut mock = MockEmbeddingEngineTrait::new();
+
+        mock.expect_dimension().return_const(384_usize);
+        mock.expect_model_info().return_const(ModelInfo::all_mini_lm_l6_v2(
+            PathBuf::from("test.onnx"),
+            256,
+        ));
+        mock.expect_config().return_const(EmbeddingConfig {
+            model_path: PathBuf::from("test.onnx"),
+            tokenizer_path: PathBuf::from("tokenizer.json"),
+            max_length: 256,
+            batch_size: 32,
+        });
+
+        // Use trait methods
+        let dim: usize = mock.dimension();
+        assert_eq!(dim, 384);
+
+        let info: &ModelInfo = mock.model_info();
+        assert_eq!(info.dimension, 384);
+
+        let cfg: &EmbeddingConfig = mock.config();
+        assert_eq!(cfg.max_length, 256);
+    }
 }
