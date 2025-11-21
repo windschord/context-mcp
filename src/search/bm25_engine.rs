@@ -722,4 +722,462 @@ mod tests {
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].metadata.get("lang"), Some(&"rust".to_string()));
     }
+
+    // ========================================
+    // Additional comprehensive tests for BM25Engine
+    // ========================================
+
+    #[test]
+    fn test_search_with_empty_query() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+        engine.index_document("doc1", "test content").unwrap();
+
+        let results = engine.search("", 10).unwrap();
+        assert_eq!(results.len(), 0, "Empty query should return no results");
+    }
+
+    #[test]
+    fn test_search_with_whitespace_only_query() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+        engine.index_document("doc1", "test content").unwrap();
+
+        let results = engine.search("   \t\n  ", 10).unwrap();
+        assert_eq!(results.len(), 0, "Whitespace-only query should return no results");
+    }
+
+    #[test]
+    fn test_search_with_very_long_query() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+        engine.index_document("doc1", "test content").unwrap();
+
+        // Create a very long query (1000 words)
+        let long_query = "test ".repeat(1000);
+        let results = engine.search(&long_query, 10).unwrap();
+        assert!(results.len() <= 10);
+    }
+
+    #[test]
+    fn test_index_empty_text() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Should succeed even with empty text
+        engine.index_document("doc1", "").unwrap();
+        assert_eq!(engine.document_count().unwrap(), 1);
+
+        // Search should not find it
+        let results = engine.search("test", 10).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_index_special_characters() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "test@example.com").unwrap();
+        engine.index_document("doc2", "user_name").unwrap();
+        engine.index_document("doc3", "hello-world").unwrap();
+        engine.index_document("doc4", "func()").unwrap();
+
+        // Search should handle special characters
+        let results = engine.search("test", 10).unwrap();
+        assert!(results.len() > 0);
+    }
+
+    #[test]
+    fn test_index_unicode_text() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "こんにちは世界").unwrap();
+        engine.index_document("doc2", "Hello 世界").unwrap();
+        engine.index_document("doc3", "🚀 Rust 🦀").unwrap();
+
+        assert_eq!(engine.document_count().unwrap(), 3);
+    }
+
+    #[test]
+    fn test_reindex_document() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Index document first time
+        engine.index_document("doc1", "original content").unwrap();
+        let results = engine.search("original", 10).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // Reindex with new content
+        engine.index_document("doc1", "updated content").unwrap();
+
+        // Old term should not be found
+        let results = engine.search("original", 10).unwrap();
+        assert_eq!(results.len(), 0);
+
+        // New term should be found
+        let results = engine.search("updated", 10).unwrap();
+        assert_eq!(results.len(), 1);
+
+        // Document count should still be 1
+        assert_eq!(engine.document_count().unwrap(), 1);
+    }
+
+    #[test]
+    fn test_batch_indexing() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        let docs = vec![
+            ("doc1".to_string(), "first document".to_string()),
+            ("doc2".to_string(), "second document".to_string()),
+            ("doc3".to_string(), "third document".to_string()),
+        ];
+
+        engine.index_documents(docs).unwrap();
+        assert_eq!(engine.document_count().unwrap(), 3);
+
+        let results = engine.search("document", 10).unwrap();
+        assert_eq!(results.len(), 3);
+    }
+
+    #[test]
+    fn test_batch_indexing_with_metadata() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        let mut docs = Vec::new();
+        for i in 1..=5 {
+            let mut metadata = HashMap::new();
+            metadata.insert("index".to_string(), i.to_string());
+            docs.push(Document::with_metadata(
+                format!("doc{}", i),
+                format!("document number {}", i),
+                metadata,
+            ));
+        }
+
+        engine.index_documents_batch(docs).unwrap();
+        assert_eq!(engine.document_count().unwrap(), 5);
+    }
+
+    #[test]
+    fn test_remove_nonexistent_document() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Should not error when removing nonexistent document
+        engine.remove_document("nonexistent").unwrap();
+        assert_eq!(engine.document_count().unwrap(), 0);
+    }
+
+    #[test]
+    fn test_search_on_empty_index() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        let results = engine.search("test", 10).unwrap();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_clear_empty_index() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Should not error on empty index
+        engine.clear().unwrap();
+        assert_eq!(engine.document_count().unwrap(), 0);
+    }
+
+    #[test]
+    fn test_search_with_min_score() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "rust rust rust programming").unwrap();
+        engine.index_document("doc2", "rust programming").unwrap();
+        engine.index_document("doc3", "python programming").unwrap();
+
+        // Search with high min_score threshold
+        let options = SearchOptions::new().with_min_score(1.0);
+        let results = engine.search_with_options("rust", options).unwrap();
+
+        // Should filter out low-scoring results
+        assert!(results.iter().all(|r| r.score >= 1.0));
+    }
+
+    #[test]
+    fn test_search_without_text() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "test content").unwrap();
+
+        let options = SearchOptions::new().with_include_text(false);
+        let results = engine.search_with_options("test", options).unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].text, "");
+    }
+
+    #[test]
+    fn test_search_without_metadata() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        let mut metadata = HashMap::new();
+        metadata.insert("key".to_string(), "value".to_string());
+        let doc = Document::with_metadata("doc1".to_string(), "test content".to_string(), metadata);
+        engine.index_document_with_metadata(doc).unwrap();
+
+        let options = SearchOptions::new().with_include_metadata(false);
+        let results = engine.search_with_options("test", options).unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert!(results[0].metadata.is_empty());
+    }
+
+    #[test]
+    fn test_idf_calculation() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Index documents where "rust" appears in all docs (low IDF)
+        // and "unique" appears in only one doc (high IDF)
+        engine.index_document("doc1", "rust programming unique").unwrap();
+        engine.index_document("doc2", "rust development").unwrap();
+        engine.index_document("doc3", "rust coding").unwrap();
+
+        let results = engine.search("unique rust", 10).unwrap();
+
+        // The document with "unique" should score highest
+        assert_eq!(results[0].id, "doc1");
+    }
+
+    #[test]
+    fn test_term_frequency_impact() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // doc1 has "test" 5 times
+        engine.index_document("doc1", "test test test test test").unwrap();
+        // doc2 has "test" 1 time
+        engine.index_document("doc2", "test").unwrap();
+
+        let results = engine.search("test", 10).unwrap();
+
+        // doc1 should score higher due to higher term frequency
+        assert_eq!(results[0].id, "doc1");
+        assert!(results[0].score > results[1].score);
+    }
+
+    #[test]
+    fn test_document_length_normalization() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Short document with term
+        engine.index_document("doc1", "rust").unwrap();
+        // Long document with same term
+        engine.index_document("doc2", &format!("rust {}", "filler ".repeat(100))).unwrap();
+
+        let results = engine.search("rust", 10).unwrap();
+
+        // Both should be found
+        assert_eq!(results.len(), 2);
+        // Document length normalization should affect scores
+        assert_ne!(results[0].score, results[1].score);
+    }
+
+    #[test]
+    fn test_multiple_query_terms() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "rust programming language").unwrap();
+        engine.index_document("doc2", "rust only").unwrap();
+        engine.index_document("doc3", "programming only").unwrap();
+
+        let results = engine.search("rust programming", 10).unwrap();
+
+        // doc1 should score highest (has both terms)
+        assert_eq!(results[0].id, "doc1");
+        assert!(results[0].matched_terms.len() >= 2 || results[0].matched_terms.contains(&"rust".to_string()) || results[0].matched_terms.contains(&"programming".to_string()));
+    }
+
+    #[test]
+    fn test_matched_terms() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "rust programming language").unwrap();
+
+        let results = engine.search("rust language", 10).unwrap();
+
+        assert_eq!(results.len(), 1);
+        assert!(results[0].matched_terms.contains(&"rust".to_string()) ||
+                results[0].matched_terms.contains(&"language".to_string()));
+    }
+
+    #[test]
+    fn test_stats_empty_index() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        let stats = engine.get_stats().unwrap();
+        assert_eq!(stats.document_count, 0);
+        assert_eq!(stats.term_count, 0);
+        assert_eq!(stats.avg_doc_length, 0.0);
+        assert_eq!(stats.total_tokens, 0);
+    }
+
+    #[test]
+    fn test_stats_after_indexing() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "hello world").unwrap();
+        engine.index_document("doc2", "hello rust").unwrap();
+
+        let stats = engine.get_stats().unwrap();
+        assert_eq!(stats.document_count, 2);
+        assert!(stats.term_count >= 2);
+        assert!(stats.avg_doc_length > 0.0);
+        assert!(stats.total_tokens >= 4);
+    }
+
+    #[test]
+    fn test_custom_bm25_config() {
+        let engine = BM25Engine::new_in_memory()
+            .unwrap()
+            .with_config(BM25Config::new(1.5, 0.9))
+            .unwrap();
+
+        engine.index_document("doc1", "test document").unwrap();
+
+        let results = engine.search("test", 10).unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_invalid_bm25_config() {
+        let result = BM25Engine::new_in_memory()
+            .unwrap()
+            .with_config(BM25Config::new(-1.0, 0.5));
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_score_ordering() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Create documents with varying relevance
+        engine.index_document("doc1", "rust rust rust").unwrap();
+        engine.index_document("doc2", "rust rust").unwrap();
+        engine.index_document("doc3", "rust").unwrap();
+
+        let results = engine.search("rust", 10).unwrap();
+
+        // Verify descending score order
+        for i in 1..results.len() {
+            assert!(results[i-1].score >= results[i].score,
+                    "Results should be in descending score order");
+        }
+    }
+
+    #[test]
+    fn test_top_k_limiting() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Index many documents
+        for i in 1..=20 {
+            engine.index_document(&format!("doc{}", i), "test document").unwrap();
+        }
+
+        // Request only top 5
+        let results = engine.search("test", 5).unwrap();
+        assert_eq!(results.len(), 5);
+
+        // Request more than available
+        let results = engine.search("test", 100).unwrap();
+        assert_eq!(results.len(), 20);
+    }
+
+    #[test]
+    fn test_case_insensitivity() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "RUST Programming").unwrap();
+        engine.index_document("doc2", "rust programming").unwrap();
+
+        // Different case queries should find documents
+        let results1 = engine.search("rust", 10).unwrap();
+        let results2 = engine.search("RUST", 10).unwrap();
+        let results3 = engine.search("Rust", 10).unwrap();
+
+        // All should return same number of results (case-insensitive)
+        assert_eq!(results1.len(), results2.len());
+        assert_eq!(results2.len(), results3.len());
+    }
+
+    #[test]
+    fn test_concurrent_reads() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let engine = Arc::new(BM25Engine::new_in_memory().unwrap());
+
+        // Index some documents
+        engine.index_document("doc1", "test content").unwrap();
+        engine.index_document("doc2", "rust programming").unwrap();
+
+        // Spawn multiple threads doing searches
+        let mut handles = vec![];
+        for _ in 0..5 {
+            let engine_clone = engine.clone();
+            handles.push(thread::spawn(move || {
+                let results = engine_clone.search("test", 10).unwrap();
+                assert!(results.len() >= 0);
+            }));
+        }
+
+        for handle in handles {
+            handle.join().unwrap();
+        }
+    }
+
+    #[test]
+    fn test_clear_and_reindex() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        // Index documents
+        engine.index_document("doc1", "first batch").unwrap();
+        engine.index_document("doc2", "first batch").unwrap();
+        assert_eq!(engine.document_count().unwrap(), 2);
+
+        // Clear
+        engine.clear().unwrap();
+        assert_eq!(engine.document_count().unwrap(), 0);
+
+        // Reindex new documents
+        engine.index_document("doc3", "second batch").unwrap();
+        engine.index_document("doc4", "second batch").unwrap();
+        assert_eq!(engine.document_count().unwrap(), 2);
+
+        // Old documents should not be found
+        let results = engine.search("first", 10).unwrap();
+        assert_eq!(results.len(), 0);
+
+        // New documents should be found
+        let results = engine.search("second", 10).unwrap();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_document_with_numbers() {
+        let engine = BM25Engine::new_in_memory().unwrap();
+
+        engine.index_document("doc1", "version 1.0.0").unwrap();
+        engine.index_document("doc2", "port 8080").unwrap();
+        engine.index_document("doc3", "year 2024").unwrap();
+
+        let results = engine.search("version", 10).unwrap();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_with_custom_tokenizer() {
+        use crate::search::tokenizer::Tokenizer;
+
+        let engine = BM25Engine::new_in_memory()
+            .unwrap()
+            .with_tokenizer(Tokenizer::code());
+
+        engine.index_document("doc1", "fn main() { println!(\"hello\"); }").unwrap();
+
+        let results = engine.search("main", 10).unwrap();
+        assert_eq!(results.len(), 1);
+    }
 }

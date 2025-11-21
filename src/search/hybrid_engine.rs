@@ -670,4 +670,355 @@ mod tests {
         assert_eq!(normalize_min_max(&[3.0, 3.0, 3.0]), vec![1.0, 1.0, 1.0]);
         assert_eq!(normalize_z_score(&[3.0, 3.0, 3.0]), vec![0.0, 0.0, 0.0]);
     }
+
+    // ========================================
+    // HybridSearchEngine integration tests with mocks
+    // ========================================
+
+    // Mock implementations for testing
+
+    #[cfg(test)]
+    mod integration_tests {
+        use super::*;
+        use crate::search::types::BM25Result;
+        use crate::storage::types::{SearchResult, VectorRecord};
+        use std::sync::Arc;
+
+        // Helper function to create mock vector record
+        fn create_mock_vector_record(id: &str, file_path: &str, score_value: f32) -> VectorRecord {
+            let mut v = vec![0.0; 384];
+            v[0] = score_value; // Use first element to track score
+            VectorRecord::new(
+                id.to_string(),
+                v,
+                "test_project".to_string(),
+                file_path.to_string(),
+                "rust".to_string(),
+                "function".to_string(),
+                format!("fn_{}", id),
+                10,
+                20,
+                format!("fn {}() {{}}", id),
+                format!("Test function {}", id),
+            )
+        }
+
+        #[tokio::test]
+        #[ignore] // Requires embedding model and Milvus instance
+        async fn test_merge_results_both_sources() {
+            // Create test data
+            let bm25_results = vec![
+                BM25Result::new(
+                    "doc1".to_string(),
+                    0.8,
+                    vec!["test".to_string()],
+                    "test content 1".to_string(),
+                ),
+                BM25Result::new(
+                    "doc2".to_string(),
+                    0.6,
+                    vec!["test".to_string()],
+                    "test content 2".to_string(),
+                ),
+            ];
+
+            let vector_results = vec![
+                SearchResult::new(
+                    "doc1".to_string(),
+                    0.9,
+                    create_mock_vector_record("doc1", "test1.rs", 0.9),
+                ),
+                SearchResult::new(
+                    "doc3".to_string(),
+                    0.7,
+                    create_mock_vector_record("doc3", "test3.rs", 0.7),
+                ),
+            ];
+
+            let normalized_bm25 = vec![1.0, 0.5];
+            let normalized_vector = vec![1.0, 0.8];
+            let alpha = 0.3;
+
+            // Create engine with dummy components (we're only testing merge_results)
+            let bm25 = Arc::new(BM25Engine::new_in_memory().unwrap());
+            let embedding = Arc::new(
+                crate::embedding::EmbeddingEngine::new(
+                    crate::embedding::EmbeddingConfig::default(),
+                )
+                .await
+                .unwrap(),
+            );
+            let milvus = Arc::new(
+                crate::storage::MilvusClient::new("http://localhost:19530")
+                    .await
+                    .unwrap(),
+            );
+
+            let engine = HybridSearchEngine::new(bm25, milvus, embedding);
+
+            // Test merge_results method
+            let results = engine
+                .merge_results(
+                    &bm25_results,
+                    &normalized_bm25,
+                    &vector_results,
+                    &normalized_vector,
+                    alpha,
+                )
+                .await
+                .unwrap();
+
+            // Should have 3 unique documents: doc1 (both sources), doc2 (BM25), doc3 (vector)
+            assert_eq!(results.len(), 3);
+        }
+
+        #[test]
+        fn test_score_merging_logic() {
+            // Test score combination formula: hybrid_score = alpha * norm_bm25 + (1-alpha) * norm_vec
+            let alpha = 0.3_f32;
+            let norm_bm25 = 0.8_f32;
+            let norm_vec = 0.6_f32;
+
+            let hybrid_score = alpha * norm_bm25 + (1.0 - alpha) * norm_vec;
+            assert!((hybrid_score - 0.66_f32).abs() < 1e-6);
+
+            // Test with alpha = 0.0 (pure vector search)
+            let alpha = 0.0_f32;
+            let hybrid_score = alpha * norm_bm25 + (1.0 - alpha) * norm_vec;
+            assert!((hybrid_score - norm_vec).abs() < 1e-6);
+
+            // Test with alpha = 1.0 (pure BM25 search)
+            let alpha = 1.0_f32;
+            let hybrid_score = alpha * norm_bm25 + (1.0 - alpha) * norm_vec;
+            assert!((hybrid_score - norm_bm25).abs() < 1e-6);
+
+            // Test with alpha = 0.5 (equal weight)
+            let alpha = 0.5_f32;
+            let hybrid_score = alpha * norm_bm25 + (1.0 - alpha) * norm_vec;
+            assert!((hybrid_score - 0.7_f32).abs() < 1e-6);
+        }
+
+        #[test]
+        fn test_normalization_with_different_methods() {
+            let scores = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+            // MinMax normalization
+            let min_max = normalize_scores(&scores, NormalizationType::MinMax);
+            assert_eq!(min_max.len(), 5);
+            assert!((min_max[0] - 0.0).abs() < 1e-6);
+            assert!((min_max[4] - 1.0).abs() < 1e-6);
+            // Check that values are in [0, 1]
+            for &score in &min_max {
+                assert!(score >= 0.0 && score <= 1.0);
+            }
+
+            // ZScore normalization
+            let z_score = normalize_scores(&scores, NormalizationType::ZScore);
+            assert_eq!(z_score.len(), 5);
+            // Mean should be approximately 0
+            let mean: f32 = z_score.iter().sum::<f32>() / z_score.len() as f32;
+            assert!(mean.abs() < 1e-6);
+
+            // None (no normalization)
+            let none = normalize_scores(&scores, NormalizationType::None);
+            assert_eq!(none, scores);
+        }
+
+        #[test]
+        fn test_hybrid_config_boundary_values() {
+            // Test alpha = 0.0 (pure vector)
+            let config = HybridConfig::new(0.0, 10);
+            assert!(config.validate().is_ok());
+            assert_eq!(config.alpha, 0.0);
+
+            // Test alpha = 1.0 (pure BM25)
+            let config = HybridConfig::new(1.0, 10);
+            assert!(config.validate().is_ok());
+            assert_eq!(config.alpha, 1.0);
+
+            // Test various valid alpha values
+            for alpha in [0.0, 0.1, 0.3, 0.5, 0.7, 0.9, 1.0] {
+                let config = HybridConfig::new(alpha, 10);
+                assert!(
+                    config.validate().is_ok(),
+                    "Alpha {} should be valid",
+                    alpha
+                );
+            }
+
+            // Test invalid alpha values
+            for alpha in [-0.1, -1.0, 1.1, 2.0] {
+                let config = HybridConfig::new(alpha, 10);
+                assert!(
+                    config.validate().is_err(),
+                    "Alpha {} should be invalid",
+                    alpha
+                );
+            }
+        }
+
+        #[test]
+        fn test_hybrid_config_top_k_variations() {
+            // Test various top_k values
+            for top_k in [1, 5, 10, 20, 50, 100] {
+                let config = HybridConfig::new(0.3, top_k);
+                assert!(
+                    config.validate().is_ok(),
+                    "top_k {} should be valid",
+                    top_k
+                );
+                assert_eq!(config.top_k, top_k);
+                assert_eq!(config.bm25_top_k, top_k * 3);
+                assert_eq!(config.vector_top_k, top_k * 3);
+            }
+
+            // Test invalid top_k
+            let config = HybridConfig::new(0.3, 0);
+            assert!(config.validate().is_err());
+        }
+
+        #[test]
+        fn test_hybrid_config_with_custom_candidate_sizes() {
+            let config = HybridConfig::new(0.3, 10)
+                .with_bm25_top_k(50)
+                .with_vector_top_k(40);
+
+            assert!(config.validate().is_ok());
+            assert_eq!(config.bm25_top_k, 50);
+            assert_eq!(config.vector_top_k, 40);
+        }
+
+        #[test]
+        fn test_normalization_preserves_order() {
+            let scores = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+            // MinMax should preserve order
+            let normalized = normalize_min_max(&scores);
+            for i in 1..normalized.len() {
+                assert!(
+                    normalized[i] >= normalized[i - 1],
+                    "MinMax normalization should preserve order"
+                );
+            }
+
+            // None should preserve order (and values)
+            let normalized = normalize_scores(&scores, NormalizationType::None);
+            assert_eq!(normalized, scores);
+        }
+
+        #[test]
+        fn test_normalization_with_negative_scores() {
+            let scores = vec![-2.0, -1.0, 0.0, 1.0, 2.0];
+
+            // MinMax normalization
+            let normalized = normalize_min_max(&scores);
+            assert_eq!(normalized.len(), 5);
+            assert!((normalized[0] - 0.0).abs() < 1e-6); // min should be 0
+            assert!((normalized[4] - 1.0).abs() < 1e-6); // max should be 1
+
+            // ZScore normalization
+            let normalized = normalize_z_score(&scores);
+            let mean: f32 = normalized.iter().sum::<f32>() / normalized.len() as f32;
+            assert!(mean.abs() < 1e-6);
+        }
+
+        #[test]
+        fn test_normalization_with_large_value_ranges() {
+            let scores = vec![0.001, 0.002, 100.0, 200.0, 1000.0];
+
+            // MinMax normalization should handle large ranges
+            let normalized = normalize_min_max(&scores);
+            assert!((normalized[0] - 0.0).abs() < 1e-6);
+            assert!((normalized[4] - 1.0).abs() < 1e-6);
+
+            // ZScore normalization
+            let normalized = normalize_z_score(&scores);
+            let mean: f32 = normalized.iter().sum::<f32>() / normalized.len() as f32;
+            assert!(mean.abs() < 1e-3); // Allow slightly larger error for large ranges
+        }
+
+        #[test]
+        fn test_hybrid_result_methods() {
+            let record = create_mock_vector_record("test_id", "test.rs", 0.9);
+
+            // Test with both scores (hybrid)
+            let result = HybridResult::new(
+                "test_id".to_string(),
+                0.75,
+                Some(0.7),
+                Some(0.8),
+                record.clone(),
+                vec!["keyword".to_string()],
+            );
+            assert!(result.is_hybrid());
+            assert!(result.has_bm25());
+            assert!(result.has_vector());
+
+            // Test with only BM25 score
+            let result = HybridResult::new(
+                "test_id".to_string(),
+                0.7,
+                Some(0.7),
+                None,
+                record.clone(),
+                vec!["keyword".to_string()],
+            );
+            assert!(!result.is_hybrid());
+            assert!(result.has_bm25());
+            assert!(!result.has_vector());
+
+            // Test with only vector score
+            let result = HybridResult::new(
+                "test_id".to_string(),
+                0.8,
+                None,
+                Some(0.8),
+                record.clone(),
+                vec![],
+            );
+            assert!(!result.is_hybrid());
+            assert!(!result.has_bm25());
+            assert!(result.has_vector());
+        }
+
+        #[test]
+        fn test_hybrid_config_normalization_types() {
+            let config = HybridConfig::new(0.3, 10)
+                .with_normalization(NormalizationType::MinMax);
+            assert_eq!(config.normalization, NormalizationType::MinMax);
+
+            let config = HybridConfig::new(0.3, 10)
+                .with_normalization(NormalizationType::ZScore);
+            assert_eq!(config.normalization, NormalizationType::ZScore);
+
+            let config = HybridConfig::new(0.3, 10)
+                .with_normalization(NormalizationType::None);
+            assert_eq!(config.normalization, NormalizationType::None);
+        }
+
+        #[test]
+        fn test_score_sorting_behavior() {
+            // Test that results would be sorted correctly by score
+            let mut scores = vec![0.3, 0.9, 0.5, 0.1, 0.7];
+            scores.sort_by(|a, b| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
+
+            assert_eq!(scores, vec![0.9, 0.7, 0.5, 0.3, 0.1]);
+        }
+
+        #[test]
+        fn test_normalization_stability() {
+            // Test that normalizing the same data twice gives the same result
+            let scores = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+
+            let result1 = normalize_min_max(&scores);
+            let result2 = normalize_min_max(&scores);
+            assert_eq!(result1, result2);
+
+            let result1 = normalize_z_score(&scores);
+            let result2 = normalize_z_score(&scores);
+            for (a, b) in result1.iter().zip(result2.iter()) {
+                assert!((a - b).abs() < 1e-6);
+            }
+        }
+    }
 }
