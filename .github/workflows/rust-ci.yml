@@ -181,12 +181,12 @@ jobs:
 
       - name: Install ONNX Runtime
         run: |
-          # Download ONNX Runtime v1.18.0
-          wget -q https://github.com/microsoft/onnxruntime/releases/download/v1.18.0/onnxruntime-linux-x64-1.18.0.tgz
-          tar -xzf onnxruntime-linux-x64-1.18.0.tgz
-          sudo cp onnxruntime-linux-x64-1.18.0/lib/* /usr/local/lib/
+          # Download ONNX Runtime v1.22.0 (compatible with ort 2.0.0-rc.10)
+          wget -q https://github.com/microsoft/onnxruntime/releases/download/v1.22.0/onnxruntime-linux-x64-1.22.0.tgz
+          tar -xzf onnxruntime-linux-x64-1.22.0.tgz
+          sudo cp onnxruntime-linux-x64-1.22.0/lib/* /usr/local/lib/
           sudo ldconfig
-          rm -rf onnxruntime-linux-x64-1.18.0*
+          rm -rf onnxruntime-linux-x64-1.22.0*
 
       - name: Cache cargo registry
         uses: actions/cache@v4
