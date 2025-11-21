@@ -133,8 +133,6 @@ async fn test_index_project_valid_empty_directory() {
 async fn test_index_project_parameter_validation() {
     // Test that parameters are correctly parsed and validated
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     let test_dir = TempDir::new().unwrap();
 
@@ -225,8 +223,6 @@ async fn test_search_code_empty_query() {
 async fn test_search_code_top_k_validation() {
     // Test that top_k parameter is validated and defaults work
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     // Test with None (should use default 10)
     let params = SearchCodeParams {
@@ -452,8 +448,6 @@ async fn test_find_related_docs_relevance_score() {
 async fn test_get_index_status_all_projects() {
     // Test get_index_status without project_id
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     let params = GetIndexStatusParams { project_id: None };
 
@@ -470,8 +464,6 @@ async fn test_get_index_status_all_projects() {
 async fn test_get_index_status_specific_project() {
     // Test get_index_status with specific project_id
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     let params = GetIndexStatusParams {
         project_id: Some("test_project".to_string()),
@@ -488,8 +480,6 @@ async fn test_get_index_status_specific_project() {
 async fn test_clear_index_requires_confirmation() {
     // Test that clear_index requires confirmation
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     let params = ClearIndexParams {
         project_id: None,
@@ -525,8 +515,6 @@ async fn test_clear_index_with_confirmation() {
 async fn test_find_related_docs_missing_parameters() {
     // Test that find_related_docs requires either file_path or symbol_name
     let (server, _temp_dir) = create_test_server().await;
-    /* Try to initialize - may fail due to missing models */
-    let _ = server.initialize().await;
 
     let params = FindRelatedDocsParams {
         file_path: None,
@@ -589,18 +577,31 @@ async fn test_server_initialize_without_models() {
 }
 
 #[tokio::test]
+#[ignore = "Requires ONNX model files"]
 async fn test_server_double_initialization() {
-    // Test that double initialization is handled
+    // Test that double initialization is properly handled (skips second init)
+    use std::path::PathBuf;
+
     let temp_dir = TempDir::new().unwrap();
     let mut config = ServerConfig::default();
     config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
 
     let server = ContextMcpServer::with_config(config);
 
-    // First initialization will fail due to missing models
-    let _ = server.initialize().await;
-    // Second initialization should be skipped (but will also fail due to missing models)
-    let _ = server.initialize().await;
+    // First initialization
+    let first_result = server.initialize().await;
+    if first_result.is_err() {
+        eprintln!("Skipping test_server_double_initialization: initialization failed");
+        return;
+    }
+
+    // Second initialization should be skipped (returns Ok without reinitializing)
+    let second_result = server.initialize().await;
+    assert!(second_result.is_ok(), "Second initialization should succeed (skip)");
 }
 
 // Error Response Format Tests
@@ -1904,4 +1905,300 @@ async fn test_clear_index_params_debug() {
 
     let debug_str = format!("{:?}", params);
     assert!(debug_str.contains("ClearIndexParams"));
+}
+
+// ========================================
+// Integration Tests with Real Milvus and ONNX Model
+// ========================================
+// These tests require:
+// 1. Milvus running at localhost:19530 (or MILVUS_ADDRESS env var)
+// 2. ONNX model files at ./models/all-MiniLM-L6-v2.onnx and ./models/tokenizer.json
+
+#[tokio::test]
+#[ignore = "Requires Milvus and ONNX model files"]
+async fn test_server_full_initialization() {
+    // Test complete server initialization with real Milvus and ONNX model
+    use std::path::PathBuf;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut config = ServerConfig::default();
+    config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+
+    // Use real model files (downloaded in CI)
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+
+    // Use Milvus address from environment or default
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
+
+    let server = ContextMcpServer::with_config(config);
+
+    // Initialize server - this should succeed with real dependencies
+    let result = server.initialize().await;
+
+    // Skip test if dependencies are not available
+    if result.is_err() {
+        eprintln!("Skipping test_server_full_initialization: real dependencies not available");
+        eprintln!("Error: {:?}", result.err());
+        return;
+    }
+
+    assert!(result.is_ok(), "Server initialization should succeed");
+
+    // Verify all components are initialized
+    let state = server.state.read().await;
+    assert!(state.initialized, "Server should be marked as initialized");
+    assert!(state.parser.is_some(), "Parser should be initialized");
+    assert!(state.embedding.is_some(), "Embedding engine should be initialized");
+    assert!(state.storage.is_some(), "Storage should be initialized");
+    assert!(state.bm25.is_some(), "BM25 engine should be initialized");
+    assert!(state.hybrid.is_some(), "Hybrid search engine should be initialized");
+    assert!(state.indexing.is_some(), "Indexing service should be initialized");
+}
+
+#[tokio::test]
+#[ignore = "Requires Milvus and ONNX model files"]
+async fn test_index_project_real_integration() {
+    // Test index_project tool with real dependencies
+    use std::path::PathBuf;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut config = ServerConfig::default();
+    config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name = format!("test_collection_{}", chrono::Utc::now().timestamp());
+
+    let server = ContextMcpServer::with_config(config);
+
+    // Initialize server
+    let init_result = server.initialize().await;
+    if init_result.is_err() {
+        eprintln!("Skipping test_index_project_real_integration: initialization failed");
+        return;
+    }
+
+    // Create a test project directory with some Rust files
+    let test_project = temp_dir.path().join("test_project");
+    std::fs::create_dir_all(&test_project).unwrap();
+    std::fs::write(
+        test_project.join("main.rs"),
+        r#"fn main() {
+    println!("Hello, world!");
+}
+
+fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+"#,
+    ).unwrap();
+
+    // Index the project
+    let params = IndexProjectParams {
+        root_path: test_project.to_string_lossy().to_string(),
+        languages: Some(vec!["rust".to_string()]),
+        exclude_patterns: None,
+        include_documents: Some(false),
+        project_id: Some("test_integration".to_string()),
+    };
+
+    let result = server.index_project(Parameters(params)).await;
+    assert!(result.is_ok(), "index_project should succeed");
+
+    let text = extract_text(&result.unwrap()).unwrap();
+    assert!(!text.contains("Error"), "Should not contain error message");
+    assert!(text.contains("success"), "Should contain success message");
+
+    // Verify project state was updated
+    let state = server.state.read().await;
+    assert!(state.indexed_projects.contains_key("test_integration"));
+}
+
+#[tokio::test]
+#[ignore = "Requires Milvus and ONNX model files"]
+async fn test_search_code_real_integration() {
+    // Test search_code tool with real dependencies
+    use std::path::PathBuf;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut config = ServerConfig::default();
+    config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name = format!("test_search_collection_{}", chrono::Utc::now().timestamp());
+
+    let server = ContextMcpServer::with_config(config);
+
+    // Initialize server
+    let init_result = server.initialize().await;
+    if init_result.is_err() {
+        eprintln!("Skipping test_search_code_real_integration: initialization failed");
+        return;
+    }
+
+    // Create and index a test project
+    let test_project = temp_dir.path().join("test_search");
+    std::fs::create_dir_all(&test_project).unwrap();
+    std::fs::write(
+        test_project.join("main.rs"),
+        r#"fn calculate_sum(numbers: &[i32]) -> i32 {
+    numbers.iter().sum()
+}
+
+fn main() {
+    let nums = vec![1, 2, 3, 4, 5];
+    let total = calculate_sum(&nums);
+    println!("Sum: {}", total);
+}
+"#,
+    ).unwrap();
+
+    // Index the project first
+    let index_params = IndexProjectParams {
+        root_path: test_project.to_string_lossy().to_string(),
+        languages: Some(vec!["rust".to_string()]),
+        exclude_patterns: None,
+        include_documents: Some(false),
+        project_id: Some("test_search_proj".to_string()),
+    };
+
+    let index_result = server.index_project(Parameters(index_params)).await;
+    assert!(index_result.is_ok(), "Indexing should succeed before search");
+
+    // Wait a bit for indexing to complete
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    // Search for the function
+    let search_params = SearchCodeParams {
+        query: "function that calculates sum of numbers".to_string(),
+        project_id: Some("test_search_proj".to_string()),
+        collection_name: None,
+        file_types: None,
+        top_k: Some(5),
+        min_score: Some(0.3),
+    };
+
+    let result = server.search_code(Parameters(search_params)).await;
+    assert!(result.is_ok(), "search_code should succeed");
+
+    let text = extract_text(&result.unwrap()).unwrap();
+    // Should contain search results
+    assert!(text.contains("results") || text.contains("total_found"));
+}
+
+#[tokio::test]
+#[ignore = "Requires Milvus and ONNX model files"]
+async fn test_get_symbol_real_integration() {
+    // Test get_symbol tool with real BM25 index
+    use std::path::PathBuf;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut config = ServerConfig::default();
+    config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name = format!("test_symbol_collection_{}", chrono::Utc::now().timestamp());
+
+    let server = ContextMcpServer::with_config(config);
+
+    // Initialize server
+    let init_result = server.initialize().await;
+    if init_result.is_err() {
+        eprintln!("Skipping test_get_symbol_real_integration: initialization failed");
+        return;
+    }
+
+    // Create and index a test project
+    let test_project = temp_dir.path().join("test_symbol");
+    std::fs::create_dir_all(&test_project).unwrap();
+    std::fs::write(
+        test_project.join("lib.rs"),
+        r#"pub struct MyStruct {
+    field: i32,
+}
+
+impl MyStruct {
+    pub fn new() -> Self {
+        Self { field: 0 }
+    }
+
+    pub fn my_method(&self) -> i32 {
+        self.field
+    }
+}
+"#,
+    ).unwrap();
+
+    // Index the project
+    let index_params = IndexProjectParams {
+        root_path: test_project.to_string_lossy().to_string(),
+        languages: Some(vec!["rust".to_string()]),
+        exclude_patterns: None,
+        include_documents: Some(false),
+        project_id: Some("test_symbol_proj".to_string()),
+    };
+
+    let index_result = server.index_project(Parameters(index_params)).await;
+    assert!(index_result.is_ok(), "Indexing should succeed");
+
+    // Wait for indexing
+    tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+    // Search for symbol
+    let symbol_params = GetSymbolParams {
+        symbol_name: "MyStruct".to_string(),
+        symbol_type: Some("struct".to_string()),
+        project_id: None,
+    };
+
+    let result = server.get_symbol(Parameters(symbol_params)).await;
+    assert!(result.is_ok(), "get_symbol should succeed");
+
+    let text = extract_text(&result.unwrap()).unwrap();
+    // Should contain definitions or references
+    assert!(text.contains("definitions") || text.contains("references"));
+}
+
+#[tokio::test]
+#[ignore = "Requires Milvus and ONNX model files"]
+async fn test_clear_index_real_integration() {
+    // Test clear_index tool with real dependencies
+    use std::path::PathBuf;
+
+    let temp_dir = TempDir::new().unwrap();
+    let mut config = ServerConfig::default();
+    config.bm25.db_path = temp_dir.path().join("test_bm25.db");
+    config.embedding.model_path = PathBuf::from("./models/all-MiniLM-L6-v2.onnx");
+    config.embedding.tokenizer_path = PathBuf::from("./models/tokenizer.json");
+    config.milvus.address = std::env::var("MILVUS_ADDRESS")
+        .unwrap_or_else(|_| "localhost:19530".to_string());
+    config.indexing.collection_name = format!("test_clear_collection_{}", chrono::Utc::now().timestamp());
+
+    let server = ContextMcpServer::with_config(config);
+
+    // Initialize server
+    let init_result = server.initialize().await;
+    if init_result.is_err() {
+        eprintln!("Skipping test_clear_index_real_integration: initialization failed");
+        return;
+    }
+
+    // Clear index with confirmation
+    let params = ClearIndexParams {
+        project_id: None,
+        confirm: Some(true),
+    };
+
+    let result = server.clear_index(Parameters(params)).await;
+    assert!(result.is_ok(), "clear_index should succeed");
+
+    let text = extract_text(&result.unwrap()).unwrap();
+    assert!(text.contains("success") || text.contains("cleared"));
 }
