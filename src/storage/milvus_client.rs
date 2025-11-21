@@ -961,6 +961,7 @@ impl MilvusClientTrait for MilvusClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use milvus::schema::IntoDataFields;
 
     // ========================================
     // Unit tests using MockMilvusClientTrait
@@ -1831,6 +1832,708 @@ mod tests {
         assert!(mock.collection_exists("test").await.is_err());
         assert!(mock.insert("test", vec![]).await.is_err());
         assert!(mock.search("test", SearchQuery::new(vec![0.1; 384], 10)).await.is_err());
+    }
+
+    // ========================================
+    // Task 14: Additional comprehensive tests for 80% coverage
+    // ========================================
+
+    #[test]
+    fn test_code_vector_entity_default() {
+        let entity = CodeVectorEntity::default();
+        assert_eq!(entity.id, "");
+        assert_eq!(entity.vector.len(), 0);
+        assert_eq!(entity.project_id, "");
+    }
+
+    #[test]
+    fn test_code_vector_entity_schema() {
+        assert_eq!(CodeVectorEntity::NAME, "code_vectors");
+        assert_eq!(CodeVectorEntity::SCHEMA.len(), 12);
+        assert_eq!(CodeVectorEntity::SCHEMA[0].name, "id");
+        assert_eq!(CodeVectorEntity::SCHEMA[1].name, "vector");
+        assert_eq!(CodeVectorEntity::SCHEMA[1].dim, DIMENSION);
+    }
+
+    #[test]
+    fn test_code_vector_entity_iter() {
+        let entity = CodeVectorEntity {
+            id: "test_id".to_string(),
+            vector: vec![0.1; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "test_fn".to_string(),
+            line_start: 10,
+            line_end: 20,
+            snippet: "fn test_fn() {}".to_string(),
+            docstring: "Test function".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        let items: Vec<_> = entity.iter().collect();
+        assert_eq!(items.len(), 12);
+    }
+
+    #[test]
+    fn test_code_vector_entity_into_iter() {
+        let entity = CodeVectorEntity {
+            id: "test_id".to_string(),
+            vector: vec![0.1; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "test_fn".to_string(),
+            line_start: 10,
+            line_end: 20,
+            snippet: "fn test_fn() {}".to_string(),
+            docstring: "Test function".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        let items: Vec<_> = entity.into_iter().collect();
+        assert_eq!(items.len(), 12);
+    }
+
+    #[test]
+    fn test_code_vector_batch_with_capacity() {
+        let batch = CodeVectorBatch::with_capacity(10);
+        assert_eq!(batch.id.capacity(), 10);
+        assert_eq!(batch.project_id.capacity(), 10);
+        assert_eq!(batch.vector.capacity(), 10 * 384);
+    }
+
+    #[test]
+    fn test_code_vector_batch_add() {
+        let mut batch = CodeVectorBatch::with_capacity(5);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![0.1; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        batch.add(entity);
+        assert_eq!(batch.len(), 1);
+        assert_eq!(batch.id[0], "test1");
+        assert_eq!(batch.vector.len(), 384);
+    }
+
+    #[test]
+    fn test_code_vector_batch_index() {
+        let mut batch = CodeVectorBatch::with_capacity(5);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![0.5; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        batch.add(entity);
+        let retrieved = batch.index(0);
+        assert!(retrieved.is_some());
+        let entity = retrieved.unwrap();
+        assert_eq!(entity.id, "test1");
+        assert_eq!(entity.vector.len(), 384);
+        assert_eq!(entity.vector[0], 0.5);
+    }
+
+    #[test]
+    fn test_code_vector_batch_index_out_of_bounds() {
+        let batch = CodeVectorBatch::with_capacity(5);
+        assert!(batch.index(0).is_none());
+        assert!(batch.index(100).is_none());
+    }
+
+    #[test]
+    fn test_code_vector_batch_split_off() {
+        let mut batch = CodeVectorBatch::with_capacity(5);
+
+        for i in 0..5 {
+            let entity = CodeVectorEntity {
+                id: format!("test{}", i),
+                vector: vec![i as f32; 384],
+                project_id: "proj1".to_string(),
+                file_path: "test.rs".to_string(),
+                language: "rust".to_string(),
+                symbol_type: "function".to_string(),
+                symbol_name: format!("fn{}", i),
+                line_start: i as i64,
+                line_end: (i + 5) as i64,
+                snippet: "code".to_string(),
+                docstring: "doc".to_string(),
+                metadata: "{}".to_string(),
+            };
+            batch.add(entity);
+        }
+
+        assert_eq!(batch.len(), 5);
+        let split = batch.split_off(3);
+        assert_eq!(batch.len(), 3);
+        assert_eq!(split.len(), 2);
+        assert_eq!(split.id[0], "test3");
+    }
+
+    #[test]
+    fn test_code_vector_batch_append() {
+        let mut batch1 = CodeVectorBatch::with_capacity(2);
+        let mut batch2 = CodeVectorBatch::with_capacity(2);
+
+        let entity1 = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![0.1; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test1.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code1".to_string(),
+            docstring: "doc1".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        let entity2 = CodeVectorEntity {
+            id: "test2".to_string(),
+            vector: vec![0.2; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test2.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn2".to_string(),
+            line_start: 10,
+            line_end: 15,
+            snippet: "code2".to_string(),
+            docstring: "doc2".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        batch1.add(entity1);
+        batch2.add(entity2);
+
+        batch1.append(batch2);
+        assert_eq!(batch1.len(), 2);
+        assert_eq!(batch1.id[1], "test2");
+    }
+
+    #[test]
+    fn test_code_vector_batch_into_data_fields() {
+        let mut batch = CodeVectorBatch::with_capacity(1);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![0.1; 384],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+        batch.add(entity);
+
+        let fields = batch.into_data_fields();
+        assert_eq!(fields.len(), 12);
+    }
+
+    #[test]
+    fn test_code_vector_search_result_with_capacity() {
+        let result = CodeVectorSearchResult::with_capacity(10);
+        assert_eq!(result.id.capacity(), 10);
+        assert_eq!(result.project_id.capacity(), 10);
+    }
+
+    #[test]
+    fn test_code_vector_search_result_add() {
+        let mut result = CodeVectorSearchResult::with_capacity(5);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        result.add(entity);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result.id[0], "test1");
+    }
+
+    #[test]
+    fn test_code_vector_search_result_index() {
+        let mut result = CodeVectorSearchResult::with_capacity(5);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        result.add(entity);
+        let retrieved = result.index(0);
+        assert!(retrieved.is_some());
+        let entity = retrieved.unwrap();
+        assert_eq!(entity.id, "test1");
+        assert_eq!(entity.vector.len(), 0); // Vector not included in search results
+    }
+
+    #[test]
+    fn test_code_vector_search_result_split_off() {
+        let mut result = CodeVectorSearchResult::with_capacity(5);
+
+        for i in 0..5 {
+            let entity = CodeVectorEntity {
+                id: format!("test{}", i),
+                vector: vec![],
+                project_id: "proj1".to_string(),
+                file_path: "test.rs".to_string(),
+                language: "rust".to_string(),
+                symbol_type: "function".to_string(),
+                symbol_name: format!("fn{}", i),
+                line_start: i as i64,
+                line_end: (i + 5) as i64,
+                snippet: "code".to_string(),
+                docstring: "doc".to_string(),
+                metadata: "{}".to_string(),
+            };
+            result.add(entity);
+        }
+
+        assert_eq!(result.len(), 5);
+        let split = result.split_off(3);
+        assert_eq!(result.len(), 3);
+        assert_eq!(split.len(), 2);
+    }
+
+    #[test]
+    fn test_code_vector_search_result_append() {
+        let mut result1 = CodeVectorSearchResult::with_capacity(2);
+        let mut result2 = CodeVectorSearchResult::with_capacity(2);
+
+        let entity1 = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![],
+            project_id: "proj1".to_string(),
+            file_path: "test1.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code1".to_string(),
+            docstring: "doc1".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        let entity2 = CodeVectorEntity {
+            id: "test2".to_string(),
+            vector: vec![],
+            project_id: "proj1".to_string(),
+            file_path: "test2.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn2".to_string(),
+            line_start: 10,
+            line_end: 15,
+            snippet: "code2".to_string(),
+            docstring: "doc2".to_string(),
+            metadata: "{}".to_string(),
+        };
+
+        result1.add(entity1);
+        result2.add(entity2);
+
+        result1.append(result2);
+        assert_eq!(result1.len(), 2);
+    }
+
+    #[test]
+    fn test_code_vector_search_result_columns() {
+        let columns = CodeVectorSearchResult::columns();
+        assert_eq!(columns.len(), 11); // All fields except vector
+        assert_eq!(columns[0].name, "id");
+        assert_eq!(columns[1].name, "project_id");
+    }
+
+    #[test]
+    fn test_code_vector_search_result_into_data_fields() {
+        let mut result = CodeVectorSearchResult::with_capacity(1);
+        let entity = CodeVectorEntity {
+            id: "test1".to_string(),
+            vector: vec![],
+            project_id: "proj1".to_string(),
+            file_path: "test.rs".to_string(),
+            language: "rust".to_string(),
+            symbol_type: "function".to_string(),
+            symbol_name: "fn1".to_string(),
+            line_start: 1,
+            line_end: 5,
+            snippet: "code".to_string(),
+            docstring: "doc".to_string(),
+            metadata: "{}".to_string(),
+        };
+        result.add(entity);
+
+        let fields = result.into_data_fields();
+        assert_eq!(fields.len(), 11); // All fields except vector
+    }
+
+    #[tokio::test]
+    async fn test_mock_insert_with_special_characters() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_insert()
+            .withf(|_, records| {
+                !records.is_empty() && records[0].snippet.contains("特殊文字")
+            })
+            .times(1)
+            .returning(|_, records| {
+                Ok(records.iter().map(|r| r.id.clone()).collect())
+            });
+
+        let record = VectorRecord::new(
+            "test.rs:1".to_string(),
+            vec![0.1; 384],
+            "proj1".to_string(),
+            "test.rs".to_string(),
+            "rust".to_string(),
+            "function".to_string(),
+            "特殊関数".to_string(),
+            1,
+            5,
+            "// 特殊文字テスト\nfn test() {}".to_string(),
+            "特殊文字を含むドキュメント".to_string(),
+        );
+
+        let result = mock.insert("test_collection", vec![record]).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_search_with_empty_vector() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_search()
+            .withf(|_, query| query.vector.is_empty())
+            .times(1)
+            .returning(|_, _| Ok(vec![]));
+
+        let query = SearchQuery::new(vec![], 10);
+        let result = mock.search("test_collection", query).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_collection_exists_special_names() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        let special_names = vec![
+            "collection-with-dashes",
+            "collection_with_underscores",
+            "collection123",
+            "UPPERCASE_COLLECTION",
+        ];
+
+        for name in special_names {
+            mock.expect_collection_exists()
+                .with(mockall::predicate::eq(name))
+                .times(1)
+                .returning(|_| Ok(true));
+        }
+
+        for name in &["collection-with-dashes", "collection_with_underscores", "collection123", "UPPERCASE_COLLECTION"] {
+            assert!(mock.collection_exists(name).await.unwrap());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_insert_with_empty_strings() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_insert()
+            .withf(|_, records| {
+                !records.is_empty() && records[0].docstring.is_empty()
+            })
+            .times(1)
+            .returning(|_, records| {
+                Ok(records.iter().map(|r| r.id.clone()).collect())
+            });
+
+        let record = VectorRecord::new(
+            "test.rs:1".to_string(),
+            vec![0.1; 384],
+            "proj1".to_string(),
+            "test.rs".to_string(),
+            "rust".to_string(),
+            "function".to_string(),
+            "fn_without_doc".to_string(),
+            1,
+            5,
+            "fn test() {}".to_string(),
+            "".to_string(), // Empty docstring
+        );
+
+        let result = mock.insert("test_collection", vec![record]).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_search_with_various_top_k() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        for top_k in [1, 5, 10, 50, 100] {
+            mock.expect_search()
+                .withf(move |_, query| query.top_k == top_k)
+                .times(1)
+                .returning(move |_, _| {
+                    Ok((0..std::cmp::min(top_k, 10))
+                        .map(|i| SearchResult {
+                            id: format!("result{}", i),
+                            score: 1.0 - (i as f32 * 0.01),
+                            record: VectorRecord::new(
+                                format!("result{}", i),
+                                vec![],
+                                "proj1".to_string(),
+                                "file.rs".to_string(),
+                                "rust".to_string(),
+                                "function".to_string(),
+                                format!("fn{}", i),
+                                i as i64,
+                                (i + 5) as i64,
+                                "code".to_string(),
+                                "doc".to_string(),
+                            ),
+                        })
+                        .collect())
+                });
+        }
+
+        for top_k in [1, 5, 10, 50, 100] {
+            let query = SearchQuery::new(vec![0.1; 384], top_k);
+            let results = mock.search("test_collection", query).await.unwrap();
+            assert!(results.len() <= top_k);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_delete_with_long_id_list() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_delete()
+            .withf(|_, ids| ids.len() == 10000)
+            .times(1)
+            .returning(|_, _| Ok(()));
+
+        let ids: Vec<String> = (0..10000).map(|i| format!("id_{}", i)).collect();
+        let result = mock.delete("test_collection", ids).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_flush_multiple_times() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_flush()
+            .times(5)
+            .returning(|_| Ok(()));
+
+        for _ in 0..5 {
+            assert!(mock.flush("test_collection").await.is_ok());
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_get_collection_stats_various_sizes() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        let sizes = vec![0, 100, 10_000, 1_000_000, 10_000_000];
+
+        for size in sizes {
+            mock.expect_get_collection_stats()
+                .times(1)
+                .returning(move |name| {
+                    Ok(CollectionStats::new(
+                        name.to_string(),
+                        size,
+                        size > 0,
+                        size * 1024,
+                    ))
+                });
+        }
+
+        for size in [0, 100, 10_000, 1_000_000, 10_000_000] {
+            let stats = mock.get_collection_stats("test").await.unwrap();
+            assert_eq!(stats.entity_count, size);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_create_collection_validation_error() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_create_collection()
+            .times(1)
+            .returning(|_| Err(ContextMcpError::Database("Invalid dimension".to_string())));
+
+        let config = CollectionConfig::code_vectors(0); // Invalid dimension
+        let result = mock.create_collection(config).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_mock_insert_serialization_error() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_insert()
+            .times(1)
+            .returning(|_, _| {
+                Err(ContextMcpError::Parse("Failed to serialize metadata".to_string()))
+            });
+
+        let record = VectorRecord::new(
+            "test.rs:1".to_string(),
+            vec![0.1; 384],
+            "proj1".to_string(),
+            "test.rs".to_string(),
+            "rust".to_string(),
+            "function".to_string(),
+            "test".to_string(),
+            1,
+            5,
+            "code".to_string(),
+            "doc".to_string(),
+        );
+
+        let result = mock.insert("test_collection", vec![record]).await;
+        assert!(result.is_err());
+        match result {
+            Err(ContextMcpError::Parse(_)) => {},
+            _ => panic!("Expected Parse error"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_mock_search_with_long_filter_expression() {
+        let mut mock = MockMilvusClientTrait::new();
+
+        mock.expect_search()
+            .withf(|_, query| {
+                query.filters.as_ref().map(|f| f.len() > 100).unwrap_or(false)
+            })
+            .times(1)
+            .returning(|_, _| Ok(vec![]));
+
+        let mut query = SearchQuery::new(vec![0.1; 384], 10);
+        query.filters = Some(format!("language == 'rust' && symbol_type == 'function' && line_start > 0 && line_end < 1000 && file_path.contains('test') && project_id == 'proj1'"));
+
+        let result = mock.search("test_collection", query).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_mock_concurrent_operations() {
+        use tokio::task::JoinSet;
+
+        let mut mock = MockMilvusClientTrait::new();
+
+        // Prepare for 10 concurrent operations
+        for _ in 0..10 {
+            mock.expect_collection_exists()
+                .times(1)
+                .returning(|_| Ok(true));
+        }
+
+        let mock = std::sync::Arc::new(tokio::sync::Mutex::new(mock));
+        let mut join_set = JoinSet::new();
+
+        for i in 0..10 {
+            let mock_clone = mock.clone();
+            join_set.spawn(async move {
+                let mock = mock_clone.lock().await;
+                mock.collection_exists(&format!("collection{}", i)).await
+            });
+        }
+
+        while let Some(result) = join_set.join_next().await {
+            assert!(result.unwrap().unwrap());
+        }
+    }
+
+    #[test]
+    fn test_code_vector_batch_len_consistency() {
+        let mut batch = CodeVectorBatch::with_capacity(5);
+
+        for i in 0..3 {
+            let entity = CodeVectorEntity {
+                id: format!("test{}", i),
+                vector: vec![i as f32; 384],
+                project_id: "proj1".to_string(),
+                file_path: "test.rs".to_string(),
+                language: "rust".to_string(),
+                symbol_type: "function".to_string(),
+                symbol_name: format!("fn{}", i),
+                line_start: i as i64,
+                line_end: (i + 5) as i64,
+                snippet: "code".to_string(),
+                docstring: "doc".to_string(),
+                metadata: "{}".to_string(),
+            };
+            batch.add(entity);
+        }
+
+        assert_eq!(batch.len(), 3);
+        assert_eq!(batch.id.len(), 3);
+        assert_eq!(batch.project_id.len(), 3);
+        assert_eq!(batch.vector.len(), 3 * 384);
+    }
+
+    #[test]
+    fn test_code_vector_batch_empty() {
+        let batch = CodeVectorBatch::with_capacity(0);
+        assert_eq!(batch.len(), 0);
+        assert!(batch.index(0).is_none());
+    }
+
+    #[test]
+    fn test_dimension_constant() {
+        assert_eq!(DIMENSION, 384);
     }
 
     // ========================================
