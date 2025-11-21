@@ -179,24 +179,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      - name: Setup Milvus with Docker Compose
-        run: |
-          docker compose up -d
-          # Wait for Milvus to be healthy
-          echo "Waiting for Milvus to be ready..."
-          timeout 120s bash -c 'until docker ps | grep milvus-standalone | grep -q healthy; do echo "Waiting for Milvus..."; sleep 5; done' || echo "Milvus startup timeout - continuing anyway"
-          docker compose ps
-          docker compose logs standalone | tail -20
-
-      - name: Download ONNX model for integration tests
-        run: |
-          mkdir -p ./models
-          # Download all-MiniLM-L6-v2 ONNX model (~90MB)
-          wget -q https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx -O ./models/all-MiniLM-L6-v2.onnx || true
-          # Download tokenizer
-          wget -q https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json -O ./models/tokenizer.json || true
-          ls -lh ./models/
-
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -214,6 +196,24 @@ jobs:
         with:
           path: target
           key: ${{ runner.os }}-cargo-coverage-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Setup Milvus with Docker Compose
+        run: |
+          docker compose up -d
+          # Wait for Milvus to be healthy
+          echo "Waiting for Milvus to be ready..."
+          timeout 120s bash -c 'until docker ps | grep milvus-standalone | grep -q healthy; do echo "Waiting for Milvus..."; sleep 5; done' || echo "Milvus startup timeout - continuing anyway"
+          docker compose ps
+          docker compose logs standalone | tail -20
+
+      - name: Download ONNX model for integration tests
+        run: |
+          mkdir -p ./models
+          # Download all-MiniLM-L6-v2 ONNX model (~90MB)
+          wget -q https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx -O ./models/all-MiniLM-L6-v2.onnx || true
+          # Download tokenizer
+          wget -q https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json -O ./models/tokenizer.json || true
+          ls -lh ./models/
 
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov

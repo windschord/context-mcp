@@ -1147,7 +1147,7 @@ mod tests {
             let engine_clone = engine.clone();
             handles.push(thread::spawn(move || {
                 let results = engine_clone.search("test", 10).unwrap();
-                assert!(results.len() >= 0);
+                assert!(results.len() <= 10);
             }));
         }
 
