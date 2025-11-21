@@ -231,12 +231,14 @@ jobs:
         run: cargo llvm-cov --lib --all-features --fail-under-lines 55 -- --include-ignored
         env:
           MILVUS_ADDRESS: localhost:19530
+          LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
       - name: Generate coverage report
         if: always()
         run: cargo llvm-cov --lib --all-features --lcov --output-path lcov.info -- --include-ignored
         env:
           MILVUS_ADDRESS: localhost:19530
+          LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
 
       - name: Upload coverage to artifacts
         if: always()
