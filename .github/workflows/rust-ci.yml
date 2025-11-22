@@ -216,13 +216,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-index-
 
-      - name: Cache target directory
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-coverage-target-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-coverage-target-
+      # Note: Removed target directory caching to avoid "Post Cache" failures
+      # Coverage jobs don't benefit much from caching as they rebuild with instrumentation
 
       - name: Setup Milvus with Docker Compose
         run: |
