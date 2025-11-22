@@ -64,7 +64,7 @@ impl Language {
     }
 
     /// Parse language from string
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "typescript" | "ts" => Language::TypeScript,
             "javascript" | "js" => Language::JavaScript,
@@ -343,10 +343,10 @@ mod tests {
 
     #[test]
     fn test_language_from_str() {
-        assert_eq!(Language::from_str("typescript"), Language::TypeScript);
-        assert_eq!(Language::from_str("JavaScript"), Language::JavaScript);
-        assert_eq!(Language::from_str("PYTHON"), Language::Python);
-        assert_eq!(Language::from_str("rust"), Language::Rust);
+        assert_eq!(Language::parse("typescript"), Language::TypeScript);
+        assert_eq!(Language::parse("JavaScript"), Language::JavaScript);
+        assert_eq!(Language::parse("PYTHON"), Language::Python);
+        assert_eq!(Language::parse("rust"), Language::Rust);
     }
 
     #[test]

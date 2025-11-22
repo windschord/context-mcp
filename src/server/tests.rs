@@ -614,7 +614,7 @@ async fn test_error_response_format_not_initialized() {
     let (server, _temp_dir) = create_test_server().await;
 
     // Test all tools return consistent error message
-    let tools = vec![
+    let tools = [
         ("index_project", "Server not initialized"),
         ("search_code", "Server not initialized"),
         ("get_symbol", "Server not initialized"),
@@ -2466,7 +2466,7 @@ async fn test_search_code_response_fields() {
     let result = server.search_code(Parameters(params)).await;
     assert!(result.is_ok());
 
-    let text = extract_text(&result.unwrap()).unwrap();
+    let _text = extract_text(&result.unwrap()).unwrap();
     // Response should be JSON (even if error response for uninitialized server)
     // After initialization, results should include all required fields
 }
@@ -2590,7 +2590,7 @@ async fn test_get_symbol_metadata_fields() {
     let result = server.get_symbol(Parameters(params)).await;
     assert!(result.is_ok());
 
-    let text = extract_text(&result.unwrap()).unwrap();
+    let _text = extract_text(&result.unwrap()).unwrap();
     // Response should include metadata fields (name, params, return type, docstring)
 }
 
@@ -2634,7 +2634,7 @@ async fn test_find_related_docs_relevance_score_sorting() {
     let result = server.find_related_docs(Parameters(params)).await;
     assert!(result.is_ok());
 
-    let text = extract_text(&result.unwrap()).unwrap();
+    let _text = extract_text(&result.unwrap()).unwrap();
     // Results should be sorted by relevance score (descending)
 }
 
@@ -2799,6 +2799,6 @@ async fn test_clear_index_specific_project_deletion() {
     let result = server.clear_index(Parameters(params)).await;
     assert!(result.is_ok());
 
-    let text = extract_text(&result.unwrap()).unwrap();
+    let _text = extract_text(&result.unwrap()).unwrap();
     // Project-specific deletion should work (or return error for uninitialized server)
 }

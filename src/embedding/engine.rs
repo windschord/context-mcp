@@ -372,6 +372,15 @@ impl EmbeddingEngine {
 //
 // All mutable state is protected by Mutex, ensuring exclusive access and preventing
 // data races. The Arc ensures proper reference counting across threads.
+//
+// SAFETY: EmbeddingEngine can safely implement Send and Sync because:
+// 1. ort::Session is thread-safe for inference operations (read-only access).
+//    The ONNX Runtime library guarantees that inference on a session is safe
+//    from multiple threads as long as the session is not modified.
+// 2. All interior mutability (session, tokenizer) is protected by Arc<Mutex<T>>,
+//    which provides exclusive access and prevents data races.
+// 3. All non-interior-mutable fields (config, model_info) contain only owned
+//    data types that are themselves Send + Sync.
 unsafe impl Send for EmbeddingEngine {}
 unsafe impl Sync for EmbeddingEngine {}
 
@@ -1041,7 +1050,7 @@ mod tests {
     async fn test_mock_unicode_text() {
         let mut mock = MockEmbeddingEngineTrait::new();
 
-        let unicode_texts = vec![
+        let unicode_texts = [
             "日本語のテキスト",
             "中文文本",
             "한국어 텍스트",

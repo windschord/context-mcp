@@ -141,7 +141,7 @@ impl HybridSearchEngine {
         );
 
         // Validate configuration
-        config.validate().map_err(|e| ContextMcpError::Config(e))?;
+        config.validate().map_err(ContextMcpError::Config)?;
 
         // Step 1: Generate query embedding
         debug!("Generating query embedding");
@@ -803,7 +803,7 @@ mod tests {
             assert!((min_max[4] - 1.0).abs() < 1e-6);
             // Check that values are in [0, 1]
             for &score in &min_max {
-                assert!(score >= 0.0 && score <= 1.0);
+                assert!((0.0..=1.0).contains(&score));
             }
 
             // ZScore normalization

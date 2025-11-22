@@ -266,19 +266,31 @@ impl ContextMcpServer {
                 state
                     .bm25
                     .as_ref()
-                    .expect("BM25 engine must be initialized before hybrid search"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "BM25 engine must be initialized before hybrid search".to_string(),
+                        )
+                    })?,
             ),
             Arc::clone(
                 state
                     .storage
                     .as_ref()
-                    .expect("Storage must be initialized before hybrid search"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "Storage must be initialized before hybrid search".to_string(),
+                        )
+                    })?,
             ),
             Arc::clone(
                 state
                     .embedding
                     .as_ref()
-                    .expect("Embedding engine must be initialized before hybrid search"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "Embedding engine must be initialized before hybrid search".to_string(),
+                        )
+                    })?,
             ),
         );
         state.hybrid = Some(Arc::new(hybrid));
@@ -290,25 +302,42 @@ impl ContextMcpServer {
                 state
                     .parser
                     .as_ref()
-                    .expect("Parser must be initialized before indexing service"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "Parser must be initialized before indexing service".to_string(),
+                        )
+                    })?,
             ),
             Arc::clone(
                 state
                     .embedding
                     .as_ref()
-                    .expect("Embedding engine must be initialized before indexing service"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "Embedding engine must be initialized before indexing service"
+                                .to_string(),
+                        )
+                    })?,
             ),
             Arc::clone(
                 state
                     .storage
                     .as_ref()
-                    .expect("Storage must be initialized before indexing service"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "Storage must be initialized before indexing service".to_string(),
+                        )
+                    })?,
             ),
             Arc::clone(
                 state
                     .bm25
                     .as_ref()
-                    .expect("BM25 engine must be initialized before indexing service"),
+                    .ok_or_else(|| {
+                        ContextMcpError::Internal(
+                            "BM25 engine must be initialized before indexing service".to_string(),
+                        )
+                    })?,
             ),
         )
         .with_collection_name(state.config.indexing.collection_name.clone());
@@ -319,7 +348,11 @@ impl ContextMcpServer {
         let storage = state
             .storage
             .as_ref()
-            .expect("Storage must be initialized before collection creation");
+            .ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Storage must be initialized before collection creation".to_string(),
+                )
+            })?;
 
         if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);
@@ -460,7 +493,11 @@ impl ContextMcpServer {
         let response = IndexProjectResponse {
             total_files: result.total_files,
             code_files: result.indexed_files,
-            document_files: 0, // TODO: Track document files separately
+            // NOTE: Document file tracking is planned for future implementation.
+            // This requires extending IndexingService to track and report
+            // document files (markdown, text, etc.) separately from code files.
+            // See docs/MIGRATION.md for implementation roadmap.
+            document_files: 0,
             total_symbols: result.total_symbols,
             processing_time_ms: start_time.elapsed().as_millis() as u64,
             errors: result.errors.len(),
@@ -674,7 +711,7 @@ impl ContextMcpServer {
                 result
                     .metadata
                     .get("symbol_type")
-                    .map_or(false, |t| t.contains(st))
+                    .is_some_and(|t| t.contains(st))
             });
 
             if !symbol_type_match {

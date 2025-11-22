@@ -96,7 +96,7 @@ impl BM25Engine {
 
     /// Set custom BM25 configuration
     pub fn with_config(mut self, config: BM25Config) -> Result<Self> {
-        config.validate().map_err(|e| ContextMcpError::Config(e))?;
+        config.validate().map_err(ContextMcpError::Config)?;
         self.config = config;
         Ok(self)
     }
@@ -807,7 +807,7 @@ mod tests {
 
         // Search should handle special characters
         let results = engine.search("test", 10).unwrap();
-        assert!(results.len() > 0);
+        assert!(!results.is_empty());
     }
 
     #[test]

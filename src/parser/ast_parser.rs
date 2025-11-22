@@ -18,6 +18,12 @@ pub struct LanguageParsers {
     cpp: tree_sitter::Language,
 }
 
+impl Default for LanguageParsers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl LanguageParsers {
     /// Initialize all language parsers
     pub fn new() -> Self {
@@ -138,7 +144,7 @@ impl AstParser {
 
         while let Some(match_) = matches.next() {
             if let Some(symbol) =
-                self.extract_symbol_from_match(&match_, &query, source_code, language)
+                self.extract_symbol_from_match(match_, &query, source_code, language)
             {
                 symbols.push(symbol);
             }
@@ -169,7 +175,7 @@ impl AstParser {
             let capture_name = &capture_names[capture.index as usize];
             let node = capture.node;
 
-            match capture_name.as_ref() {
+            match &**capture_name {
                 "function.name" | "method.name" | "class.name" | "struct.name" | "enum.name"
                 | "interface.name" | "trait.name" | "type.name" | "variable.name"
                 | "constant.name" => {
@@ -230,7 +236,7 @@ impl AstParser {
 
         // Infer kind from capture pattern if not set
         if kind.is_none() {
-            kind = infer_kind_from_language(language, &capture_names, match_);
+            kind = infer_kind_from_language(language, capture_names, match_);
         }
 
         // Build symbol if we have minimum required information

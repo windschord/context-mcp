@@ -145,6 +145,7 @@ pub struct VectorRecord {
 
 impl VectorRecord {
     /// Create a new vector record
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: String,
         vector: Vec<f32>,

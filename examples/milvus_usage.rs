@@ -155,6 +155,7 @@ async fn main() -> context_mcp::Result<()> {
 }
 
 /// Helper function to create a sample VectorRecord
+#[allow(clippy::too_many_arguments)]
 fn create_sample_record(
     id: &str,
     vector: Vec<f32>,

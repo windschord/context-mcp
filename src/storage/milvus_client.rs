@@ -798,7 +798,7 @@ impl MilvusClient {
         let mut search_results = Vec::new();
 
         for result_set in results.into_iter() {
-            for (_idx, entry) in result_set.iter().enumerate() {
+            for entry in result_set.iter() {
                 // Parse metadata JSON and convert to HashMap<String, String>
                 let metadata_json: HashMap<String, serde_json::Value> =
                     serde_json::from_str(&entry.inner.metadata).unwrap_or_default();
@@ -858,10 +858,15 @@ impl MilvusClient {
 
         let _collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
-        // Note: The delete API might not be available in the current milvus crate
-        // This is a placeholder implementation
-        // TODO: Implement delete when API is available
-
+        // NOTE: Delete API is not available in the current vendor/milvus-patched crate.
+        // This is a placeholder implementation that logs a warning instead of deleting.
+        //
+        // Future implementation requires:
+        // 1. Upstream milvus-sdk-rust to support delete operations
+        // 2. Update vendor/milvus-patched with the new API
+        // 3. Implement: collection.delete().filter(expr).execute().await?
+        //
+        // See vendor/milvus-patched/README.md for tracking upstream changes.
         warn!("Delete operation is not yet implemented in vendor/milvus-patched");
 
         debug!("Successfully deleted {} records", ids.len());
@@ -888,11 +893,15 @@ impl MilvusClient {
 
         let _collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
-        // Note: The delete API might not be available in the current milvus crate
-        // This is a placeholder implementation
-        // TODO: Implement delete with filter when API is available
-        // Expected API: collection.delete().filter(filter).execute().await?;
-
+        // NOTE: Delete with filter API is not available in the current vendor/milvus-patched crate.
+        // This is a placeholder implementation that logs a warning instead of deleting.
+        //
+        // Future implementation requires:
+        // 1. Upstream milvus-sdk-rust to support delete operations with filters
+        // 2. Update vendor/milvus-patched with the new API
+        // 3. Implement: collection.delete().filter(filter).execute().await?
+        //
+        // See vendor/milvus-patched/README.md for tracking upstream changes.
         warn!("Delete with filter operation is not yet implemented in vendor/milvus-patched");
 
         debug!("Delete by filter operation completed");
@@ -2482,7 +2491,7 @@ mod tests {
             .returning(|_, _| Ok(vec![]));
 
         let mut query = SearchQuery::new(vec![0.1; 384], 10);
-        query.filters = Some(format!("language == 'rust' && symbol_type == 'function' && line_start > 0 && line_end < 1000 && file_path.contains('test') && project_id == 'proj1'"));
+        query.filters = Some("language == 'rust' && symbol_type == 'function' && line_start > 0 && line_end < 1000 && file_path.contains('test') && project_id == 'proj1'".to_string());
 
         let result = mock.search("test_collection", query).await;
         assert!(result.is_ok());

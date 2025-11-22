@@ -174,7 +174,7 @@ async fn main() -> anyhow::Result<()> {
 
 /// Create sample vector records for demonstration
 async fn create_sample_records(embedding: &EmbeddingEngine) -> anyhow::Result<Vec<VectorRecord>> {
-    let samples = vec![
+    let samples = [
         (
             "config_parser.rs",
             "pub fn parse_config_file(path: &Path) -> Result<Config>",
