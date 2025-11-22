@@ -100,14 +100,11 @@ cargo build --release
 
 ## クイックスタート
 
-設定ファイル不要で、Docker Compose起動とMCP設定のみで即座に使用開始できます。
+**ゼロコンフィグ**: 設定ファイル不要で、3ステップで即座に使用開始できます。
 
-### 1. Milvus standaloneの起動
+### ステップ1: Milvus standaloneの起動
 
 ```bash
-# プロジェクトのルートディレクトリで実行
-cd /path/to/your/project
-
 # docker-compose.ymlをダウンロード（初回のみ）
 curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
 
@@ -118,21 +115,20 @@ docker-compose up -d
 docker ps
 ```
 
-### 2. Claude CodeにMCP設定を追加
+### ステップ2: Claude CodeにMCP設定を追加
 
-#### 方法1: claude mcp addコマンドで追加（推奨）
+環境変数のみで動作します。設定ファイルは不要です。
+
+#### 方法A: `claude mcp add`コマンド（推奨）
 
 ```bash
 claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
-  --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
   -- /usr/local/bin/context-mcp
 ```
 
-設定後、Claude Codeを再起動してください。
-
-#### 方法2: JSONファイルを直接編集
+#### 方法B: JSONファイルを直接編集
 
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
@@ -144,7 +140,6 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
       "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -152,9 +147,14 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 }
 ```
 
-設定後、Claude Codeを再起動してください。
+**補足**:
+- `LSP_MCP_MODE=local`: ローカルモード（デフォルト）
+- `LSP_MCP_VECTOR_ADDRESS`: 省略可（デフォルト: `localhost:19530`）
+- その他の設定は[環境変数リファレンス](docs/ENVIRONMENT_VARIABLES.md)を参照
 
-### 3. 使用開始
+設定後、**Claude Codeを再起動**してください。
+
+### ステップ3: 使用開始
 
 Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
 
@@ -165,49 +165,41 @@ Claude Codeで以下のように指示するだけで、自動的にプロジェ
 以降、セマンティック検索が利用可能になります:
 
 ```
-@lsp-mcp 「認証機能」に関連するコードを検索してください
+@lsp-mcp 認証機能に関連するコードを検索してください
 ```
 
 ```
 @lsp-mcp getUserById関数の定義と使用箇所を教えてください
 ```
 
-### （オプション）設定ファイルによるカスタマイズ
+---
 
-環境変数だけでなく、プロジェクトごとに設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します:
+### カスタマイズ（オプショナル）
+
+プロジェクト固有の設定が必要な場合は、`.lsp-mcp.json`を作成できます:
 
 ```bash
 # プロジェクトルートで設定ファイルを作成
 cd /path/to/your/project
-```
-
-`.lsp-mcp.json`の例:
-
-```json
+cat > .lsp-mcp.json <<EOF
 {
   "mode": "local",
-  "vectorStore": {
-    "backend": "milvus",
-    "config": {
-      "address": "localhost:19530"
-    }
-  },
-  "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2"
-  },
   "indexing": {
     "excludePatterns": [
       "node_modules/**",
       ".git/**",
-      "dist/**"
+      "dist/**",
+      "vendor/**"
     ],
     "languages": ["typescript", "python", "go"]
   }
 }
+EOF
 ```
 
-設定ファイルと環境変数を併用する場合、**環境変数が優先**されます。
+**重要**: 環境変数と設定ファイルを併用する場合、**環境変数が優先**されます。
+
+詳細は[セットアップガイド](docs/SETUP.md)を参照してください。
 
 ## Claude Codeでの使用方法
 

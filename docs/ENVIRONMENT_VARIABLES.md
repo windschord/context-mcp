@@ -1,10 +1,10 @@
 # 環境変数リファレンス
 
-このドキュメントでは、Context-MCPで使用可能なすべての環境変数について説明します。
+このドキュメントでは、LSP-MCPで使用可能なすべての環境変数について説明します。
 
 ## 概要
 
-Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
+LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
@@ -13,9 +13,9 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
   ↓
 1. 環境変数（LSP_MCP_MODE等）
   ↓
-2. ユーザー設定ファイル（.context-mcp.json）
+2. ユーザー設定ファイル（.lsp-mcp.json）
   ↓
-3. デフォルト設定（src/config/types.ts）
+3. デフォルト設定（src/config/mod.rs）
   ↓
 優先度（低）
 ```
@@ -87,15 +87,15 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 埋め込みベクトル生成プロバイダーを指定します。
 
-- **型**: `"transformers"` | `"openai"` | `"voyageai"`
-- **デフォルト**: `"transformers"`
+- **型**: `"local"` | `"openai"` | `"voyageai"`
+- **デフォルト**: `"local"`
 - **説明**:
-  - `transformers`: Transformers.js（ローカル実行、外部通信なし）
+  - `local`: ローカルONNXモデル（ONNX Runtime経由、外部通信なし）
   - `openai`: OpenAI Embedding API（クラウド、APIキー必要）
   - `voyageai`: VoyageAI API（クラウド、APIキー必要）
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_PROVIDER=transformers
+  LSP_MCP_EMBEDDING_PROVIDER=local
   LSP_MCP_EMBEDDING_PROVIDER=openai
   LSP_MCP_EMBEDDING_PROVIDER=voyageai
   ```
@@ -118,13 +118,13 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 - **型**: `string`
 - **デフォルト**:
-  - Transformers.js: `"Xenova/all-MiniLM-L6-v2"`
+  - local: `"all-MiniLM-L6-v2.onnx"`
   - OpenAI: `"text-embedding-3-small"`
-  - VoyageAI: `"voyage-2"`
+  - VoyageAI: `"voyage-code-2"`
 - **説明**: 使用する埋め込みモデルの名前
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_MODEL=Xenova/all-MiniLM-L6-v2
+  LSP_MCP_EMBEDDING_MODEL=all-MiniLM-L6-v2.onnx
   LSP_MCP_EMBEDDING_MODEL=text-embedding-3-large
   ```
 
@@ -157,9 +157,9 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
 ```json
 {
   "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+    "lsp-mcp": {
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "INFO"
@@ -174,7 +174,7 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
 LSP_MCP_MODE=local
 LSP_MCP_VECTOR_BACKEND=milvus
 LSP_MCP_VECTOR_ADDRESS=localhost:19530
-LSP_MCP_EMBEDDING_PROVIDER=transformers
+LSP_MCP_EMBEDDING_PROVIDER=local
 LOG_LEVEL=INFO
 ```
 
@@ -186,9 +186,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+    "lsp-mcp": {
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "cloud",
         "LSP_MCP_VECTOR_BACKEND": "zilliz",
@@ -222,9 +222,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+    "lsp-mcp": {
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LSP_MCP_VECTOR_BACKEND": "milvus",
@@ -246,9 +246,9 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+    "lsp-mcp": {
+      "command": "/path/to/lsp_mcp/target/debug/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
         "LOG_LEVEL": "DEBUG"
@@ -268,7 +268,7 @@ LOG_LEVEL=INFO
 
 ### 例: 部分的な上書き
 
-`.context-mcp.json`:
+`.lsp-mcp.json`:
 ```json
 {
   "mode": "local",
@@ -279,8 +279,8 @@ LOG_LEVEL=INFO
     }
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2"
+    "provider": "local",
+    "model": "all-MiniLM-L6-v2.onnx"
   }
 }
 ```

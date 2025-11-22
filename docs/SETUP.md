@@ -20,74 +20,69 @@
 
 ### 必須環境
 
-- **Node.js**: 18.0以上（推奨: 20.x LTS）
-- **npm**: 9.0以上
+- **Rust**: 1.70以上（推奨: 1.80以降）([rustup](https://rustup.rs/)でインストール推奨)
+- **Protocol Buffers compiler**: protoc ([インストール手順](https://grpc.io/docs/protoc-installation/))
 - **OS**: macOS, Linux, Windows（WSL2推奨）
 - **メモリ**: 最低4GB（推奨: 8GB以上）
 - **ディスク**: 最低5GB以上の空き容量
 
 ### モード別の追加要件
 
-#### 軽量モード（Chroma）
-- 追加要件なし（最も簡単）
-
-#### 標準モード（Milvus）
+#### ローカルモード（デフォルト）
 - **Docker**: 20.10以上
 - **Docker Compose**: v2.0以上
 - **追加メモリ**: Milvus用に2GB以上
 
 #### クラウドモード
 - **API キー**: OpenAI API キーまたはVoyageAI APIキー
-- **ベクターDB アカウント**: Zilliz CloudまたはQdrant Cloud
+- **ベクターDB アカウント**: Zilliz Cloud
 
 ## インストール方法
 
-### 方法1: グローバルインストール（推奨）
+### 方法1: バイナリリリースから使用（最も簡単、推奨）
+
+GitHubリリースページから、お使いのプラットフォーム向けのビルド済みバイナリをダウンロードできます：
 
 ```bash
-# npmでグローバルインストール
-npm install -g context-mcp
+# Linux (x86_64)
+curl -L https://github.com/windschord/lsp-mcp/releases/latest/download/context-mcp-linux-x86_64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
+context-mcp --version
 
-# インストール確認
+# macOS (Intel)
+curl -L https://github.com/windschord/lsp-mcp/releases/latest/download/context-mcp-macos-x86_64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
+context-mcp --version
+
+# macOS (Apple Silicon)
+curl -L https://github.com/windschord/lsp-mcp/releases/latest/download/context-mcp-macos-aarch64.tar.gz | tar xz
+sudo mv context-mcp /usr/local/bin/
 context-mcp --version
 ```
 
-### 方法2: ローカルインストール（開発者向け）
+### 方法2: ソースからビルド（開発者向け）
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/yourusername/context-mcp.git
-cd context-mcp
+git clone https://github.com/windschord/lsp-mcp.git
+cd lsp-mcp
 
-# 依存関係のインストール
-npm install
-
-# TypeScriptのビルド
-npm run build
+# リリースビルド
+cargo build --release
 
 # 動作確認
-node dist/index.js --version
-```
-
-### 方法3: npx経由で使用（インストール不要、推奨）
-
-```bash
-# GitHubリポジトリから直接使用
-npx github:windschord/context-mcp --version
+./target/release/context-mcp --version
 ```
 
 ## クイックスタート（ゼロコンフィグモード）
 
-**最も簡単な方法**: 設定ファイル不要で、Docker Compose起動とMCP設定のみで即座に使用開始できます。
+**最も簡単な方法**: 設定ファイル不要で、環境変数のみで即座に使用開始できます。
 
 ### ステップ1: Milvus standaloneの起動
 
 ```bash
-# プロジェクトのルートディレクトリで実行
-cd /path/to/your/project
-
 # docker-compose.ymlをダウンロード（初回のみ）
-curl -O https://raw.githubusercontent.com/windschord/context-mcp/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
 
 # Milvus standalone起動
 docker-compose up -d
@@ -96,25 +91,29 @@ docker-compose up -d
 docker ps
 ```
 
-### ステップ2: Claude CodeにMCP設定を追加
+### ステップ2: Claude CodeにMCP設定を追加（環境変数のみ）
 
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
 ```json
 {
   "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+    "lsp-mcp": {
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
         "LOG_LEVEL": "INFO"
       }
     }
   }
 }
 ```
+
+**補足**:
+- `LSP_MCP_MODE=local`: ローカルモード（デフォルト）
+- `LSP_MCP_VECTOR_ADDRESS`: 省略可（デフォルト: `localhost:19530`）
+- `LSP_MCP_EMBEDDING_PROVIDER`: 省略可（デフォルト: `local` - ONNX Runtime）
 
 設定後、**Claude Codeを再起動**してください。
 
@@ -123,7 +122,7 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 Claude Codeで以下のように指示するだけで、自動的にプロジェクトがインデックス化されます:
 
 ```
-@context-mcp プロジェクトをインデックス化してください
+@lsp-mcp プロジェクトをインデックス化してください
 ```
 
 これで完了です。より詳細な設定やカスタマイズが必要な場合は、以下のセクションを参照してください。
@@ -398,7 +397,7 @@ context-mcp estimate-cost /path/to/project
 
 ## 環境変数による設定
 
-Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
+LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
@@ -407,9 +406,9 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
   ↓
 1. 環境変数（LSP_MCP_MODE等）
   ↓
-2. ユーザー設定ファイル（.context-mcp.json）
+2. ユーザー設定ファイル（.lsp-mcp.json）
   ↓
-3. デフォルト設定（src/config/types.ts）
+3. デフォルト設定（src/config/mod.rs）
   ↓
 優先度（低）
 ```
@@ -424,12 +423,29 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 | `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
 | `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
 | `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
-| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `transformers` | `transformers`, `openai`, `voyageai` |
+| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `local` | `local`, `openai`, `voyageai` |
 | `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
-| `LSP_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `Xenova/all-MiniLM-L6-v2` |
+| `LSP_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `all-MiniLM-L6-v2.onnx` |
 | `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
 
 詳細は[環境変数リファレンス](ENVIRONMENT_VARIABLES.md)を参照してください。
+
+### 環境変数ベースセットアップの利点
+
+環境変数による設定は、従来の設定ファイル方式と比較して以下の利点があります:
+
+| 項目 | 環境変数方式 | 設定ファイル方式 |
+|-----|------------|---------------|
+| **セットアップ時間** | 約1分（MCP設定のみ） | 約5分（設定ファイル作成 + MCP設定） |
+| **設定ファイル作成** | 不要 | 必要（`.lsp-mcp.json`） |
+| **環境ごとの切り替え** | 容易（環境変数を変更するだけ） | やや面倒（設定ファイルを複数管理） |
+| **CI/CD統合** | 容易（環境変数を設定するだけ） | やや面倒（設定ファイルを配置） |
+| **秘密情報管理** | 安全（環境変数、Git管理外） | 注意が必要（設定ファイルに書かない） |
+| **推奨ユースケース** | 個人開発、シンプルな設定、CI/CD | チーム開発、複雑な設定、プロジェクト固有設定 |
+
+**推奨アプローチ**:
+- **個人開発・シンプルな構成**: 環境変数のみ
+- **チーム開発・複雑な構成**: 設定ファイル + 環境変数（秘密情報のみ環境変数）
 
 ### 使用例
 
@@ -493,11 +509,11 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 ## 設定ファイルによるカスタマイズ
 
-環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.context-mcp.json`を作成します。
+環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します。
 
 ### 設定ファイルの作成
 
-プロジェクトルートに`.context-mcp.json`を作成:
+プロジェクトルートに`.lsp-mcp.json`を作成:
 
 ```json
 {
@@ -509,8 +525,8 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
     }
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2"
+    "provider": "local",
+    "model": "all-MiniLM-L6-v2.onnx"
   },
   "indexing": {
     "languages": ["typescript", "python", "go", "rust"],
@@ -519,6 +535,7 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
       ".git/**",
       "dist/**",
       "build/**",
+      "target/**",
       "*.min.js",
       ".env",
       ".env.*",
@@ -539,10 +556,10 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 
 ### 環境変数と設定ファイルの併用
 
-環境変数と`.context-mcp.json`を併用する場合、以下のマージロジックが適用されます：
+環境変数と`.lsp-mcp.json`を併用する場合、以下のマージロジックが適用されます：
 
 1. デフォルト設定を読み込む
-2. `.context-mcp.json`が存在する場合、その内容で上書き
+2. `.lsp-mcp.json`が存在する場合、その内容で上書き
 3. 環境変数が設定されている場合、その値で上書き（最優先）
 
 ### 設定方式の比較
@@ -552,6 +569,25 @@ Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに�
 | **環境変数のみ** | 簡単、CI/CD対応、Git管理不要 | プロジェクト固有設定に不向き | 個人開発、シンプルな設定 |
 | **設定ファイルのみ** | プロジェクト固有設定、Git管理可能 | 環境ごとの変更に不向き | チーム開発、複雑な設定 |
 | **併用** | 柔軟性最大、環境ごとの上書き可能 | やや複雑 | 複数環境（dev/staging/prod） |
+
+### 従来方式（設定ファイル）との比較
+
+| 項目 | ゼロコンフィグ（環境変数） | 従来方式（設定ファイル） |
+|-----|--------------------------|----------------------|
+| **初回セットアップ時間** | 1分 | 5分 |
+| **設定ファイル作成** | 不要 | 必要（`.lsp-mcp.json`） |
+| **MCP設定の記述量** | 少ない（環境変数のみ） | 多い（設定ファイルパス指定） |
+| **環境間の切り替え** | 容易（環境変数変更） | やや面倒（設定ファイル切り替え） |
+| **秘密情報（APIキー等）** | 安全（環境変数、Git管理外） | 注意が必要（誤コミット防止） |
+| **プロジェクト固有設定** | 不向き | 適している |
+| **チーム共有** | 不向き（各自で環境変数設定） | 適している（Gitで管理） |
+| **複雑な設定** | 不向き | 適している |
+| **推奨ユーザー** | 個人開発者、初学者 | チーム開発、上級者 |
+
+**結論**:
+- **まずはゼロコンフィグで始める**: 環境変数のみで動作させる
+- **必要に応じて設定ファイルを追加**: プロジェクト固有の設定が必要になったら`.lsp-mcp.json`を作成
+- **ハイブリッド運用**: 共通設定は設定ファイル、秘密情報は環境変数で管理
 
 ## Claude Code統合
 
