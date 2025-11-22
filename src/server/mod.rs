@@ -262,97 +262,58 @@ impl ContextMcpServer {
         // Initialize hybrid search engine
         info!("Initializing hybrid search engine");
         let hybrid = HybridSearchEngine::new(
-            Arc::clone(
-                state
-                    .bm25
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "BM25 engine must be initialized before hybrid search".to_string(),
-                        )
-                    })?,
-            ),
-            Arc::clone(
-                state
-                    .storage
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "Storage must be initialized before hybrid search".to_string(),
-                        )
-                    })?,
-            ),
-            Arc::clone(
-                state
-                    .embedding
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "Embedding engine must be initialized before hybrid search".to_string(),
-                        )
-                    })?,
-            ),
+            Arc::clone(state.bm25.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "BM25 engine must be initialized before hybrid search".to_string(),
+                )
+            })?),
+            Arc::clone(state.storage.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Storage must be initialized before hybrid search".to_string(),
+                )
+            })?),
+            Arc::clone(state.embedding.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Embedding engine must be initialized before hybrid search".to_string(),
+                )
+            })?),
         );
         state.hybrid = Some(Arc::new(hybrid));
 
         // Initialize indexing service
         info!("Initializing indexing service");
         let indexing = IndexingService::new(
-            Arc::clone(
-                state
-                    .parser
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "Parser must be initialized before indexing service".to_string(),
-                        )
-                    })?,
-            ),
-            Arc::clone(
-                state
-                    .embedding
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "Embedding engine must be initialized before indexing service"
-                                .to_string(),
-                        )
-                    })?,
-            ),
-            Arc::clone(
-                state
-                    .storage
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "Storage must be initialized before indexing service".to_string(),
-                        )
-                    })?,
-            ),
-            Arc::clone(
-                state
-                    .bm25
-                    .as_ref()
-                    .ok_or_else(|| {
-                        ContextMcpError::Internal(
-                            "BM25 engine must be initialized before indexing service".to_string(),
-                        )
-                    })?,
-            ),
+            Arc::clone(state.parser.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Parser must be initialized before indexing service".to_string(),
+                )
+            })?),
+            Arc::clone(state.embedding.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Embedding engine must be initialized before indexing service".to_string(),
+                )
+            })?),
+            Arc::clone(state.storage.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "Storage must be initialized before indexing service".to_string(),
+                )
+            })?),
+            Arc::clone(state.bm25.as_ref().ok_or_else(|| {
+                ContextMcpError::Internal(
+                    "BM25 engine must be initialized before indexing service".to_string(),
+                )
+            })?),
         )
         .with_collection_name(state.config.indexing.collection_name.clone());
         state.indexing = Some(Arc::new(indexing));
 
         // Create Milvus collection if it doesn't exist
         let collection_name = &state.config.indexing.collection_name;
-        let storage = state
-            .storage
-            .as_ref()
-            .ok_or_else(|| {
-                ContextMcpError::Internal(
-                    "Storage must be initialized before collection creation".to_string(),
-                )
-            })?;
+        let storage = state.storage.as_ref().ok_or_else(|| {
+            ContextMcpError::Internal(
+                "Storage must be initialized before collection creation".to_string(),
+            )
+        })?;
 
         if !storage.collection_exists(collection_name).await? {
             info!("Creating collection: {}", collection_name);

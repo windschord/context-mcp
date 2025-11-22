@@ -69,7 +69,10 @@ async fn test_e2e_server_initialization() {
         }
         Err(e) => {
             // This is expected if Milvus or models are not available
-            eprintln!("Server initialization failed (expected if dependencies unavailable): {}", e);
+            eprintln!(
+                "Server initialization failed (expected if dependencies unavailable): {}",
+                e
+            );
             // Don't fail the test - this is acceptable for CI without full setup
         }
     }
@@ -136,11 +139,21 @@ fn test_config_loading() {
 
     // Verify default values are applied when not specified in JSON
     assert!(
-        config.embedding.model_path.to_str().unwrap().contains("MiniLM"),
+        config
+            .embedding
+            .model_path
+            .to_str()
+            .unwrap()
+            .contains("MiniLM"),
         "Default embedding model should contain 'MiniLM'"
     );
     assert!(
-        config.embedding.tokenizer_path.to_str().unwrap().contains("tokenizer"),
+        config
+            .embedding
+            .tokenizer_path
+            .to_str()
+            .unwrap()
+            .contains("tokenizer"),
         "Default tokenizer path should contain 'tokenizer'"
     );
     assert!(
