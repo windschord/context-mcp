@@ -5,7 +5,9 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc as tokio_mpsc;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
+#[cfg(test)]
+use tracing::debug;
 
 /// ファイル変更イベントの種類
 #[derive(Debug, Clone, PartialEq, Eq)]
