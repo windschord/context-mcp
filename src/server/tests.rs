@@ -2480,7 +2480,11 @@ async fn test_search_code_file_types_multiple() {
         query: "function".to_string(),
         project_id: None,
         collection_name: None,
-        file_types: Some(vec!["rust".to_string(), "python".to_string(), "typescript".to_string()]),
+        file_types: Some(vec![
+            "rust".to_string(),
+            "python".to_string(),
+            "typescript".to_string(),
+        ]),
         top_k: Some(20),
         min_score: None,
     };
@@ -2595,7 +2599,14 @@ async fn test_get_symbol_all_symbol_types() {
     // REQ-012: Test extraction of functions, classes, interfaces
     let (server, _temp_dir) = create_test_server().await;
 
-    let symbol_types = vec!["function", "class", "interface", "variable", "struct", "enum"];
+    let symbol_types = vec![
+        "function",
+        "class",
+        "interface",
+        "variable",
+        "struct",
+        "enum",
+    ];
 
     for symbol_type in symbol_types {
         let params = GetSymbolParams {
@@ -2769,7 +2780,9 @@ async fn test_clear_index_success_message() {
     let text = extract_text(&result.unwrap()).unwrap();
     // Should return error for uninitialized server, or success message if initialized
     assert!(
-        text.contains("Server not initialized") || text.contains("cleared") || text.contains("success")
+        text.contains("Server not initialized")
+            || text.contains("cleared")
+            || text.contains("success")
     );
 }
 

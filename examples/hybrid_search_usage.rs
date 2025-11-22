@@ -87,9 +87,7 @@ async fn main() -> anyhow::Result<()> {
     // Step 4: Insert some vectors into Milvus (simulating indexed code)
     println!("4. Inserting sample vectors...");
     let sample_records = create_sample_records(&embedding).await?;
-    milvus
-        .insert(collection_name, sample_records)
-        .await?;
+    milvus.insert(collection_name, sample_records).await?;
     println!("   Vectors inserted\n");
 
     // Step 5: Create hybrid search engine

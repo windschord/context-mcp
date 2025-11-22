@@ -493,7 +493,11 @@ impl IndexingService {
         // Delete old index
         if let Err(e) = self.delete_file_index(&file_path.to_string_lossy()).await {
             // Log error but continue with re-indexing
-            tracing::warn!("Failed to delete old index for {}: {}", file_path.display(), e);
+            tracing::warn!(
+                "Failed to delete old index for {}: {}",
+                file_path.display(),
+                e
+            );
         }
 
         // Re-index the file
@@ -1570,8 +1574,7 @@ fn documented_func() {
     #[tokio::test]
     async fn test_index_project_with_exclude_patterns() {
         // Create test directory structure
-        let temp_dir =
-            std::env::temp_dir().join(format!("exclude_test_{}", uuid::Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("exclude_test_{}", uuid::Uuid::new_v4()));
         tokio::fs::create_dir(&temp_dir)
             .await
             .expect("Failed to create temp dir");

@@ -365,15 +365,11 @@ impl BM25Engine {
         let conn = self.conn.lock();
         let mut stmt = conn
             .prepare("SELECT id FROM documents")
-            .map_err(|e| {
-                ContextMcpError::Database(format!("Failed to prepare query: {}", e))
-            })?;
+            .map_err(|e| ContextMcpError::Database(format!("Failed to prepare query: {}", e)))?;
 
         let ids = stmt
             .query_map([], |row| row.get(0))
-            .map_err(|e| {
-                ContextMcpError::Database(format!("Failed to query document IDs: {}", e))
-            })?
+            .map_err(|e| ContextMcpError::Database(format!("Failed to query document IDs: {}", e)))?
             .collect::<std::result::Result<Vec<String>, _>>()
             .map_err(|e| {
                 ContextMcpError::Database(format!("Failed to collect document IDs: {}", e))
