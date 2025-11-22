@@ -205,13 +205,25 @@ impl EmbeddingEngine {
 - `delete(id)`: ベクトルの削除
 
 **サポートバックエンド**:
-```typescript
+```rust
 // ローカルバックエンド（デフォルト）
-- MilvusBackend: Milvus standalone (Docker Compose、localhost:19530)
+- MilvusBackend: Milvus standalone v2.6.4+ (Docker Compose、localhost:19530)
 
 // クラウドバックエンド（オプション）
 - ZillizBackend: Zilliz Cloud (Milvusマネージドサービス)
 ```
+
+**Milvus SDK実装**:
+- 公式Rust SDK: `milvus-sdk-rust v0.1.0`（milvus-io/milvus-sdk-rust）
+- Milvus v2.6.4+と完全互換（VarChar型サポート）
+- ビルダーパターンによる使いやすいAPI設計
+- 非同期通信（tokio + tonic）による高性能
+- 最終更新: 2025年2月18日（アクティブメンテナンス）
+
+**移行履歴**:
+- 旧SDK: `milvus v0.2.0`（非公式、2022年頃のコード、Milvus v2.6.4非互換）
+- 互換性問題: VarChar型が"string data type not supported"エラー
+- 解決策: 公式`milvus-sdk-rust`へ移行（2025年11月）
 
 ### コンポーネント8: File Watcher
 **目的**: ファイルシステムの変更監視
@@ -946,6 +958,59 @@ docker-compose up -d
 - **エラー追跡**: スタックトレース、エラー発生箇所、コンテキスト情報
 - **リソース使用量**: メモリ使用量、インデックス済みファイル数、CPU使用率
 - **ビジネスメトリクス**: 検索実行回数、インデックス化頻度、ツール呼び出し統計
+
+### 決定8: 公式milvus-sdk-rustへの移行
+
+**背景**:
+- 初期実装では非公式SDK（`milvus v0.2.0`）を使用
+- Milvus v2.6.4との互換性問題が発生（VarChar型が"string data type not supported"エラー）
+- 非公式SDKは2022年頃で更新停止、メンテナンス不在
+
+**検討した選択肢**:
+1. **公式milvus-sdk-rust** - Milvus公式、アクティブメンテナンス、v2.6.4互換
+2. 非公式milvus v0.2.0維持 - 変更不要だが互換性問題未解決
+3. Milvusバージョンダウングレード - 互換性確保だが新機能利用不可
+
+**決定**: 公式milvus-sdk-rust v0.1.0への移行
+**根拠**:
+- **互換性問題の根本解決**: Milvus v2.6.4との完全互換性を確認
+- **VarChar型の完全サポート**: `new_varchar()`および`new_primary_varchar()`メソッド提供
+- **公式サポート**: milvus-io組織による公式SDK、継続的なメンテナンス保証
+- **最新機能対応**: Milvus 2.6.x新機能へのアクセス
+- **アクティブ開発**: 最終更新2025年2月18日、14個の統合テスト、豊富なサンプルコード
+- **API改善**: ビルダーパターンによる使いやすいスキーマ定義
+- **プロダクション対応**: README明記 "should be already to run in your production environment"
+
+**実装差分**:
+```rust
+// 旧SDK（milvus v0.2.0）
+FieldSchema::new_varchar("field", Some("desc"), false, 256)
+
+// 新SDK（milvus-sdk-rust v0.1.0）
+FieldSchema::new_varchar("field", "desc", 256)
+
+// スキーマ構築
+// 旧: 直接フィールド配列定義
+// 新: CollectionSchemaBuilderによるビルダーパターン
+let schema = CollectionSchemaBuilder::new("collection_name", "description")
+    .add_field(FieldSchema::new_primary_varchar("id", "primary key", false, 256))
+    .add_field(FieldSchema::new_float_vector("vector", "embeddings", 384))
+    .build()?;
+```
+
+**移行タスク**:
+1. Cargo.toml依存関係更新（`milvus v0.2.0` → `milvus-sdk-rust v0.1.0`）
+2. `src/storage/milvus_client.rs`のAPI変更対応（スキーマ定義、コレクション作成等）
+3. 既存テストの更新（新APIに合わせて修正）
+4. 統合テストでの動作確認（Milvus v2.6.4環境）
+5. ドキュメント更新（README、設計書等）
+
+**移行リスク**:
+- **低リスク**: API変更は限定的（主にスキーマ定義周り）、破壊的変更は少ない
+- **テストカバレッジ**: 統合テスト6個で新SDK動作を検証済み
+- **後方互換性**: 既存インデックスデータは保持（コレクションスキーマは同一）
+
+**完了予定**: フェーズ12.5（テストカバレッジ改善の一環として実施）
 
 ## セキュリティ考慮事項
 
