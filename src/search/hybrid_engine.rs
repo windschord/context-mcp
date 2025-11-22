@@ -247,12 +247,12 @@ impl HybridSearchEngine {
             // not the full VectorRecord structure.
 
             // Try to find this ID in vector results
-            if let Some(vector_result) = vector_results.iter().find(|v| &v.id == id) {
+            if let Some((vector_idx, vector_result)) = vector_results
+                .iter()
+                .enumerate()
+                .find(|(_, v)| &v.id == id)
+            {
                 // Found in both sources - true hybrid result
-                let vector_idx = vector_results
-                    .iter()
-                    .position(|v| &v.id == id)
-                    .expect("Vector result must exist since we just found it with find()");
                 let norm_vec_score = normalized_vector[vector_idx];
                 let combined_score = alpha * norm_score + (1.0 - alpha) * norm_vec_score;
 
