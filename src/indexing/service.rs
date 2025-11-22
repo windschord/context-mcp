@@ -1330,4 +1330,185 @@ fn documented_func() {
         tokio::fs::remove_file(test_file).await.ok();
         tokio::fs::remove_dir(temp_dir).await.ok();
     }
+
+    #[tokio::test]
+    async fn test_index_project_partial_failure() {
+        // Create test directory with multiple files (some will fail)
+        let temp_dir =
+            std::env::temp_dir().join(format!("partial_fail_test_{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir(&temp_dir)
+            .await
+            .expect("Failed to create temp dir");
+
+        // Create multiple test files
+        let test_file1 = temp_dir.join("test1.rs");
+        let test_file2 = temp_dir.join("test2.rs");
+        tokio::fs::write(&test_file1, "fn test1() {}")
+            .await
+            .expect("Failed to write test file");
+        tokio::fs::write(&test_file2, "fn test2() {}")
+            .await
+            .expect("Failed to write test file");
+
+        // Setup mocks - first file succeeds, second fails
+        let mut mock_embedding = MockEmbeddingEngineTrait::new();
+        let call_count = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let call_count_clone = call_count.clone();
+        mock_embedding.expect_embed_batch().returning(move |texts| {
+            let count = call_count_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            if count == 0 {
+                Ok(texts
+                    .iter()
+                    .map(|text| Embedding::new(vec![0.1; 384], text.to_string(), 10))
+                    .collect())
+            } else {
+                Err(ContextMcpError::Embedding("Embedding failed".to_string()))
+            }
+        });
+
+        let mut mock_storage = MockMilvusClientTrait::new();
+        mock_storage.expect_insert().returning(|_, _| Ok(vec![]));
+
+        let service = create_test_service(Arc::new(mock_embedding), Arc::new(mock_storage));
+
+        let config = IndexConfig::new(temp_dir.clone()).with_project_id("partial-test".to_string());
+
+        let result = service.index_project(config).await;
+        assert!(result.is_ok());
+        let index_result = result.unwrap();
+
+        // Should have processed both files (one success, one failure)
+        assert_eq!(index_result.total_files, 2);
+        assert!(!index_result.errors.is_empty());
+
+        // Cleanup
+        tokio::fs::remove_file(test_file1).await.ok();
+        tokio::fs::remove_file(test_file2).await.ok();
+        tokio::fs::remove_dir(temp_dir).await.ok();
+    }
+
+    #[tokio::test]
+    async fn test_index_file_unsupported_language() {
+        // Create test file with unsupported extension
+        let temp_dir = std::env::temp_dir();
+        let test_file = temp_dir.join("test.xyz");
+        tokio::fs::write(&test_file, "some content")
+            .await
+            .expect("Failed to write test file");
+
+        let mock_embedding = Arc::new(MockEmbeddingEngineTrait::new());
+        let mock_storage = Arc::new(MockMilvusClientTrait::new());
+        let service = create_test_service(mock_embedding, mock_storage);
+
+        let result = service.index_file(&test_file, "test-project").await;
+
+        // Should handle unsupported file gracefully
+        assert!(result.is_ok());
+        let file_result = result.unwrap();
+        // Behavior depends on implementation - either success with 0 symbols or parse error
+        if !file_result.success {
+            assert!(file_result.error.is_some());
+        }
+
+        // Cleanup
+        tokio::fs::remove_file(test_file).await.ok();
+    }
+
+    #[tokio::test]
+    async fn test_index_file_with_large_content() {
+        // Create file with large content
+        let temp_dir = std::env::temp_dir();
+        let test_file = temp_dir.join("test_large.rs");
+        let large_content = (0..100)
+            .map(|i| format!("fn func_{}() {{\n    // Comment\n}}\n", i))
+            .collect::<String>();
+        tokio::fs::write(&test_file, large_content)
+            .await
+            .expect("Failed to write test file");
+
+        // Setup mocks
+        let mut mock_embedding = MockEmbeddingEngineTrait::new();
+        mock_embedding
+            .expect_embed_batch()
+            .times(1)
+            .returning(|texts| {
+                Ok(texts
+                    .iter()
+                    .map(|text| Embedding::new(vec![0.1; 384], text.to_string(), 10))
+                    .collect())
+            });
+
+        let mut mock_storage = MockMilvusClientTrait::new();
+        mock_storage
+            .expect_insert()
+            .times(1)
+            .returning(|_, _| Ok(vec![]));
+
+        let service = create_test_service(Arc::new(mock_embedding), Arc::new(mock_storage));
+
+        let result = service.index_file(&test_file, "test-project").await;
+        assert!(result.is_ok());
+        let file_result = result.unwrap();
+        assert!(file_result.success);
+        assert!(file_result.symbol_count > 0);
+
+        // Cleanup
+        tokio::fs::remove_file(test_file).await.ok();
+    }
+
+    #[tokio::test]
+    async fn test_index_project_with_exclude_patterns() {
+        // Create test directory structure
+        let temp_dir =
+            std::env::temp_dir().join(format!("exclude_test_{}", uuid::Uuid::new_v4()));
+        tokio::fs::create_dir(&temp_dir)
+            .await
+            .expect("Failed to create temp dir");
+
+        let target_dir = temp_dir.join("target");
+        tokio::fs::create_dir(&target_dir)
+            .await
+            .expect("Failed to create target dir");
+
+        // Create files
+        let included_file = temp_dir.join("included.rs");
+        let excluded_file = target_dir.join("excluded.rs");
+        tokio::fs::write(&included_file, "fn included() {}")
+            .await
+            .expect("Failed to write included file");
+        tokio::fs::write(&excluded_file, "fn excluded() {}")
+            .await
+            .expect("Failed to write excluded file");
+
+        // Setup mocks
+        let mut mock_embedding = MockEmbeddingEngineTrait::new();
+        mock_embedding.expect_embed_batch().returning(|texts| {
+            Ok(texts
+                .iter()
+                .map(|text| Embedding::new(vec![0.1; 384], text.to_string(), 10))
+                .collect())
+        });
+
+        let mut mock_storage = MockMilvusClientTrait::new();
+        mock_storage.expect_insert().returning(|_, _| Ok(vec![]));
+
+        let service = create_test_service(Arc::new(mock_embedding), Arc::new(mock_storage));
+
+        let config = IndexConfig::new(temp_dir.clone())
+            .with_project_id("exclude-test".to_string())
+            .with_exclude_patterns(vec!["target/**".to_string()]);
+
+        let result = service.index_project(config).await;
+        assert!(result.is_ok());
+        let index_result = result.unwrap();
+
+        // Should only index included file
+        assert_eq!(index_result.total_files, 1);
+
+        // Cleanup
+        tokio::fs::remove_file(included_file).await.ok();
+        tokio::fs::remove_file(excluded_file).await.ok();
+        tokio::fs::remove_dir(target_dir).await.ok();
+        tokio::fs::remove_dir(temp_dir).await.ok();
+    }
 }
