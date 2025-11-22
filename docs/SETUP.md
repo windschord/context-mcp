@@ -62,17 +62,51 @@ context-mcp --version
 
 ### 方法2: ソースからビルド（開発者向け）
 
+#### 依存関係のインストール
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
+```
+
+**macOS:**
+```bash
+brew install protobuf
+```
+
+#### リポジトリのクローンとビルド
+
 ```bash
 # リポジトリのクローン
 git clone https://github.com/windschord/lsp-mcp.git
 cd lsp-mcp
 
-# リリースビルド
+# デバッグビルド（開発時）
+cargo build
+
+# リリースビルド（本番使用時）
 cargo build --release
 
 # 動作確認
 ./target/release/context-mcp --version
 ```
+
+#### テスト実行
+
+```bash
+# すべてのテストを実行
+cargo test
+
+# ユニットテストのみ実行
+cargo test --lib
+
+# カバレッジ測定
+cargo install cargo-llvm-cov
+cargo llvm-cov --lib --all-features
+```
+
+詳細は[テストガイド](../tests/README.md)を参照してください。
 
 ## クイックスタート（ゼロコンフィグモード）
 

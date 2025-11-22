@@ -91,10 +91,41 @@ context-mcp --version
 
 ### ソースからビルド（開発時）
 
+#### 1. 依存関係のインストール
+
+**Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
+```
+
+**macOS:**
+```bash
+brew install protobuf
+```
+
+#### 2. リポジトリのクローン
+
 ```bash
 git clone https://github.com/windschord/lsp-mcp.git
 cd lsp-mcp
+```
+
+#### 3. ビルド
+
+**デバッグビルド:**
+```bash
+cargo build
+```
+
+**リリースビルド:**
+```bash
 cargo build --release
+```
+
+#### 4. 動作確認
+
+```bash
 ./target/release/context-mcp --version
 ```
 
@@ -470,6 +501,31 @@ cargo fmt --all
 # Format check
 cargo fmt --all -- --check
 ```
+
+### テスト
+
+```bash
+# すべてのテストを実行
+cargo test
+
+# ユニットテストのみ実行
+cargo test --lib
+
+# 特定のモジュールのテストを実行
+cargo test --lib indexing
+cargo test --lib parser
+cargo test --lib search
+
+# カバレッジ測定（cargo-llvm-covが必要）
+cargo install cargo-llvm-cov
+cargo llvm-cov --lib --all-features
+
+# カバレッジレポートをHTML形式で生成
+cargo llvm-cov --lib --all-features --html
+cargo llvm-cov --lib --all-features --open
+```
+
+詳細は[テストガイド](tests/README.md)を参照してください。
 
 ### 依存関係の管理
 
