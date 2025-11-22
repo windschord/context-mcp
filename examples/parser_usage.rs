@@ -4,7 +4,7 @@
 ///
 /// This file demonstrates how to use the Tree-sitter AST parser
 /// and symbol extractor to analyze source code.
-use context_mcp::parser::{Language, ParseResult, Symbol, SymbolExtractor, SymbolKind};
+use context_mcp::parser::{Language, SymbolExtractor, SymbolKind};
 
 /// Example 1: Basic symbol extraction from a Rust file
 fn example_basic_extraction() -> context_mcp::Result<()> {

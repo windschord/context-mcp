@@ -11,7 +11,6 @@
 /// Run with: cargo run --example bm25_usage
 use context_mcp::search::{BM25Config, BM25Engine, Document, SearchOptions, Tokenizer};
 use std::collections::HashMap;
-use std::path::Path;
 
 fn main() -> context_mcp::Result<()> {
     // Initialize tracing for logging
@@ -23,7 +22,7 @@ fn main() -> context_mcp::Result<()> {
 
     // Example 1: Basic usage with in-memory database
     println!("1. Creating in-memory BM25 engine...");
-    let mut engine = BM25Engine::new_in_memory()?;
+    let engine = BM25Engine::new_in_memory()?;
     println!("   ✓ Engine created\n");
 
     // Example 2: Index some code documents
@@ -177,7 +176,7 @@ fn main() -> context_mcp::Result<()> {
 
 /// Example: Batch indexing
 fn batch_indexing_example() -> context_mcp::Result<()> {
-    let mut engine = BM25Engine::new_in_memory()?;
+    let engine = BM25Engine::new_in_memory()?;
 
     println!("   Creating batch of documents...");
 
@@ -218,7 +217,7 @@ fn custom_tokenizer_example() -> context_mcp::Result<()> {
         .with_split_snake_case(true)
         .with_min_term_length(3);
 
-    let mut engine = BM25Engine::new_in_memory()?.with_tokenizer(custom_tokenizer);
+    let engine = BM25Engine::new_in_memory()?.with_tokenizer(custom_tokenizer);
 
     engine.index_document("doc1", "getUserById fetchDataFromAPI")?;
     let results = engine.search("user data", 10)?;
@@ -235,7 +234,7 @@ fn custom_config_example() -> context_mcp::Result<()> {
     // Create engine with custom BM25 parameters
     let config = BM25Config::new(1.5, 0.9); // Higher k1 and b values
 
-    let mut engine = BM25Engine::new_in_memory()?.with_config(config)?;
+    let engine = BM25Engine::new_in_memory()?.with_config(config)?;
 
     engine.index_document("short", "rust")?;
     engine.index_document("medium", "rust programming language")?;
@@ -256,7 +255,7 @@ fn custom_config_example() -> context_mcp::Result<()> {
     }
 
     // Compare with default config
-    let mut default_engine = BM25Engine::new_in_memory()?;
+    let default_engine = BM25Engine::new_in_memory()?;
     default_engine.index_document("short", "rust")?;
     default_engine.index_document("medium", "rust programming language")?;
     default_engine.index_document(
@@ -288,7 +287,7 @@ fn persistent_db_example() -> context_mcp::Result<()> {
 
     {
         // Create and populate the database
-        let mut engine = BM25Engine::new(&db_path)?;
+        let engine = BM25Engine::new(&db_path)?;
         engine.index_document("doc1", "persistent data storage")?;
         engine.index_document("doc2", "database indexing")?;
         println!("   ✓ Indexed 2 documents");
@@ -319,7 +318,7 @@ fn persistent_db_example() -> context_mcp::Result<()> {
 /// Example: Demonstrating ranking quality
 #[allow(dead_code)]
 fn ranking_quality_example() -> context_mcp::Result<()> {
-    let mut engine = BM25Engine::new_in_memory()?;
+    let engine = BM25Engine::new_in_memory()?;
 
     // Index documents with varying relevance to query "parse config file"
     engine.index_document(
@@ -360,7 +359,7 @@ fn ranking_quality_example() -> context_mcp::Result<()> {
 /// Example: Update and deletion operations
 #[allow(dead_code)]
 fn update_delete_example() -> context_mcp::Result<()> {
-    let mut engine = BM25Engine::new_in_memory()?;
+    let engine = BM25Engine::new_in_memory()?;
 
     // Index initial document
     engine.index_document("doc1", "old content version 1")?;

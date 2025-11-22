@@ -30,10 +30,10 @@ use context_mcp::embedding::{EmbeddingConfig, EmbeddingEngine};
 use context_mcp::indexing::{IndexConfig, IndexingService};
 use context_mcp::parser::SymbolExtractor;
 use context_mcp::search::bm25_engine::BM25Engine;
-use context_mcp::search::types::BM25Config;
 use context_mcp::storage::milvus_client::MilvusClient;
 use context_mcp::storage::types::CollectionConfig;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -72,7 +72,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create or verify collection exists
     let collection_name = "code_vectors";
-    if !milvus.has_collection(collection_name).await? {
+    if !milvus.collection_exists(collection_name).await? {
         info!("Creating collection '{}'", collection_name);
         let collection_config = CollectionConfig::code_vectors(384); // all-MiniLM-L6-v2 dimension
         milvus.create_collection(collection_config).await?;
@@ -82,16 +82,20 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Create BM25 engine (full-text search)
-    let bm25_config = BM25Config::default();
-    let bm25 = BM25Engine::new("./data/bm25_index.db", bm25_config)?;
+    let bm25 = BM25Engine::new(Path::new("./data/bm25_index.db"))?;
     info!("✓ BM25 engine initialized");
 
     info!("");
 
     // Step 2: Create indexing service
     info!("Step 2: Creating indexing service...");
-    let service = IndexingService::new(parser, embedding, milvus, bm25)
-        .with_collection_name(collection_name.to_string());
+    let service = IndexingService::new(
+        Arc::new(parser),
+        Arc::new(embedding),
+        Arc::new(milvus),
+        Arc::new(bm25),
+    )
+    .with_collection_name(collection_name.to_string());
     info!("✓ Indexing service created");
     info!("");
 

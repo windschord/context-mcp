@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
 
     // Example 1: Create server with default configuration
     println!("1. Creating server with default configuration...");
-    let server = ContextMcpServer::new();
+    let _server = ContextMcpServer::new();
     println!("   Server created\n");
 
     // Example 2: Create server with custom configuration

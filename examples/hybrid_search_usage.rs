@@ -16,8 +16,8 @@
 use context_mcp::embedding::{EmbeddingConfig, EmbeddingEngine};
 use context_mcp::search::{BM25Engine, HybridConfig, HybridSearchEngine, NormalizationType};
 use context_mcp::storage::{CollectionConfig, MilvusClient, VectorRecord};
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Step 1: Initialize BM25 engine
     println!("1. Initializing BM25 engine...");
-    let mut bm25 = BM25Engine::new(Path::new("hybrid_example.db"))?;
+    let bm25 = BM25Engine::new(Path::new("hybrid_example.db"))?;
 
     // Index some sample documents
     println!("   Indexing sample documents...");
@@ -88,13 +88,13 @@ async fn main() -> anyhow::Result<()> {
     println!("4. Inserting sample vectors...");
     let sample_records = create_sample_records(&embedding).await?;
     milvus
-        .insert_vectors(collection_name, sample_records)
+        .insert(collection_name, sample_records)
         .await?;
     println!("   Vectors inserted\n");
 
     // Step 5: Create hybrid search engine
     println!("5. Creating hybrid search engine...");
-    let hybrid = HybridSearchEngine::new(bm25, milvus, embedding);
+    let hybrid = HybridSearchEngine::new(Arc::new(bm25), Arc::new(milvus), Arc::new(embedding));
     println!("   Engine ready\n");
 
     // Step 6: Perform searches with different configurations
