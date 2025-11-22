@@ -355,6 +355,33 @@ impl BM25Engine {
         Ok(())
     }
 
+    /// Delete a document from the index (alias for remove_document)
+    pub fn delete_document(&self, id: &str) -> Result<()> {
+        self.remove_document(id)
+    }
+
+    /// Get all document IDs in the index
+    pub fn get_all_document_ids(&self) -> Result<Vec<String>> {
+        let conn = self.conn.lock();
+        let mut stmt = conn
+            .prepare("SELECT id FROM documents")
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to prepare query: {}", e))
+            })?;
+
+        let ids = stmt
+            .query_map([], |row| row.get(0))
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to query document IDs: {}", e))
+            })?
+            .collect::<std::result::Result<Vec<String>, _>>()
+            .map_err(|e| {
+                ContextMcpError::Database(format!("Failed to collect document IDs: {}", e))
+            })?;
+
+        Ok(ids)
+    }
+
     /// Clear all documents from the index
     pub fn clear(&self) -> Result<()> {
         info!("Clearing all documents");

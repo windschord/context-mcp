@@ -438,6 +438,117 @@ impl IndexingService {
         info!("Index cleared successfully");
         Ok(())
     }
+
+    /// Delete indexed data for a specific file
+    ///
+    /// # Arguments
+    /// - `file_path`: Path to the file to remove from the index
+    ///
+    /// # Returns
+    /// Result indicating success or failure
+    pub async fn delete_file_index(&self, file_path: &str) -> Result<()> {
+        debug!("Deleting index for file: {}", file_path);
+
+        // Delete from vector database using filter
+        // Format: DELETE FROM collection WHERE file_path = 'path'
+        let filter = format!("file_path == \"{}\"", file_path);
+        self.storage
+            .delete_with_filter(&self.collection_name, &filter)
+            .await?;
+
+        // Delete from BM25 index
+        // We need to find all document IDs that start with this file path
+        let docs_to_delete: Vec<String> = self
+            .bm25
+            .get_all_document_ids()?
+            .into_iter()
+            .filter(|id| id.starts_with(file_path))
+            .collect();
+
+        for doc_id in docs_to_delete {
+            self.bm25.delete_document(&doc_id)?;
+        }
+
+        debug!("Successfully deleted index for file: {}", file_path);
+        Ok(())
+    }
+
+    /// Update index for a single file (incremental update)
+    ///
+    /// This method deletes the old index for the file and creates a new one.
+    ///
+    /// # Arguments
+    /// - `file_path`: Path to the file to update
+    /// - `project_id`: Project identifier
+    ///
+    /// # Returns
+    /// Result of the file indexing operation
+    pub async fn update_file_index(
+        &self,
+        file_path: &Path,
+        project_id: &str,
+    ) -> Result<FileIndexResult> {
+        info!("Updating index for file: {}", file_path.display());
+
+        // Delete old index
+        if let Err(e) = self.delete_file_index(&file_path.to_string_lossy()).await {
+            // Log error but continue with re-indexing
+            tracing::warn!("Failed to delete old index for {}: {}", file_path.display(), e);
+        }
+
+        // Re-index the file
+        self.index_file(file_path, project_id).await
+    }
+
+    /// Process file change events for incremental updates
+    ///
+    /// # Arguments
+    /// - `events`: List of file change events
+    /// - `project_id`: Project identifier
+    ///
+    /// # Returns
+    /// Results of processing each event
+    pub async fn process_file_changes(
+        &self,
+        events: Vec<crate::indexing::FileChangeEvent>,
+        project_id: &str,
+    ) -> Result<Vec<FileIndexResult>> {
+        let mut results = Vec::new();
+
+        for event in events {
+            let result = match event.kind {
+                crate::indexing::FileChangeKind::Created
+                | crate::indexing::FileChangeKind::Modified => {
+                    // Re-index the file
+                    self.update_file_index(&event.path, project_id).await?
+                }
+                crate::indexing::FileChangeKind::Deleted => {
+                    // Delete from index
+                    if let Err(e) = self.delete_file_index(&event.path.to_string_lossy()).await {
+                        tracing::warn!(
+                            "Failed to delete index for {}: {}",
+                            event.path.display(),
+                            e
+                        );
+                        FileIndexResult::error(
+                            event.path.to_string_lossy().to_string(),
+                            IndexError::storage(
+                                event.path.to_string_lossy().to_string(),
+                                e.to_string(),
+                            ),
+                            0,
+                        )
+                    } else {
+                        FileIndexResult::success(event.path.to_string_lossy().to_string(), 0, 0)
+                    }
+                }
+            };
+
+            results.push(result);
+        }
+
+        Ok(results)
+    }
 }
 
 /// Statistics about the current index
