@@ -220,7 +220,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: target
-          key: ${{ runner.os }}-cargo-coverage-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-coverage-target-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-cargo-coverage-target-
 
