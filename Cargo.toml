@@ -64,6 +64,8 @@ ndarray = "0.16"
 # Vector database
 # Using milvus crate (unofficial but more actively maintained)
 # NOTE: Using patched local version to fix lifetime bug in v0.2.0
+# TODO: Migrate to [patch.crates-io] approach to improve maintainability
+# See https://github.com/windschord/context-mcp/pull/17#issuecomment-3565505457
 milvus = { path = "vendor/milvus-patched", optional = true }
 
 # Local database for BM25 search

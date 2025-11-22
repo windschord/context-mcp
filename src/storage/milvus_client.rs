@@ -859,7 +859,6 @@ impl MilvusClient {
         let _collection: Collection<CodeVectorEntity> = self.get_collection().await?;
 
         // NOTE: Delete API is not available in the current vendor/milvus-patched crate.
-        // This is a placeholder implementation that logs a warning instead of deleting.
         //
         // Future implementation requires:
         // 1. Upstream milvus-sdk-rust to support delete operations
@@ -867,11 +866,9 @@ impl MilvusClient {
         // 3. Implement: collection.delete().filter(expr).execute().await?
         //
         // See vendor/milvus-patched/README.md for tracking upstream changes.
-        warn!("Delete operation is not yet implemented in vendor/milvus-patched");
-
-        debug!("Successfully deleted {} records", ids.len());
-
-        Ok(())
+        Err(ContextMcpError::Database(
+            "Delete operation not supported by Milvus SDK version".to_string(),
+        ))
     }
 
     /// Delete records by filter expression

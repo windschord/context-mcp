@@ -230,6 +230,33 @@ export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 docker-compose up -d
 ```
 
+## 課題と今後の対応
+
+### Vendored依存関係の移行
+
+**現状**: `vendor/milvus-patched`ディレクトリに外部依存をコピーし、手動でパッチを適用
+
+**問題点**:
+- 上流のセキュリティパッチが自動適用されない
+- メンテナンス負担の増加
+- 依存関係の透明性が低下
+- cargo-auditなどのセキュリティ監査ツールが正常動作しない
+
+**推奨される対応**:
+1. milvusクレートのフォークをGitHubに作成
+2. パッチを適用してコミット
+3. Cargo.tomlで`[patch.crates-io]`セクションを使用:
+   ```toml
+   [patch.crates-io]
+   milvus = { git = "https://github.com/your-fork/milvus-sdk-rust", branch = "fix/lifetime-bug" }
+   ```
+4. vendor/milvus-patchedディレクトリを削除
+5. パッチを上流にPR提出
+
+**参考**: PR #17レビュー指摘 https://github.com/windschord/context-mcp/pull/17#issuecomment-3565505457
+
+**優先度**: 高（マージ後の対応推奨）
+
 ## 参考資料
 
 - [CLAUDE.md](/home/tsk/sync/git/lsp_mcp/CLAUDE.md) - プロジェクト概要
