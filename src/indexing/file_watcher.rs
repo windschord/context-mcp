@@ -270,8 +270,13 @@ mod tests {
         std::thread::sleep(Duration::from_millis(200));
 
         // イベントを確認
+        // ファイルシステムの実装により、CreatedまたはModifiedイベントが発生する可能性がある
         if let Ok(Some(event)) = watcher.try_recv() {
-            assert_eq!(event.kind, FileChangeKind::Created);
+            assert!(
+                event.kind == FileChangeKind::Created || event.kind == FileChangeKind::Modified,
+                "Expected Created or Modified event, got {:?}",
+                event.kind
+            );
             assert!(event.path.ends_with("test.txt"));
         }
     }
