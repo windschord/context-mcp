@@ -31,30 +31,30 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      # Note: Using restore-only for caches to avoid "Post Cache" failures
+      # Note: Using restore-only with simplified keys to avoid hashFiles failures
       - name: Cache cargo registry
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-registry
 
       - name: Cache cargo index
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index
           restore-keys: |
-            ${{ runner.os }}-cargo-index-
+            ${{ runner.os }}-cargo-index
 
       - name: Cache target directory
         uses: actions/cache/restore@v4
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target
           restore-keys: |
-            ${{ runner.os }}-cargo-build-target-
+            ${{ runner.os }}-cargo-build-target
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -96,30 +96,30 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: brew install protobuf
 
-      # Note: Using restore-only for caches to avoid "Post Cache" failures
+      # Note: Using restore-only with simplified keys to avoid hashFiles failures
       - name: Cache cargo registry
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-registry
 
       - name: Cache cargo index
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index
           restore-keys: |
-            ${{ runner.os }}-cargo-index-
+            ${{ runner.os }}-cargo-index
 
       - name: Cache target directory
         uses: actions/cache/restore@v4
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target
           restore-keys: |
-            ${{ runner.os }}-cargo-build-target-
+            ${{ runner.os }}-cargo-build-target
 
       - name: Build
         run: cargo build --verbose
@@ -152,30 +152,30 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y protobuf-compiler
 
-      # Note: Using restore-only for caches to avoid "Post Cache" failures
+      # Note: Using restore-only with simplified keys to avoid hashFiles failures
       - name: Cache cargo registry
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-registry
 
       - name: Cache cargo index
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index
           restore-keys: |
-            ${{ runner.os }}-cargo-index-
+            ${{ runner.os }}-cargo-index
 
       - name: Cache target directory
         uses: actions/cache/restore@v4
         with:
           path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-build-target
           restore-keys: |
-            ${{ runner.os }}-cargo-build-target-
+            ${{ runner.os }}-cargo-build-target
 
       - name: Check
         run: cargo check --lib --bins --tests --all-features
@@ -209,23 +209,23 @@ jobs:
           sudo ldconfig
           rm -rf onnxruntime-linux-x64-1.22.0*
 
-      # Note: Using restore-only for caches to avoid "Post Cache" failures
+      # Note: Using restore-only with simplified keys to avoid hashFiles failures
       # Coverage jobs rebuild with instrumentation, so cache saving is not critical
       - name: Cache cargo registry
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-registry
           restore-keys: |
-            ${{ runner.os }}-cargo-registry-
+            ${{ runner.os }}-cargo-registry
 
       - name: Cache cargo index
         uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-index
           restore-keys: |
-            ${{ runner.os }}-cargo-index-
+            ${{ runner.os }}-cargo-index
 
       - name: Setup Milvus with Docker Compose
         run: |
