@@ -200,8 +200,10 @@ jobs:
           sudo ldconfig
           rm -rf onnxruntime-linux-x64-1.22.0*
 
+      # Note: Using restore-only for caches to avoid "Post Cache" failures
+      # Coverage jobs rebuild with instrumentation, so cache saving is not critical
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
@@ -209,15 +211,12 @@ jobs:
             ${{ runner.os }}-cargo-registry-
 
       - name: Cache cargo index
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-index-
-
-      # Note: Removed target directory caching to avoid "Post Cache" failures
-      # Coverage jobs don't benefit much from caching as they rebuild with instrumentation
 
       - name: Setup Milvus with Docker Compose
         run: |
