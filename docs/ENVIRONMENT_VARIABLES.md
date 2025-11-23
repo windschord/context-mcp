@@ -1,19 +1,19 @@
 # 環境変数リファレンス
 
-このドキュメントでは、LSP-MCPで使用可能なすべての環境変数について説明します。
+このドキュメントでは、Context-MCPで使用可能なすべての環境変数について説明します。
 
 ## 概要
 
-LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
+Context-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_MODE等）
+1. 環境変数（MILVUS_ADDRESS等）
   ↓
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定（src/config/mod.rs）
   ↓
@@ -24,145 +24,113 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、環境�
 
 ## 環境変数一覧
 
-### モード設定
+### Milvus設定
 
-#### `LSP_MCP_MODE`
+#### `MILVUS_ADDRESS`
 
-動作モードを指定します。
-
-- **型**: `"local"` | `"cloud"`
-- **デフォルト**: `"local"`
-- **説明**: ローカルモード（プライバシー重視、外部通信なし）またはクラウドモード（外部API使用）を選択
-- **例**:
-  ```bash
-  LSP_MCP_MODE=local
-  LSP_MCP_MODE=cloud
-  ```
-
-### ベクターDB設定
-
-#### `LSP_MCP_VECTOR_BACKEND`
-
-使用するベクターDBバックエンドを指定します。
-
-- **型**: `"milvus"` | `"zilliz"`
-- **デフォルト**: `"milvus"`
-- **説明**:
-  - `milvus`: Milvus standalone（Docker Compose経由、ローカル実行）
-  - `zilliz`: Zilliz Cloud（Milvusマネージドサービス）
-- **例**:
-  ```bash
-  LSP_MCP_VECTOR_BACKEND=milvus
-  LSP_MCP_VECTOR_BACKEND=zilliz
-  ```
-
-#### `LSP_MCP_VECTOR_ADDRESS`
-
-ベクターDBの接続アドレスを指定します。
+Milvusサーバーの接続アドレスを指定します。
 
 - **型**: `string` (host:port形式)
 - **デフォルト**: `"localhost:19530"`
-- **説明**: ベクターDBサーバーのホスト名とポート番号
+- **説明**: MilvusまたはZilliz Cloudサーバーのホスト名とポート番号
 - **例**:
   ```bash
-  LSP_MCP_VECTOR_ADDRESS=localhost:19530
-  LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
+  MILVUS_ADDRESS=localhost:19530
+  MILVUS_ADDRESS=your-instance.zilliz.com:19530
   ```
 
-#### `LSP_MCP_VECTOR_TOKEN`
+#### `MILVUS_TOKEN`
 
-ベクターDB認証トークンを指定します（Zilliz Cloud使用時）。
+Milvus認証トークンを指定します（Zilliz Cloud使用時）。
 
 - **型**: `string`
 - **デフォルト**: なし
-- **説明**: Zilliz Cloudへの接続に必要な認証トークン
+- **説明**: Zilliz Cloudへの接続に必要な認証トークン。ローカルMilvus standaloneでは不要
 - **例**:
   ```bash
-  LSP_MCP_VECTOR_TOKEN=your-zilliz-cloud-token
+  MILVUS_TOKEN=your-zilliz-cloud-token
   ```
 
-### 埋め込み設定
+### 埋め込みモデル設定
 
-#### `LSP_MCP_EMBEDDING_PROVIDER`
+#### `MODEL_PATH`
 
-埋め込みベクトル生成プロバイダーを指定します。
+ONNXモデルファイルのパスを指定します。
 
-- **型**: `"local"` | `"openai"` | `"voyageai"`
-- **デフォルト**: `"local"`
-- **説明**:
-  - `local`: ローカルONNXモデル（ONNX Runtime経由、外部通信なし）
-  - `openai`: OpenAI Embedding API（クラウド、APIキー必要）
-  - `voyageai`: VoyageAI API（クラウド、APIキー必要）
+- **型**: `string` (ファイルパス)
+- **デフォルト**: `"models/all-MiniLM-L6-v2.onnx"`
+- **説明**: 埋め込みベクトル生成に使用するONNXモデルファイルへのパス
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_PROVIDER=local
-  LSP_MCP_EMBEDDING_PROVIDER=openai
-  LSP_MCP_EMBEDDING_PROVIDER=voyageai
+  MODEL_PATH=models/all-MiniLM-L6-v2.onnx
+  MODEL_PATH=/custom/path/model.onnx
   ```
 
-#### `LSP_MCP_EMBEDDING_API_KEY`
+#### `TOKENIZER_PATH`
 
-埋め込みAPIの認証キーを指定します（クラウドプロバイダー使用時）。
+トークナイザーファイルのパスを指定します。
 
-- **型**: `string`
-- **デフォルト**: なし
-- **説明**: OpenAI APIキーまたはVoyageAI APIキー
+- **型**: `string` (ファイルパス)
+- **デフォルト**: `"models/tokenizer.json"`
+- **説明**: トークナイザー設定ファイルへのパス
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
+  TOKENIZER_PATH=models/tokenizer.json
+  TOKENIZER_PATH=/custom/path/tokenizer.json
   ```
 
-#### `LSP_MCP_EMBEDDING_MODEL`
+### BM25設定
 
-埋め込みモデル名を指定します（オプション）。
+#### `BM25_DB_PATH`
 
-- **型**: `string`
-- **デフォルト**:
-  - local: `"all-MiniLM-L6-v2.onnx"`
-  - OpenAI: `"text-embedding-3-small"`
-  - VoyageAI: `"voyage-code-2"`
-- **説明**: 使用する埋め込みモデルの名前
+BM25データベースファイルのパスを指定します。
+
+- **型**: `string` (ファイルパス)
+- **デフォルト**: `"./data/bm25.db"`
+- **説明**: BM25全文検索インデックスを格納するSQLiteデータベースファイルへのパス
 - **例**:
   ```bash
-  LSP_MCP_EMBEDDING_MODEL=all-MiniLM-L6-v2.onnx
-  LSP_MCP_EMBEDDING_MODEL=text-embedding-3-large
+  BM25_DB_PATH=./data/bm25.db
+  BM25_DB_PATH=/custom/path/bm25.db
   ```
 
 ### ログ設定
 
-#### `LOG_LEVEL`
+#### `RUST_LOG`
 
 ログ出力レベルを指定します。
 
-- **型**: `"DEBUG"` | `"INFO"` | `"WARN"` | `"ERROR"`
-- **デフォルト**: `"INFO"`
-- **説明**:
-  - `DEBUG`: デバッグ情報を含むすべてのログを出力
-  - `INFO`: 一般的な情報ログを出力（推奨）
-  - `WARN`: 警告とエラーのみ出力
-  - `ERROR`: エラーのみ出力
+- **型**: `string`
+- **デフォルト**: `"info"`
+- **説明**: Rustの標準ログレベル。カンマ区切りでモジュール別の設定も可能
+- **値**:
+  - `error`: エラーのみ出力
+  - `warn`: 警告とエラーを出力
+  - `info`: 一般的な情報ログを出力（推奨）
+  - `debug`: デバッグ情報を含むすべてのログを出力
+  - `trace`: 最も詳細なトレース情報を含むすべてのログを出力
 - **例**:
   ```bash
-  LOG_LEVEL=INFO
-  LOG_LEVEL=DEBUG
+  RUST_LOG=info
+  RUST_LOG=debug
+  RUST_LOG=context_mcp=debug,milvus=info
   ```
 
 ## ユースケース別の設定例
 
 ### ユースケース1: ローカルモード（デフォルト、最もシンプル）
 
-Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデルを使用。
+Docker ComposeでMilvus standaloneを起動し、ローカルONNXモデルを使用。
 
 **Claude Code MCP設定**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "/usr/local/bin/context-mcp",
       "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LOG_LEVEL": "INFO"
+        "RUST_LOG": "info"
       }
     }
   }
@@ -171,32 +139,28 @@ Docker ComposeでMilvus standaloneを起動し、ローカル埋め込みモデ�
 
 **環境変数**（省略可、デフォルト値が使用される）:
 ```bash
-LSP_MCP_MODE=local
-LSP_MCP_VECTOR_BACKEND=milvus
-LSP_MCP_VECTOR_ADDRESS=localhost:19530
-LSP_MCP_EMBEDDING_PROVIDER=local
-LOG_LEVEL=INFO
+MILVUS_ADDRESS=localhost:19530
+MODEL_PATH=models/all-MiniLM-L6-v2.onnx
+TOKENIZER_PATH=models/tokenizer.json
+BM25_DB_PATH=./data/bm25.db
+RUST_LOG=info
 ```
 
-### ユースケース2: クラウドモード（OpenAI + Zilliz Cloud）
+### ユースケース2: Zilliz Cloud使用
 
-外部APIを使用して高速・高精度な検索を実現。
+クラウドベースのMilvusサービスを使用。埋め込みはローカルONNXモデル。
 
 **Claude Code MCP設定**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "/usr/local/bin/context-mcp",
       "args": [],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
-        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
-        "LOG_LEVEL": "INFO"
+        "MILVUS_ADDRESS": "your-instance.zilliz.com:19530",
+        "MILVUS_TOKEN": "your-zilliz-token",
+        "RUST_LOG": "info"
       }
     }
   }
@@ -205,37 +169,42 @@ LOG_LEVEL=INFO
 
 **環境変数**:
 ```bash
-LSP_MCP_MODE=cloud
-LSP_MCP_VECTOR_BACKEND=zilliz
-LSP_MCP_VECTOR_ADDRESS=your-instance.zilliz.com:19530
-LSP_MCP_VECTOR_TOKEN=your-zilliz-token
-LSP_MCP_EMBEDDING_PROVIDER=openai
-LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
-LOG_LEVEL=INFO
+MILVUS_ADDRESS=your-instance.zilliz.com:19530
+MILVUS_TOKEN=your-zilliz-token
+MODEL_PATH=models/all-MiniLM-L6-v2.onnx
+TOKENIZER_PATH=models/tokenizer.json
+BM25_DB_PATH=./data/bm25.db
+RUST_LOG=info
 ```
 
-### ユースケース3: ハイブリッドモード（ローカルベクターDB + クラウド埋め込み）
+### ユースケース3: カスタムモデルパス
 
-ベクターDBはローカル、埋め込みはクラウドを使用してコストと性能をバランス。
+カスタムの埋め込みモデルとトークナイザーを使用。
 
 **Claude Code MCP設定**:
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "/usr/local/bin/context-mcp",
       "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_BACKEND": "milvus",
-        "LSP_MCP_VECTOR_ADDRESS": "localhost:19530",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
-        "LOG_LEVEL": "INFO"
+        "MODEL_PATH": "/custom/path/model.onnx",
+        "TOKENIZER_PATH": "/custom/path/tokenizer.json",
+        "RUST_LOG": "info"
       }
     }
   }
 }
+```
+
+**環境変数**:
+```bash
+MILVUS_ADDRESS=localhost:19530
+MODEL_PATH=/custom/path/model.onnx
+TOKENIZER_PATH=/custom/path/tokenizer.json
+BM25_DB_PATH=./data/bm25.db
+RUST_LOG=info
 ```
 
 ### ユースケース4: 開発・デバッグモード
@@ -246,16 +215,26 @@ LOG_LEVEL=INFO
 ```json
 {
   "mcpServers": {
-    "lsp-mcp": {
+    "context-mcp": {
       "command": "/path/to/lsp_mcp/target/debug/context-mcp",
       "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LOG_LEVEL": "DEBUG"
+        "RUST_LOG": "debug",
+        "RUST_BACKTRACE": "1"
       }
     }
   }
 }
+```
+
+**環境変数**:
+```bash
+MILVUS_ADDRESS=localhost:19530
+MODEL_PATH=models/all-MiniLM-L6-v2.onnx
+TOKENIZER_PATH=models/tokenizer.json
+BM25_DB_PATH=./data/bm25.db
+RUST_LOG=debug
+RUST_BACKTRACE=1
 ```
 
 ## 環境変数と設定ファイルの併用
@@ -268,34 +247,34 @@ LOG_LEVEL=INFO
 
 ### 例: 部分的な上書き
 
-`.lsp-mcp.json`:
+`.context-mcp.json`:
 ```json
 {
-  "mode": "local",
-  "vectorStore": {
-    "backend": "milvus",
-    "config": {
-      "address": "localhost:19530"
-    }
+  "milvus": {
+    "address": "localhost:19530"
   },
   "embedding": {
-    "provider": "local",
-    "model": "all-MiniLM-L6-v2.onnx"
+    "model_path": "models/all-MiniLM-L6-v2.onnx",
+    "tokenizer_path": "models/tokenizer.json"
+  },
+  "bm25": {
+    "db_path": "./data/bm25.db"
   }
 }
 ```
 
 環境変数:
 ```bash
-LSP_MCP_EMBEDDING_PROVIDER=openai
-LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
+MILVUS_ADDRESS=custom-server:19530
+RUST_LOG=debug
 ```
 
 **最終的な設定**:
-- モード: `local`（設定ファイルから）
-- ベクターDB: `milvus` @ `localhost:19530`（設定ファイルから）
-- 埋め込み: `openai`（環境変数で上書き）
-- 埋め込みAPIキー: `sk-proj-...`（環境変数から）
+- Milvusアドレス: `custom-server:19530`（環境変数で上書き）
+- モデルパス: `models/all-MiniLM-L6-v2.onnx`（設定ファイルから）
+- トークナイザーパス: `models/tokenizer.json`（設定ファイルから）
+- BM25 DBパス: `./data/bm25.db`（設定ファイルから）
+- ログレベル: `debug`（環境変数から）
 
 ## トラブルシューティング
 
@@ -310,26 +289,38 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 
 **解決方法**:
 1. Claude Codeを再起動
-2. 環境変数名を確認（例: `LSP_MCP_MODE`、アンダースコアの位置に注意）
-3. ログを確認（`LOG_LEVEL=DEBUG`に設定して起動ログを確認）
+2. 環境変数名を確認（例: `MILVUS_ADDRESS`、アンダースコアの位置に注意）
+3. ログを確認（`RUST_LOG=debug`に設定して起動ログを確認）
 
-### 問題2: APIキーが認識されない
+```bash
+# 環境変数が正しく設定されているか確認
+echo $MILVUS_ADDRESS
+echo $MODEL_PATH
+echo $RUST_LOG
+```
 
-**症状**: `LSP_MCP_EMBEDDING_API_KEY`を設定したが、認証エラーが発生
+### 問題2: トークンが認識されない
+
+**症状**: `MILVUS_TOKEN`を設定したが、認証エラーが発生
 
 **原因**:
-- APIキーの形式が不正
+- トークンの形式が不正
 - 環境変数に特殊文字（スペース、改行等）が含まれている
-- プロバイダー設定が一致していない
+- Zilliz Cloudのアドレスが正しくない
 
 **解決方法**:
-1. APIキーを再確認（先頭・末尾にスペースがないか）
-2. `LSP_MCP_EMBEDDING_PROVIDER`が正しく設定されているか確認
-3. ログでAPIキーの最初の数文字を確認（センシティブ情報は伏せられます）
+1. トークンを再確認（先頭・末尾にスペースがないか）
+2. `MILVUS_ADDRESS`が正しく設定されているか確認
+3. ログでトークンの最初の数文字を確認
 
-### 問題3: ベクターDBに接続できない
+```bash
+# トークンの確認（先頭数文字のみ表示）
+echo $MILVUS_TOKEN | cut -c1-10
+```
 
-**症状**: `LSP_MCP_VECTOR_ADDRESS`を設定したが、接続エラーが発生
+### 問題3: Milvusに接続できない
+
+**症状**: `MILVUS_ADDRESS`を設定したが、接続エラーが発生
 
 **原因**:
 - Milvus standaloneが起動していない
@@ -339,32 +330,77 @@ LSP_MCP_EMBEDDING_API_KEY=sk-proj-...
 **解決方法**:
 1. `docker ps`でMilvusコンテナが起動していることを確認
 2. アドレス形式を確認（例: `localhost:19530`）
-3. `telnet localhost 19530`で接続テスト
+3. `nc -zv localhost 19530`で接続テスト
+
+```bash
+# Milvusの起動確認
+docker ps | grep milvus
+
+# ポートの接続確認
+nc -zv localhost 19530
+
+# 環境変数の確認
+echo $MILVUS_ADDRESS
+```
 
 ### 問題4: ログレベルの変更が反映されない
 
-**症状**: `LOG_LEVEL`を変更したが、ログ出力量が変わらない
+**症状**: `RUST_LOG`を変更したが、ログ出力量が変わらない
 
 **原因**:
 - Claude Codeを再起動していない
-- 環境変数名のスペルミス（`LOG_LEVEL`、アンダースコアなし）
+- 環境変数名のスペルミス
 
 **解決方法**:
 1. Claude Codeを完全に再起動
-2. 環境変数名を確認（`LOG_LEVEL`、`LSP_MCP_LOG_LEVEL`ではない）
+2. 環境変数名を確認（`RUST_LOG`）
+3. ログが標準エラー出力に出力されることを確認
+
+```bash
+# ログレベルの確認
+echo $RUST_LOG
+
+# 直接実行してログを確認
+RUST_LOG=debug ./target/release/context-mcp
+```
+
+### 問題5: モデルファイルが見つからない
+
+**症状**: `MODEL_PATH`を設定したが、モデルが読み込めない
+
+**原因**:
+- モデルファイルが存在しない
+- パスが正しくない
+- 相対パスと絶対パスの混同
+
+**解決方法**:
+1. モデルファイルの存在を確認
+2. 絶対パスを使用
+3. ファイルの読み取り権限を確認
+
+```bash
+# モデルファイルの確認
+ls -lh $MODEL_PATH
+
+# または直接パスを確認
+ls -lh models/all-MiniLM-L6-v2.onnx
+
+# 絶対パスを使用
+export MODEL_PATH=/absolute/path/to/model.onnx
+```
 
 ## デバッグ用コマンド
 
 ### 現在の設定を確認
 
-Context-MCPは起動時に適用された設定をログに出力します。
+Context-MCPは起動時に適用された設定をログに出力します（`RUST_LOG=debug`時）。
 
 ```bash
 # Claude Codeのログを確認（macOS）
 tail -f ~/Library/Logs/Claude/mcp-server-context-mcp.log
 
 # 起動時の設定ログを確認
-grep "設定ファイルを読み込みました\|環境変数.*からオーバーライド" ~/Library/Logs/Claude/mcp-server-context-mcp.log
+grep "Configuration" ~/Library/Logs/Claude/mcp-server-context-mcp.log
 ```
 
 ### 環境変数の確認
@@ -373,10 +409,73 @@ grep "設定ファイルを読み込みました\|環境変数.*からオーバ�
 # Claude Code MCP設定ファイルを確認
 cat ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
-# 特定の環境変数を確認（macOS/Linux）
-echo $LSP_MCP_MODE
-echo $LSP_MCP_VECTOR_ADDRESS
+# 特定の環境変数を確認
+echo $MILVUS_ADDRESS
+echo $MODEL_PATH
+echo $TOKENIZER_PATH
+echo $BM25_DB_PATH
+echo $RUST_LOG
+
+# すべての環境変数を表示
+env | grep -E "MILVUS|MODEL|TOKENIZER|BM25|RUST_LOG"
 ```
+
+### 手動実行でのテスト
+
+```bash
+# 環境変数を設定して手動実行
+MILVUS_ADDRESS=localhost:19530 \
+MODEL_PATH=models/all-MiniLM-L6-v2.onnx \
+TOKENIZER_PATH=models/tokenizer.json \
+BM25_DB_PATH=./data/bm25.db \
+RUST_LOG=debug \
+./target/release/context-mcp
+```
+
+## その他の環境変数
+
+### デバッグ関連
+
+#### `RUST_BACKTRACE`
+
+バックトレースの表示を制御します。
+
+- **型**: `string`
+- **デフォルト**: `"0"` (無効)
+- **値**:
+  - `0`: バックトレース無効
+  - `1`: バックトレース有効
+  - `full`: 完全なバックトレース表示
+- **例**:
+  ```bash
+  RUST_BACKTRACE=1
+  RUST_BACKTRACE=full
+  ```
+
+### ネットワーク関連（今後実装予定）
+
+#### `HTTP_PROXY`, `HTTPS_PROXY`
+
+プロキシサーバーを使用する場合に設定します。
+
+- **型**: `string` (URL形式)
+- **デフォルト**: なし
+- **例**:
+  ```bash
+  HTTP_PROXY=http://proxy.example.com:8080
+  HTTPS_PROXY=http://proxy.example.com:8080
+  ```
+
+#### `NO_PROXY`
+
+プロキシを使用しないホストを指定します。
+
+- **型**: `string` (カンマ区切りのホストリスト)
+- **デフォルト**: なし
+- **例**:
+  ```bash
+  NO_PROXY=localhost,127.0.0.1,.local
+  ```
 
 ## 関連ドキュメント
 
@@ -384,3 +483,11 @@ echo $LSP_MCP_VECTOR_ADDRESS
 - [SETUP.md](SETUP.md) - 詳細なセットアップ手順
 - [CONFIGURATION.md](CONFIGURATION.md) - 設定ファイルリファレンス
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - トラブルシューティング全般
+
+## 変更履歴
+
+- **2025-01-23**: Rust実装に合わせて更新
+  - Node.js/TypeScript関連の環境変数を削除
+  - `LSP_MCP_MODE`, `LSP_MCP_VECTOR_BACKEND`を削除（Milvusのみサポート）
+  - OpenAI、VoyageAI関連の環境変数を削除（ローカルONNXのみサポート）
+  - `MILVUS_ADDRESS`, `MILVUS_TOKEN`, `MODEL_PATH`, `TOKENIZER_PATH`, `BM25_DB_PATH`, `RUST_LOG`を追加
