@@ -14,30 +14,78 @@
 
 ## 前提条件
 
-- Node.js 18.0以上
-- npm 9.0以上
+- Rust 1.75以上（1.80以上を推奨）
+- Protocol Buffers compiler（protoc）
 - Claude Code（最新版）
-- Docker & Docker Compose（Milvusを使用する場合）
+- Docker & Docker Compose（Milvus必須）
 
 ## インストール手順
 
-### 1. Context-MCPのビルド
+### 1. Rustツールチェーンのインストール
+
+```bash
+# rustupを使用してRustをインストール（推奨）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# インストール後、環境変数を読み込む
+source $HOME/.cargo/env
+
+# バージョン確認
+rustc --version  # 1.75以上であることを確認
+cargo --version
+```
+
+### 2. Protocol Buffers compilerのインストール
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
+
+# macOS
+brew install protobuf
+
+# バージョン確認
+protoc --version  # 3.12以上であることを確認
+```
+
+### 3. Context-MCPのビルド
 
 ```bash
 cd /path/to/context-mcp
-npm install
-npm run build
+
+# 依存関係のビルド（初回は時間がかかります）
+cargo build --release
 ```
 
-ビルドが成功すると、`dist`ディレクトリにコンパイルされたファイルが生成されます。
+ビルドが成功すると、`target/release/context-mcp`に実行可能バイナリが生成されます。
 
-### 2. 実行可能性の確認
+### 4. 実行可能性の確認
 
 ```bash
-node dist/index.js --version
+./target/release/context-mcp --version
 ```
 
 バージョン情報が表示されれば、ビルドは正常に完了しています。
+
+### 5. Milvus standaloneの起動
+
+Context-MCPはベクターDBとしてMilvusを使用します（必須）。
+
+```bash
+cd /path/to/context-mcp
+
+# Milvus standaloneを起動（Docker Compose使用）
+docker-compose up -d
+
+# コンテナの状態確認
+docker ps | grep milvus
+
+# ログ確認
+docker-compose logs -f milvus-standalone
+```
+
+Milvusが正常に起動すると、`localhost:19530`で接続可能になります。
 
 ## MCP設定ファイルの設定
 
@@ -52,58 +100,55 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
 
 以下の内容を`mcp_settings.json`に追加します。
 
-#### ローカルモード（Transformers.js + Milvus standalone）- npx使用（推奨）
+**重要**: `command`には**ビルドした実行可能バイナリの絶対パス**を指定してください。
+
+#### ローカルモード（ONNX埋め込み + Milvus standalone）
 
 ```json
 {
   "mcpServers": {
     "context-mcp": {
-      "command": "npx",
-      "args": ["-y", "context-mcp"],
+      "command": "/path/to/context-mcp/target/release/context-mcp",
+      "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LOG_LEVEL": "INFO"
+        "RUST_LOG": "info"
       }
     }
   }
 }
 ```
 
-#### 軽量ローカルモード（Transformers.js + Chroma、Docker不要）- npx使用（推奨）
+**パスの例:**
+- macOS/Linux: `/Users/username/projects/context-mcp/target/release/context-mcp`
+- Windows: `C:\Users\username\projects\context-mcp\target\release\context-mcp.exe`
 
+#### 設定ファイル（.context-mcp.json）を使ったカスタマイズ
+
+プロジェクトのルートディレクトリに`.context-mcp.json`を配置することで、動作をカスタマイズできます。
+
+**基本設定例:**
 ```json
 {
-  "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["-y", "context-mcp"],
-      "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_VECTOR_BACKEND": "chroma",
-        "LOG_LEVEL": "INFO"
-      }
+  "mode": "local",
+  "vectorStore": {
+    "backend": "milvus",
+    "config": {
+      "address": "localhost:19530",
+      "standalone": true,
+      "dataPath": "./volumes"
     }
-  }
-}
-```
-
-#### クラウドモード（OpenAI + Zilliz Cloud）- npx使用（推奨）
-
-```json
-{
-  "mcpServers": {
-    "context-mcp": {
-      "command": "npx",
-      "args": ["-y", "context-mcp"],
-      "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "OPENAI_API_KEY": "your-openai-api-key",
-        "ZILLIZ_ENDPOINT": "your-instance.zilliz.com:19530",
-        "ZILLIZ_TOKEN": "your-zilliz-token",
-        "LOG_LEVEL": "INFO"
-      }
-    }
+  },
+  "embedding": {
+    "provider": "onnx",
+    "modelPath": "./models/all-MiniLM-L6-v2.onnx",
+    "dimension": 384
+  },
+  "privacy": {
+    "blockExternalCalls": true
+  },
+  "search": {
+    "hybridAlpha": 0.3,
+    "topK": 10
   }
 }
 ```
@@ -112,11 +157,9 @@ Claude CodeのMCP設定ファイルにContext-MCPを登録します。
 
 | 環境変数 | 説明 | デフォルト値 |
 |---------|-----|-------------|
-| `LSP_MCP_MODE` | 動作モード（`local` または `cloud`） | `local` |
-| `LSP_MCP_VECTOR_STORE` | ベクターDB（`milvus`, `chroma`, `zilliz`） | `milvus` |
-| `OPENAI_API_KEY` | OpenAI APIキー（クラウドモード時） | - |
-| `ZILLIZ_ENDPOINT` | Zilliz Cloudエンドポイント | - |
-| `ZILLIZ_TOKEN` | Zilliz Cloudトークン | - |
+| `RUST_LOG` | ログレベル（`error`, `warn`, `info`, `debug`, `trace`） | `info` |
+| `MILVUS_ADDRESS` | Milvusサーバーのアドレス | `localhost:19530` |
+| `MILVUS_DATA_PATH` | Milvusデータディレクトリ | `./volumes` |
 
 ## 動作確認
 
@@ -154,15 +197,21 @@ Context-MCPとClaude Codeの統合が正常に完了したかを確認するた�
 
 ### ✅ インストールと設定
 
-- [ ] **Node.js 18+がインストールされている**
+- [ ] **Rust 1.75+がインストールされている**
   ```bash
-  node --version  # v18.0.0以上が表示される
+  rustc --version  # 1.75.0以上が表示される
+  cargo --version
+  ```
+
+- [ ] **Protocol Buffers compilerがインストールされている**
+  ```bash
+  protoc --version  # 3.12以上が表示される
   ```
 
 - [ ] **Context-MCPがビルドできる**
   ```bash
   cd /path/to/context-mcp
-  npm run build
+  cargo build --release
   # エラーなく完了する
   ```
 
@@ -182,10 +231,11 @@ Context-MCPとClaude Codeの統合が正常に完了したかを確認するた�
 - [ ] **実行ファイルのパスが絶対パスである**
   - 相対パスは使用しない
   - `~/`は展開する（例: `/Users/username/...`）
+  - 実行権限が付与されている（`chmod +x`）
 
 ### ✅ モード別の設定確認
 
-#### ローカルモード（Milvus使用時）
+#### ローカルモード（Milvus + ONNX）
 
 - [ ] **Docker & Docker Composeがインストールされている**
   ```bash
@@ -193,45 +243,21 @@ Context-MCPとClaude Codeの統合が正常に完了したかを確認するた�
   docker-compose --version
   ```
 
-- [ ] **Milvus standaloneが起動している**
+- [ ] **Milvus standaloneが起動している（必須）**
   ```bash
+  cd /path/to/context-mcp
   docker-compose up -d
-  docker ps | grep milvus  # milvusコンテナが表示される
+  docker ps | grep milvus  # milvus-standaloneコンテナが表示される
   ```
 
 - [ ] **ポート19530が空いている**
   ```bash
-  lsof -i :19530  # 使用中でないか確認
+  lsof -i :19530  # Milvusのみが使用中であることを確認
   ```
 
-#### 軽量ローカルモード（Chroma使用時）
-
-- [ ] **環境変数が設定されている**
-  ```json
-  "env": {
-    "LSP_MCP_VECTOR_STORE": "chroma"
-  }
-  ```
-
-- [ ] **Chromaデータディレクトリが作成可能**
-  - デフォルト: `./.context-mcp/chroma`
-  - 書き込み権限がある
-
-#### クラウドモード
-
-- [ ] **APIキーが設定されている**
-  ```json
-  "env": {
-    "OPENAI_API_KEY": "sk-...",
-    "ZILLIZ_ENDPOINT": "...",
-    "ZILLIZ_TOKEN": "..."
-  }
-  ```
-
-- [ ] **インターネット接続がある**
-  ```bash
-  curl -I https://api.openai.com  # 接続確認
-  ```
+- [ ] **ONNXモデルが配置されている（オプション）**
+  - デフォルトで埋め込みモデルを自動ダウンロード
+  - カスタムモデルを使用する場合は`./models/`に配置
 
 ### ✅ Claude Code統合確認
 
@@ -506,6 +532,7 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 - MCP設定ファイルのパスが間違っている
 - Claude Codeが再起動されていない
 - ビルドエラーがある
+- 実行権限がない
 
 **解決方法:**
 
@@ -514,25 +541,36 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
    cat ~/.config/claude/mcp_settings.json
    ```
 
-2. パスが絶対パスであることを確認:
+2. バイナリの絶対パスであることを確認:
    ```json
-   "args": ["/Users/username/path/to/context-mcp/dist/index.js"]
+   "command": "/Users/username/path/to/context-mcp/target/release/context-mcp"
    ```
 
-3. ビルドエラーを確認:
+3. 実行権限を確認・付与:
+   ```bash
+   ls -l /path/to/context-mcp/target/release/context-mcp
+   chmod +x /path/to/context-mcp/target/release/context-mcp
+   ```
+
+4. ビルドエラーを確認:
    ```bash
    cd /path/to/context-mcp
-   npm run build
+   cargo build --release
    ```
 
-4. Claude Codeを完全に終了して再起動
+5. 直接実行して動作確認:
+   ```bash
+   ./target/release/context-mcp --version
+   ```
+
+6. Claude Codeを完全に終了して再起動
 
 ### インデックス化が失敗する
 
 **原因:**
-- ベクターDBが起動していない（Milvus使用時）
+- Milvusが起動していない（必須）
 - メモリ不足
-- APIキーが無効（クラウドモード時）
+- ネットワーク接続の問題
 
 **解決方法:**
 
@@ -540,17 +578,37 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
    ```bash
    cd /path/to/context-mcp
    docker-compose up -d
+
+   # 起動確認
+   docker ps | grep milvus
+   docker-compose logs -f milvus-standalone
    ```
 
-2. Chromaを使用する（Docker不要）:
+2. Milvusの状態を確認:
    ```bash
-   export LSP_MCP_VECTOR_STORE=chroma
+   # ポート19530が開いているか確認
+   lsof -i :19530
+
+   # Milvusコンテナのヘルスチェック
+   docker inspect milvus-standalone | grep Health
    ```
 
 3. ログを確認:
    ```bash
-   # Claude Codeのログを確認
+   # Context-MCPのログ（Rust）
+   RUST_LOG=debug ./target/release/context-mcp
+
+   # Claude Codeのログ
    tail -f ~/.config/claude/logs/mcp-context-mcp.log
+
+   # Milvusのログ
+   docker-compose logs -f milvus-standalone
+   ```
+
+4. Milvusを再起動:
+   ```bash
+   docker-compose down
+   docker-compose up -d
    ```
 
 ### 検索結果が不正確
@@ -585,16 +643,17 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 ### パフォーマンスが遅い
 
 **原因:**
-- ローカル埋め込みモデルの初回ロード
+- ONNX埋め込みモデルの初回ロード
 - 大規模プロジェクト
 - ディスクI/Oの遅延
+- Milvusのインデックス構築
 
 **解決方法:**
 
-1. クラウドモードを使用（高速な埋め込み生成）:
+1. リリースビルドを使用（デバッグビルドは遅い）:
    ```bash
-   export LSP_MCP_MODE=cloud
-   export OPENAI_API_KEY=your-key
+   cargo build --release
+   ./target/release/context-mcp  # デバッグ版は使用しない
    ```
 
 2. インクリメンタル更新を活用（初回インデックス化後は高速）
@@ -602,6 +661,16 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 3. 除外パターンを使ってファイル数を削減:
    ```
    「node_modules、dist、buildディレクトリを除外してインデックス化してください」
+   ```
+
+4. Milvusのメモリ制限を調整（docker-compose.yml）:
+   ```yaml
+   services:
+     milvus-standalone:
+       deploy:
+         resources:
+           limits:
+             memory: 4g  # メモリを増やす
    ```
 
 ### Milvus接続エラー
@@ -616,21 +685,40 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 1. Milvusの状態を確認:
    ```bash
    docker ps | grep milvus
+   docker-compose ps
    ```
 
-2. Milvusを再起動:
+2. Milvusのログを確認:
    ```bash
-   docker-compose restart
+   docker-compose logs -f milvus-standalone
    ```
 
-3. ポートの競合を確認:
+3. Milvusを完全に再起動:
+   ```bash
+   docker-compose down
+   docker-compose up -d
+
+   # 起動完了まで待つ（30秒程度）
+   sleep 30
+   docker ps | grep milvus
+   ```
+
+4. ポートの競合を確認:
    ```bash
    lsof -i :19530
+   # Milvus以外が使用している場合は、そのプロセスを停止
    ```
 
-4. Chromaに切り替え（Docker不要）:
+5. ファイアウォール設定を確認:
    ```bash
-   export LSP_MCP_VECTOR_STORE=chroma
+   # ローカルホストの19530番ポートが許可されているか確認
+   sudo ufw status
+   ```
+
+6. Docker volumesをクリア（最終手段）:
+   ```bash
+   docker-compose down -v
+   docker-compose up -d
    ```
 
 ## サポート
@@ -648,3 +736,10 @@ TypeScriptとPythonファイルを含めて、node_modulesは除外してくだ�
 - [設定リファレンス](CONFIGURATION.md) - 詳細な設定オプション
 - [アーキテクチャ](ARCHITECTURE.md) - システムの内部構造
 - [プラグイン開発](PLUGIN_DEVELOPMENT.md) - カスタムプラグインの作成方法
+
+## 参考資料
+
+- [Rust公式サイト](https://www.rust-lang.org/) - Rustのインストールと学習
+- [Milvus Documentation](https://milvus.io/docs) - Milvusの詳細ドキュメント
+- [MCP Protocol Specification](https://spec.modelcontextprotocol.io/) - MCPプロトコルの仕様
+
