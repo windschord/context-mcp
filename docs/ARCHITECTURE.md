@@ -2,7 +2,7 @@
 
 ## 概要
 
-Context-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。レイヤー化されたアーキテクチャを採用し、各コンポーネントが明確な責務を持つ設計となっています。
+Context-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わせた、Claude Code向けのModel Context Protocol (MCP)プラグインです。Rustで実装され、レイヤー化されたアーキテクチャを採用し、各コンポーネントが明確な責務を持つ設計となっています。
 
 ## システムアーキテクチャ図
 
@@ -58,24 +58,20 @@ Context-MCPは、Tree-sitterによるAST解析とベクターDBを組み合わ�
 │                       Storage Layer                                    │
 │  ┌───────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │
 │  │ Embedding Engine  │  │ Vector Store     │  │ Local Index      │   │
-│  │ ┌───────────────┐ │  │ Plugin Interface │  │ (SQLite)         │   │
-│  │ │ Local Engine  │ │  │ ┌──────────────┐ │  │ - inverted_index │   │
-│  │ │ (Transformers)│ │  │ │ Milvus       │ │  │ - BM25 data      │   │
-│  │ └───────────────┘ │  │ │ Plugin       │ │  └──────────────────┘   │
-│  │ ┌───────────────┐ │  │ └──────────────┘ │                          │
-│  │ │ Cloud Engine  │ │  │ ┌──────────────┐ │                          │
-│  │ │ (OpenAI/     │ │  │ │ Chroma       │ │                          │
-│  │ │  VoyageAI)   │ │  │ │ Plugin       │ │                          │
-│  │ └───────────────┘ │  │ └──────────────┘ │                          │
+│  │ ┌───────────────┐ │  │                  │  │ (SQLite)         │   │
+│  │ │ ONNX Runtime  │ │  │ ┌──────────────┐ │  │ - inverted_index │   │
+│  │ │ (Local Only)  │ │  │ │ Milvus       │ │  │ - BM25 data      │   │
+│  │ └───────────────┘ │  │ │ Client       │ │  └──────────────────┘   │
+│  │                   │  │ └──────────────┘ │                          │
 │  └───────────────────┘  └──────────────────┘                          │
 └────────────────────────────────┬───────────────────────────────────────┘
                                  │
 ┌────────────────────────────────▼───────────────────────────────────────┐
 │                       External Services                                 │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
-│  │ Milvus Standalone│  │ OpenAI API       │  │ Zilliz Cloud     │     │
-│  │ (Docker)         │  │                  │  │ (Optional)       │     │
-│  └──────────────────┘  └──────────────────┘  └──────────────────┘     │
+│  ┌──────────────────┐                      ┌──────────────────┐        │
+│  │ Milvus Standalone│                      │ Zilliz Cloud     │        │
+│  │ (Docker)         │                      │ (Optional)       │        │
+│  └──────────────────┘                      └──────────────────┘        │
 └────────────────────────────────────────────────────────────────────────┘
 
 Additional Components:
@@ -83,8 +79,8 @@ Additional Components:
 │                       Utilities Layer                                   │
 │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐     │
 │  │ File Watcher     │  │ Config Manager   │  │ Logger           │     │
-│  │ (chokidar)       │  │ - Mode Manager   │  │ - Sanitizer      │     │
-│  │ - Incremental    │  │ - Setup Wizard   │  │ - File Rotation  │     │
+│  │ (notify)         │  │ - Mode Manager   │  │ (tracing)        │     │
+│  │ - Incremental    │  │                  │  │ - JSON/Pretty    │     │
 │  │   Updates        │  │                  │  │                  │     │
 │  └──────────────────┘  └──────────────────┘  └──────────────────┘     │
 └────────────────────────────────────────────────────────────────────────┘
@@ -179,27 +175,25 @@ where α = 0.3 (default, configurable)
 **主要コンポーネント:**
 
 #### Embedding Engine（埋め込みエンジン）
-- **LocalEmbeddingEngine**: Transformers.js（ローカル実行）
-  - モデル: Xenova/all-MiniLM-L6-v2（デフォルト）
-  - オフライン動作対応
-- **CloudEmbeddingEngine**: OpenAI/VoyageAI API（クラウド実行）
-  - OpenAI: text-embedding-3-small/large
-  - VoyageAI: voyage-code-2
+- **ONNX Runtime**: ローカル推論のみ
+  - モデル: all-MiniLM-L6-v2（ONNX形式）
+  - トークナイザー: tokenizers crate
+  - 完全オフライン動作
+  - バッチ処理サポート
 
 #### Vector Store（ベクターストア）
-プラグインアーキテクチャにより複数のバックエンドをサポート:
+Milvusベクターデータベースのみサポート:
 
 **ローカルバックエンド:**
-- **Milvus Plugin**: Milvus standalone（Docker Compose）
+- **Milvus Standalone**: Docker Compose経由で実行
   - 高性能、大規模プロジェクト向け
   - localhost:19530で実行
-- **Chroma Plugin**: ChromaDB
-  - Docker不要、軽量
-  - 小規模プロジェクト向け
+  - HNSWインデックスによる高速検索
 
 **クラウドバックエンド（オプション）:**
-- Zilliz Cloud（Milvusマネージドサービス）
-- Qdrant Cloud
+- **Zilliz Cloud**: Milvusマネージドサービス
+  - トークン認証
+  - スケーラブル
 
 #### Local Index（ローカルインデックス）
 - SQLiteベースの転置インデックス
@@ -295,7 +289,7 @@ Hybrid Search Engine
 File System
     │ file change event
     ▼
-File Watcher (chokidar)
+File Watcher (notify)
     │
     ├─ debounce(500ms)
     │
@@ -317,68 +311,75 @@ Indexing Service
 
 ### MCP Server
 
-**ファイル:** `src/server/mcp-server.ts`
+**ファイル:** `src/server/mod.rs`
+
+**主要構造体:**
+- `ContextMcpServer`: メインサーバー構造体
+- `ServerState`: 内部状態管理
 
 **主要メソッド:**
 - `initialize()`: サーバー初期化、ツール登録
-- `shutdown()`: クリーンアップ処理
-- `handleToolCall(toolName, params)`: ツール呼び出しハンドラー
+- `new()` / `with_config()`: インスタンス作成
+- `index_project()`: プロジェクトインデックス化ツール
+- `search_code()`: セマンティックコード検索ツール
+- `get_symbol()`: シンボル検索ツール
+- `find_related_docs()`: 関連ドキュメント検索ツール
+- `get_index_status()`: インデックス状況確認ツール
+- `clear_index()`: インデックスクリアツール
 
 ### Indexing Service
 
-**ファイル:** `src/services/indexing-service.ts`
+**ファイル:** `src/indexing/service.rs`
 
 **主要メソッド:**
-- `indexProject(rootPath, options)`: プロジェクト全体インデックス化
-- `indexFile(filePath)`: 単一ファイルインデックス化
-- `getIndexStatus(projectId)`: インデックス統計取得
-- `deleteProject(projectId)`: プロジェクトインデックス削除
+- `index_project(config: IndexConfig)`: プロジェクト全体インデックス化
+- `index_file(path: PathBuf)`: 単一ファイルインデックス化
+- `get_stats()`: インデックス統計取得
+- `clear_index()`: インデックスクリア
 
-**イベント:**
-- `progress`: インデックス化進捗（ファイル単位）
-- `complete`: インデックス化完了
-- `error`: エラー発生
+**並列処理:**
+- rayon による並列ファイル処理
+- バッチ埋め込み生成
 
 ### Hybrid Search Engine
 
-**ファイル:** `src/services/hybrid-search-engine.ts`
+**ファイル:** `src/search/hybrid_engine.rs`
 
 **主要メソッド:**
-- `search(query, options)`: ハイブリッド検索
-- `vectorSearch(query, topK)`: ベクトル検索のみ
-- `fullTextSearch(query, topK)`: 全文検索のみ
+- `search(query, collection, top_k)`: ハイブリッド検索
+- `search_with_config(query, collection, config)`: 設定付きハイブリッド検索
 
 **設定:**
-- `hybridWeight`: BM25の重み（デフォルト: 0.3）
-- `topK`: 取得結果数（デフォルト: 20）
+- `alpha`: BM25の重み（デフォルト: 0.3）
+- `normalization`: スコア正規化方式（MinMax/ZScore/None）
+- `bm25_top_k`, `vector_top_k`: 各検索の取得数
 
-### Vector Store Plugin Interface
+### Milvus Client
 
-**ファイル:** `src/storage/types.ts`
+**ファイル:** `src/storage/milvus_client.rs`
 
-**インターフェース:** `VectorStorePlugin`
+**主要メソッド:**
+- `new(address)` / `new_with_token(address, token)`: 接続作成
+- `create_collection(config)`: コレクション作成
+- `collection_exists(name)`: コレクション存在確認
+- `insert_records(collection, records)`: レコード挿入
+- `search(collection, vectors, limit)`: ベクトル検索
+- `delete_by_expr(collection, expr)`: 条件付き削除
+- `get_collection_stats(name)`: 統計情報取得
 
-**必須メソッド:**
-- `connect(config)`: 接続
-- `disconnect()`: 切断
-- `createCollection(name, dimension)`: コレクション作成
-- `upsert(collectionName, vectors)`: ベクトル挿入/更新
-- `query(collectionName, vector, topK, filter?)`: 類似検索
-- `delete(collectionName, ids)`: ベクトル削除
-- `getStats(collectionName)`: 統計情報取得
+### Embedding Engine
 
-### Embedding Engine Interface
+**ファイル:** `src/embedding/engine.rs`
 
-**ファイル:** `src/embedding/types.ts`
+**主要構造体:**
+- `EmbeddingEngine`: ONNX Runtimeベースの埋め込みエンジン
+- `EmbeddingConfig`: 設定
 
-**インターフェース:** `EmbeddingEngine`
-
-**必須メソッド:**
-- `initialize()`: 初期化
-- `embed(text)`: 単一埋め込み
-- `embedBatch(texts)`: バッチ埋め込み
-- `getDimension()`: ベクトル次元数取得
-- `dispose()`: リソース解放
+**主要メソッド:**
+- `new(config)`: エンジン作成・初期化
+- `embed(text)`: 単一テキスト埋め込み
+- `embed_batch(texts)`: バッチ埋め込み
+- `dimension()`: ベクトル次元数取得
 
 ## データベーススキーマ
 
@@ -420,120 +421,148 @@ CREATE INDEX idx_doc_id ON inverted_index(document_id);
 ## プライバシーファースト設計
 
 ### ローカルモード（デフォルト）
-- **埋め込み**: Transformers.js（完全ローカル実行）
-- **ベクターDB**: Milvus standalone（Docker）またはChroma（Docker不要）
-- **外部通信**: ゼロ（`blockExternalCalls: true`）
+- **埋め込み**: ONNX Runtime（完全ローカル実行）
+- **ベクターDB**: Milvus standalone（Docker）
+- **外部通信**: ベクターDBへの接続のみ（ローカルホスト）
 - **利点**: プライバシー保護、オフライン動作、APIコスト不要
 
 ### クラウドモード（オプション）
-- **埋め込み**: OpenAI API、VoyageAI API
-- **ベクターDB**: Zilliz Cloud、Qdrant Cloud
-- **外部通信**: 必要
-- **利点**: 高性能、セットアップ簡単、スケーラブル
+- **埋め込み**: ONNX Runtime（ローカル実行は変わらず）
+- **ベクターDB**: Zilliz Cloud
+- **外部通信**: Zilliz Cloudへの接続
+- **利点**: セットアップ簡単、スケーラブル、Docker不要
 
 ### モード切り替え
-設定ファイル `.context-mcp.json` の `mode` フィールドで切り替え:
-- `"mode": "local"` → ローカルモード
-- `"mode": "cloud"` → クラウドモード
+設定ファイルの `milvus.address` と `milvus.token` で切り替え:
+- ローカル: `address: "localhost:19530"`, `token: null`
+- クラウド: `address: "your-instance.zilliz.com:19530"`, `token: "your-token"`
 
 ## パフォーマンス最適化
 
 ### インデックス化
-- **並列処理**: ワーカースレッドによるファイル並列処理
-- **バッチ埋め込み**: 複数テキストを一度に処理
-- **インクリメンタル更新**: 変更ファイルのみ再インデックス化
+- **並列処理**: rayon による並列ファイル処理
+- **バッチ埋め込み**: 複数テキストを一度に処理（設定可能なバッチサイズ）
+- **インクリメンタル更新**: 変更ファイルのみ再インデックス化（notify によるファイル監視）
 
 ### 検索
-- **並列検索**: BM25とベクトル検索を並列実行
-- **キャッシュ**: 頻出クエリ結果のキャッシング
+- **並列検索**: BM25とベクトル検索を非同期並列実行（tokio）
 - **インデックス最適化**: HNSWインデックス（Milvus）
+- **スコア正規化**: MinMax/ZScore による正確なスコア統合
 
 ### メモリ管理
-- **ストリーミング処理**: 大規模ファイル対応
-- **モデルプール**: Tree-sitterパーサーの再利用
-- **自動GC**: 定期的なガベージコレクション
+- **Arc/RwLock**: スレッドセーフな状態共有
+- **ONNX Session再利用**: 埋め込みモデルの効率的な利用
+- **SQLite接続プール**: BM25検索の高速化
 
 ## セキュリティ考慮事項
 
 ### データ保護
 - センシティブファイル自動除外（`.env`, `credentials.json`等）
-- ベクターDBへの送信前プライバシーチェック
-- ローカル実行オプション（外部通信なし）
+- ローカル埋め込み実行（外部APIへのコード送信なし）
+- Milvus接続はローカルホストまたは信頼できるクラウドのみ
 
 ### 認証情報管理
-- APIキーはOS標準キーチェーンに保存
-- 設定ファイル内の平文保存禁止
-- 環境変数からの読み取りサポート
+- Zilliz Cloudトークンは環境変数から読み取り推奨
+- 設定ファイル内の平文保存に注意（.gitignore 推奨）
 
 ### 通信暗号化
-- ベクターDB接続: TLS/SSL必須
-- 埋め込みAPI通信: HTTPS必須
+- Milvus/Zilliz Cloud接続: TLS/SSL対応
+- ローカルモード: localhost通信のみ
 
 ## 拡張性
 
-### プラグイン追加
-新しいベクターDBやパーサーを簡単に追加可能:
+### 新しい言語パーサーの追加
+Tree-sitterの言語パーサーを追加することで、新しいプログラミング言語をサポート可能:
 
-**Vector Store Plugin例:**
-```typescript
-import { VectorStorePlugin } from '../storage/types.js';
+1. `Cargo.toml` に言語パーサークレートを追加
+2. `src/parser/types.rs` の `Language` enumに追加
+3. `src/parser/symbol_extractor.rs` で対応するパーサー初期化を追加
+4. 必要に応じてクエリパターンをカスタマイズ
 
-export class NewVectorStorePlugin implements VectorStorePlugin {
-  readonly name = 'new-vector-db';
+### カスタムベクターストアの追加
+現在はMilvusのみサポートしていますが、他のベクターDBへの対応も可能:
 
-  async connect(config: VectorStoreConfig): Promise<void> {
-    // 接続処理
-  }
-
-  // ... 他のメソッド実装
-}
-
-// 登録
-registry.register(new NewVectorStorePlugin());
-```
-
-**Embedding Engine例:**
-```typescript
-import { EmbeddingEngine } from '../embedding/types.js';
-
-export class NewEmbeddingEngine implements EmbeddingEngine {
-  async initialize(): Promise<void> {
-    // 初期化処理
-  }
-
-  async embed(text: string): Promise<number[]> {
-    // 埋め込み処理
-  }
-
-  // ... 他のメソッド実装
-}
-```
+1. `src/storage/` に新しいクライアントモジュールを追加
+2. 必要なメソッドを実装（insert、search、delete等）
+3. `src/storage/mod.rs` で公開
+4. `src/server/mod.rs` で切り替え可能にする
 
 ## エラーハンドリング
 
 ### エラーカテゴリ
-- **ConfigError**: 設定エラー
-- **FileSystemError**: ファイルシステムエラー
-- **ParseError**: パースエラー
-- **NetworkError**: ネットワークエラー
-- **StorageError**: ストレージエラー
+`src/error.rs` で定義された `ContextMcpError`:
+- **Config**: 設定エラー
+- **Io**: ファイルシステムエラー
+- **Parse**: パースエラー
+- **Storage**: ベクターDBエラー
+- **Embedding**: 埋め込み生成エラー
+- **Search**: 検索エラー
+- **Internal**: 内部エラー
 
 ### リカバリー戦略
 - **部分的失敗の許容**: 単一ファイルエラーで全体停止しない
-- **自動リトライ**: ネットワークエラー時の自動リトライ（最大3回）
-- **フォールバック**: プライマリ失敗時のセカンダリオプション
+- **エラーログ記録**: tracing クレートによる詳細ログ
+- **ユーザーフレンドリーなエラーメッセージ**: MCPプロトコル経由で返却
 
 ### エラー通知
 すべてのエラーには以下を含む:
-- エラーコード
+- エラーの種類（enum variant）
 - わかりやすいメッセージ
-- 対処方法の提案（可能な場合）
-- リカバリー可能かどうか
+- 元エラー情報（where applicable）
+
+## 技術スタック
+
+- **言語**: Rust（MSRV 1.75、推奨 1.80+）
+- **MCP SDK**: rmcp 0.8（公式Rust SDK）
+- **非同期ランタイム**: tokio 1.41
+- **並列処理**: rayon 1.10
+- **AST解析**: tree-sitter 0.24（言語パーサーは 0.23.x）
+- **埋め込み**: ONNX Runtime（ort 2.0.0-rc.10）
+- **トークナイザー**: tokenizers 0.20
+- **ベクターDB**: Milvus（milvus クレート）
+- **全文検索**: rusqlite 0.32（SQLiteバンドル）
+- **ファイル監視**: notify 6.1
+- **ログ**: tracing + tracing-subscriber
+- **エラーハンドリング**: thiserror + anyhow
+
+## ビルドとテスト
+
+### ビルドコマンド
+```bash
+# デバッグビルド
+cargo build
+
+# リリースビルド
+cargo build --release
+
+# コンパイルチェックのみ
+cargo check
+
+# Lint実行
+cargo clippy --all-targets --all-features
+
+# フォーマット
+cargo fmt --all
+```
+
+### テストコマンド
+```bash
+# 全テスト実行
+cargo test
+
+# ライブラリテストのみ
+cargo test --lib
+
+# 詳細出力
+cargo test --verbose
+
+# 全機能有効化してテスト
+cargo test --all-features
+```
 
 ## 関連ドキュメント
 
 - [セットアップガイド](./SETUP.md)
 - [設定リファレンス](./CONFIGURATION.md)
-- [プラグイン開発ガイド](./PLUGIN_DEVELOPMENT.md)
 - [MCP Tools APIリファレンス](./MCP_TOOLS_API.md)
-- [トラブルシューティング](./TROUBLESHOOTING.md)
+- [Rust移行ガイド](./MIGRATION.md)

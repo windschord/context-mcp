@@ -64,36 +64,19 @@ Context-MCPは、Claude Codeから利用可能な6つのMCPツールを提供し
 ### レスポンス
 
 **成功時:**
-```typescript
+```json
 {
-  success: true,
-  projectId: string,           // プロジェクトの一意識別子
-  stats: {
-    totalFiles: number,        // スキャンされた総ファイル数
-    processedFiles: number,    // 正常に処理されたファイル数
-    failedFiles: number,       // 失敗したファイル数
-    totalSymbols: number,      // 抽出されたシンボル数
-    totalVectors: number,      // 生成されたベクトル数
-    processingTime: number     // 処理時間（ミリ秒）
-  },
-  errors?: Array<{             // エラーがあった場合
-    file: string,
-    error: string
-  }>
+  "totalFiles": number,        // スキャンされた総ファイル数
+  "codeFiles": number,         // コードファイル数
+  "documentFiles": number,     // ドキュメントファイル数
+  "totalSymbols": number,      // 抽出されたシンボル数
+  "processingTimeMs": number,  // 処理時間（ミリ秒）
+  "errors": number,            // エラー数
+  "status": string             // ステータスメッセージ
 }
 ```
 
-**エラー時:**
-```typescript
-{
-  success: false,
-  error: {
-    code: string,
-    message: string,
-    suggestion?: string
-  }
-}
-```
+**Rust構造体参照:** `src/tools/mod.rs::IndexProjectResponse`
 
 ### 使用例
 
@@ -143,9 +126,9 @@ Context-MCPは、Claude Codeから利用可能な6つのMCPツールを提供し
 |-----------|------|------|-----------|------|
 | `query` | string | ✓ | - | 検索クエリ（自然言語またはキーワード） |
 | `projectId` | string | ✗ | 全プロジェクト | 検索対象のプロジェクトID |
-| `fileTypes` | string[] | ✗ | 全ファイル | ファイルタイプフィルタ（例: `[".ts", ".py"]`） |
-| `languages` | string[] | ✗ | 全言語 | 言語フィルタ（例: `["TypeScript", "Python"]`） |
+| `fileTypes` | string[] | ✗ | 全ファイル | ファイルタイプフィルタ（例: `["ts", "py"]`） |
 | `topK` | number | ✗ | `10` | 返す結果数（1-100） |
+| `scoreThreshold` | number | ✗ | `0.5` | 最小類似度スコア閾値（0.0-1.0） |
 
 **パラメータスキーマ（JSON Schema）:**
 ```json
@@ -165,17 +148,19 @@ Context-MCPは、Claude Codeから利用可能な6つのMCPツールを提供し
       "items": { "type": "string" },
       "description": "ファイルタイプフィルタ"
     },
-    "languages": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "言語フィルタ"
-    },
     "topK": {
       "type": "number",
       "minimum": 1,
       "maximum": 100,
       "default": 10,
       "description": "返す結果数"
+    },
+    "scoreThreshold": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "default": 0.5,
+      "description": "最小類似度スコア閾値"
     }
   },
   "required": ["query"]
@@ -185,23 +170,26 @@ Context-MCPは、Claude Codeから利用可能な6つのMCPツールを提供し
 ### レスポンス
 
 **成功時:**
-```typescript
+```json
 {
-  results: Array<{
-    filePath: string,          // ファイルパス
-    language: string,          // 言語名
-    snippet: string,           // コードスニペット（前後3行含む）
-    score: number,             // ハイブリッドスコア（0-1）
-    lineStart: number,         // 開始行番号
-    lineEnd: number,           // 終了行番号
-    symbolName?: string,       // シンボル名（関数、クラス等）
-    symbolType?: string,       // シンボルタイプ（function, class等）
-    metadata?: Record<string, any>  // 追加メタデータ
-  }>,
-  totalResults: number,        // 総結果数
-  searchTime: number           // 検索時間（ミリ秒）
+  "results": [
+    {
+      "filePath": string,          // ファイルパス
+      "snippet": string,           // コードスニペット
+      "score": number,             // 類似度スコア（0.0-1.0）
+      "language": string,          // 言語名
+      "symbolType": string?,       // シンボルタイプ（function, class等）
+      "symbolName": string?,       // シンボル名（関数、クラス等）
+      "lineRange": [number, number], // 行番号範囲 [開始, 終了]
+      "metadata": object?          // 追加メタデータ（オプション）
+    }
+  ],
+  "totalFound": number,          // 総結果数
+  "searchTimeMs": number         // 検索時間（ミリ秒）
 }
 ```
+
+**Rust構造体参照:** `src/tools/mod.rs::SearchCodeResponse`, `SearchResult`
 
 **スコアリング:**
 ```
@@ -223,7 +211,7 @@ where α = 0.3 (default)
 ```json
 {
   "query": "async function fetchData",
-  "languages": ["TypeScript", "JavaScript"],
+  "fileTypes": ["ts", "js"],
   "topK": 10
 }
 ```
@@ -232,8 +220,9 @@ where α = 0.3 (default)
 ```json
 {
   "query": "データベース接続",
-  "fileTypes": [".ts", ".js"],
-  "projectId": "my-project-id"
+  "fileTypes": ["ts", "js"],
+  "projectId": "my-project-id",
+  "scoreThreshold": 0.7
 }
 ```
 
@@ -244,22 +233,16 @@ where α = 0.3 (default)
   "results": [
     {
       "filePath": "src/api/client.ts",
-      "language": "TypeScript",
       "snippet": "async function sendRequest(url: string, options: RequestOptions): Promise<Response> {\n  const response = await fetch(url, options);\n  return response;\n}",
       "score": 0.92,
-      "lineStart": 42,
-      "lineEnd": 45,
-      "symbolName": "sendRequest",
+      "language": "typescript",
       "symbolType": "function",
-      "metadata": {
-        "parameters": ["url", "options"],
-        "returnType": "Promise<Response>",
-        "docstring": "HTTPリクエストを送信します"
-      }
+      "symbolName": "sendRequest",
+      "lineRange": [42, 45]
     }
   ],
-  "totalResults": 15,
-  "searchTime": 234
+  "totalFound": 15,
+  "searchTimeMs": 234
 }
 ```
 
@@ -305,27 +288,35 @@ where α = 0.3 (default)
 
 ### レスポンス
 
-```typescript
+```json
 {
-  definitions: Array<{
-    filePath: string,
-    language: string,
-    lineStart: number,
-    lineEnd: number,
-    snippet: string,
-    scope: string,             // "module", "class", "function"
-    metadata?: Record<string, any>
-  }>,
-  references: Array<{
-    filePath: string,
-    lineNumber: number,
-    context: string,           // 参照箇所の前後のコンテキスト
-    usage: string              // 使用方法（例: "call", "import"）
-  }>,
-  totalDefinitions: number,
-  totalReferences: number
+  "definitions": [
+    {
+      "filePath": string,
+      "symbolName": string,
+      "symbolType": string,
+      "lineRange": [number, number],  // 行番号範囲
+      "snippet": string,
+      "isDefinition": true,
+      "docstring": string?            // ドキュメント文字列（オプション）
+    }
+  ],
+  "references": [
+    {
+      "filePath": string,
+      "symbolName": string,
+      "symbolType": string,
+      "lineRange": [number, number],
+      "snippet": string,
+      "isDefinition": false,
+      "docstring": string?
+    }
+  ],
+  "totalCount": number               // 総数（定義+参照）
 }
 ```
+
+**Rust構造体参照:** `src/tools/mod.rs::GetSymbolResponse`, `SymbolLocation`
 
 ### 使用例
 
@@ -353,34 +344,33 @@ where α = 0.3 (default)
   "definitions": [
     {
       "filePath": "src/utils/config.ts",
-      "language": "TypeScript",
-      "lineStart": 10,
-      "lineEnd": 25,
+      "symbolName": "parseConfig",
+      "symbolType": "function",
+      "lineRange": [10, 25],
       "snippet": "export function parseConfig(path: string): Config {\n  // ...\n}",
-      "scope": "module",
-      "metadata": {
-        "parameters": ["path"],
-        "returnType": "Config",
-        "docstring": "設定ファイルを読み込んでパースします"
-      }
+      "isDefinition": true,
+      "docstring": "設定ファイルを読み込んでパースします"
     }
   ],
   "references": [
     {
       "filePath": "src/main.ts",
-      "lineNumber": 15,
-      "context": "import { parseConfig } from './utils/config';\n\nconst config = parseConfig('./config.json');",
-      "usage": "import"
+      "symbolName": "parseConfig",
+      "symbolType": "function",
+      "lineRange": [15, 15],
+      "snippet": "import { parseConfig } from './utils/config';",
+      "isDefinition": false
     },
     {
       "filePath": "src/main.ts",
-      "lineNumber": 17,
-      "context": "const config = parseConfig('./config.json');",
-      "usage": "call"
+      "symbolName": "parseConfig",
+      "symbolType": "function",
+      "lineRange": [17, 17],
+      "snippet": "const config = parseConfig('./config.json');",
+      "isDefinition": false
     }
   ],
-  "totalDefinitions": 1,
-  "totalReferences": 2
+  "totalCount": 3
 }
 ```
 
@@ -427,22 +417,22 @@ where α = 0.3 (default)
 
 ### レスポンス
 
-```typescript
+```json
 {
-  relatedDocs: Array<{
-    docPath: string,           // ドキュメントファイルパス
-    section: string,           // 関連セクション（見出し）
-    relevance: number,         // 関連度スコア（0-1）
-    excerpts: string[],        // 抜粋（関連箇所）
-    codeReferences: Array<{    // コード参照
-      lineNumber: number,
-      snippet: string
-    }>
-  }>,
-  totalDocs: number,
-  searchTime: number
+  "documents": [
+    {
+      "filePath": string,        // ドキュメントファイルパス
+      "title": string,           // ドキュメントタイトル/見出し
+      "relevanceScore": number,  // 関連度スコア（0.0-1.0）
+      "excerpt": string,         // 抜粋（関連箇所）
+      "section": string?         // セクション名（オプション）
+    }
+  ],
+  "totalFound": number
 }
 ```
+
+**Rust構造体参照:** `src/tools/mod.rs::FindRelatedDocsResponse`, `RelatedDocument`
 
 ### 使用例
 
@@ -467,34 +457,22 @@ where α = 0.3 (default)
 
 ```json
 {
-  "relatedDocs": [
+  "documents": [
     {
-      "docPath": "docs/api/search.md",
-      "section": "## Search API",
-      "relevance": 0.88,
-      "excerpts": [
-        "The search function accepts a query string and returns matching code snippets.",
-        "It uses hybrid search combining BM25 and vector similarity."
-      ],
-      "codeReferences": [
-        {
-          "lineNumber": 45,
-          "snippet": "```typescript\nawait search('find function');\n```"
-        }
-      ]
+      "filePath": "docs/api/search.md",
+      "title": "Search API",
+      "relevanceScore": 0.88,
+      "excerpt": "The search function accepts a query string and returns matching code snippets. It uses hybrid search combining BM25 and vector similarity.",
+      "section": "API Reference"
     },
     {
-      "docPath": "README.md",
-      "section": "## Features",
-      "relevance": 0.72,
-      "excerpts": [
-        "Semantic code search powered by hybrid BM25 + vector search"
-      ],
-      "codeReferences": []
+      "filePath": "README.md",
+      "title": "Features",
+      "relevanceScore": 0.72,
+      "excerpt": "Semantic code search powered by hybrid BM25 + vector search"
     }
   ],
-  "totalDocs": 2,
-  "searchTime": 156
+  "totalFound": 2
 }
 ```
 
@@ -527,30 +505,38 @@ where α = 0.3 (default)
 
 ### レスポンス
 
-```typescript
+```json
 {
-  projects: Array<{
-    projectId: string,
-    rootPath: string,
-    status: "indexed" | "indexing" | "error",
-    lastIndexed: string,       // ISO 8601 timestamp
-    stats: {
-      totalFiles: number,
-      totalSymbols: number,
-      totalVectors: number,
-      totalDocuments: number
-    },
-    errors?: Array<{
-      file: string,
-      error: string,
-      timestamp: string
-    }>
-  }>,
-  totalProjects: number,
-  vectorStoreBackend: string,  // "milvus", "chroma" etc.
-  embeddingModel: string       // "Xenova/all-MiniLM-L6-v2" etc.
+  "projects": [
+    {
+      "projectId": string,
+      "rootPath": string,
+      "status": string,              // "indexed", "indexing", "error"
+      "lastIndexedAt": string?,      // ISO 8601 timestamp（オプション）
+      "stats": {
+        "totalFiles": number,
+        "codeFiles": number,
+        "documentFiles": number,
+        "totalSymbols": number,
+        "totalVectors": number,
+        "indexSizeBytes": number
+      }
+    }
+  ],
+  "overallStats": {
+    "totalFiles": number,
+    "codeFiles": number,
+    "documentFiles": number,
+    "totalSymbols": number,
+    "totalVectors": number,
+    "indexSizeBytes": number
+  }
 }
 ```
+
+**Rust構造体参照:** `src/tools/mod.rs::GetIndexStatusResponse`, `ProjectIndexStatus`, `IndexStatistics`
+
+**注意:** `vectorStoreBackend`と`embeddingModel`の情報は設定ファイルまたは別途取得が必要です。
 
 ### 使用例
 
@@ -575,18 +561,25 @@ where α = 0.3 (default)
       "projectId": "abc123",
       "rootPath": "/path/to/my-project",
       "status": "indexed",
-      "lastIndexed": "2025-11-03T10:30:00Z",
+      "lastIndexedAt": "2025-11-03T10:30:00Z",
       "stats": {
         "totalFiles": 1523,
+        "codeFiles": 1478,
+        "documentFiles": 45,
         "totalSymbols": 5678,
         "totalVectors": 6234,
-        "totalDocuments": 45
+        "indexSizeBytes": 104857600
       }
     }
   ],
-  "totalProjects": 1,
-  "vectorStoreBackend": "milvus",
-  "embeddingModel": "Xenova/all-MiniLM-L6-v2"
+  "overallStats": {
+    "totalFiles": 1523,
+    "codeFiles": 1478,
+    "documentFiles": 45,
+    "totalSymbols": 5678,
+    "totalVectors": 6234,
+    "indexSizeBytes": 104857600
+  }
 }
 ```
 
@@ -626,15 +619,16 @@ where α = 0.3 (default)
 
 ### レスポンス
 
-```typescript
+```json
 {
-  success: boolean,
-  projectId: string,
-  deletedVectors: number,
-  deletedDocuments: number,
-  message: string
+  "success": boolean,
+  "projectsCleared": number,     // クリアされたプロジェクト数
+  "vectorsDeleted": number,      // 削除されたベクトル数
+  "message": string              // ステータスメッセージ
 }
 ```
+
+**Rust構造体参照:** `src/tools/mod.rs::ClearIndexResponse`
 
 ### 使用例
 
@@ -648,26 +642,12 @@ where α = 0.3 (default)
 
 ### レスポンス例
 
-**成功時:**
 ```json
 {
   "success": true,
-  "projectId": "my-project-id",
-  "deletedVectors": 6234,
-  "deletedDocuments": 1523,
+  "projectsCleared": 1,
+  "vectorsDeleted": 6234,
   "message": "Project index cleared successfully"
-}
-```
-
-**確認不足時:**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "CONFIRMATION_REQUIRED",
-    "message": "Please set confirm=true to clear index",
-    "suggestion": "Add 'confirm: true' to the request"
-  }
 }
 ```
 
@@ -677,33 +657,35 @@ where α = 0.3 (default)
 
 ### エラーレスポンス形式
 
-すべてのツールは、エラー発生時に以下の形式でレスポンスを返します:
+すべてのツールは、エラー発生時にMCPプロトコル標準のエラーレスポンスを返します:
 
-```typescript
+```json
 {
-  success: false,
-  error: {
-    code: string,              // エラーコード
-    message: string,           // エラーメッセージ
-    details?: any,             // 詳細情報（オプション）
-    suggestion?: string,       // 対処方法の提案（オプション）
-    recoverable: boolean       // リカバリー可能か
-  }
+  "code": number,              // MCP ErrorCode
+  "message": string,           // エラーメッセージ
+  "data": object?              // 追加情報（オプション）
 }
 ```
 
-### 主なエラーコード
+**Rust実装参照:** `src/error.rs::ContextMcpError` → `rmcp::ErrorData`への変換
 
-| エラーコード | 説明 | 対処方法 |
-|-------------|------|---------|
-| `INVALID_PARAMS` | パラメータが不正 | パラメータを確認 |
-| `PROJECT_NOT_FOUND` | プロジェクトが見つからない | `index_project`を先に実行 |
-| `FILE_NOT_FOUND` | ファイルが見つからない | ファイルパスを確認 |
-| `PARSE_ERROR` | パースエラー | ファイルの構文を確認 |
-| `VECTOR_STORE_ERROR` | ベクターストアエラー | 接続状況を確認 |
-| `EMBEDDING_ERROR` | 埋め込み生成エラー | 設定とAPIキーを確認 |
-| `TIMEOUT` | タイムアウト | 再試行またはtopKを削減 |
-| `CONFIRMATION_REQUIRED` | 確認が必要 | `confirm: true`を追加 |
+### 主なエラーコードとContextMcpErrorマッピング
+
+| MCP ErrorCode | ContextMcpError | 説明 | 対処方法 |
+|--------------|----------------|------|---------|
+| `INVALID_PARAMS` | `Config` | 設定・パラメータが不正 | パラメータまたは設定を確認 |
+| `PARSE_ERROR` | `Parse` | JSON/AST解析エラー | ファイルの構文を確認 |
+| `INTERNAL_ERROR` | `Mcp` | MCPプロトコルエラー | サーバーログを確認 |
+| `INTERNAL_ERROR` | `Database` | ベクターストア/SQLiteエラー | 接続状況とデータベースステータスを確認 |
+| `INTERNAL_ERROR` | `Embedding` | 埋め込み生成エラー | モデルファイルとONNXランタイムを確認 |
+| `INTERNAL_ERROR` | `Indexing` | インデックス化エラー | ディスク容量とファイルパーミッションを確認 |
+| `INTERNAL_ERROR` | `Search` | 検索エラー | インデックスの健全性を確認 |
+| `INTERNAL_ERROR` | `TreeSitter` | Tree-sitterパースエラー | ソースコードの構文を確認 |
+| `INTERNAL_ERROR` | `FileSystem` | ファイルシステムエラー | ファイルパスとパーミッションを確認 |
+| `INTERNAL_ERROR` | `Io` | I/Oエラー | ディスクとファイルアクセスを確認 |
+| `INTERNAL_ERROR` | `Internal` | 内部エラー | サーバーログを確認 |
+
+**注意:** Rust実装では、ほとんどのエラーが`INTERNAL_ERROR`にマッピングされます。詳細なエラー種別は`message`フィールドで判別できます。
 
 ---
 
@@ -722,10 +704,18 @@ where α = 0.3 (default)
 
 ### 最適化のヒント
 
-1. **`search_code`**: `topK`を必要最小限に（10-20推奨）
+1. **`search_code`**:
+   - `topK`を必要最小限に（10-20推奨）
+   - `scoreThreshold`で低スコア結果を除外（0.5-0.7推奨）
 2. **`index_project`**: 大規模プロジェクトは`excludePatterns`で不要なファイルを除外
 3. **`find_related_docs`**: `symbolName`を指定すると精度向上
-4. **フィルタリング**: `languages`や`fileTypes`で検索範囲を絞る
+4. **フィルタリング**: `fileTypes`で検索範囲を絞る
+
+### 技術仕様
+
+- **埋め込みモデル**: all-MiniLM-L6-v2（ONNXランタイム使用）
+- **ベクターストア**: Milvus standalone（デフォルト）
+- **全文検索**: BM25（SQLite実装）
 
 ---
 
