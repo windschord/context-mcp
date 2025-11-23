@@ -50,7 +50,7 @@ impl FileScanner {
             .git_ignore(true) // Respect .gitignore files
             .git_global(true) // Respect global gitignore
             .git_exclude(true) // Respect .git/info/exclude
-            .hidden(false) // Don't skip hidden files (some projects use them)
+            .hidden(true) // Skip hidden files by default
             .follow_links(false); // Don't follow symlinks to avoid cycles
 
         // Add custom ignore patterns

@@ -100,9 +100,22 @@ impl FileWatcher {
             }
 
             // 隠しファイルと一時ファイルは無視
+            // パス内に隠しディレクトリ（.で始まるディレクトリ）が含まれているかチェック
+            if path.components().any(|c| {
+                if let std::path::Component::Normal(os_str) = c {
+                    if let Some(s) = os_str.to_str() {
+                        return s.starts_with('.');
+                    }
+                }
+                false
+            }) {
+                continue;
+            }
+
+            // 一時ファイルは無視
             if let Some(file_name) = path.file_name() {
                 let name = file_name.to_string_lossy();
-                if name.starts_with('.') || name.ends_with('~') || name.ends_with(".swp") {
+                if name.ends_with('~') || name.ends_with(".swp") {
                     continue;
                 }
             }

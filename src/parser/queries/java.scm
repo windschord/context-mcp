@@ -38,6 +38,14 @@
   declarator: (variable_declarator
     name: (identifier) @constant.name)) @constant.definition
 
+; Constant declarations (final static fields - reversed order)
+(field_declaration
+  (modifiers
+    "final"
+    "static")
+  declarator: (variable_declarator
+    name: (identifier) @constant.name)) @constant.definition
+
 ; Import declarations
 (import_declaration
   (scoped_identifier) @import.name) @import.definition

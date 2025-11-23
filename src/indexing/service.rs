@@ -265,20 +265,18 @@ impl IndexingService {
             .insert(&self.collection_name, vector_records)
             .await
         {
-            let error = IndexError::storage(file_path.clone(), e.to_string());
-            return Ok(FileIndexResult::error(
+            return Ok(Self::handle_storage_error(
                 file_path,
-                error,
+                e,
                 start_time.elapsed().as_millis() as u64,
             ));
         }
 
         // Index in BM25
         if let Err(e) = self.bm25.index_documents_batch(bm25_documents) {
-            let error = IndexError::storage(file_path.clone(), e.to_string());
-            return Ok(FileIndexResult::error(
+            return Ok(Self::handle_storage_error(
                 file_path,
-                error,
+                e,
                 start_time.elapsed().as_millis() as u64,
             ));
         }
@@ -288,6 +286,16 @@ impl IndexingService {
             symbols.len(),
             start_time.elapsed().as_millis() as u64,
         ))
+    }
+
+    /// Helper method for handling storage errors
+    fn handle_storage_error(
+        file_path: String,
+        error: impl std::fmt::Display,
+        elapsed_ms: u64,
+    ) -> FileIndexResult {
+        let error = IndexError::storage(file_path.clone(), error.to_string());
+        FileIndexResult::error(file_path, error, elapsed_ms)
     }
 
     /// Index multiple files with provided configuration

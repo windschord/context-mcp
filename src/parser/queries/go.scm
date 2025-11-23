@@ -37,10 +37,10 @@
   (var_spec
     name: (identifier) @variable.name)) @variable.definition
 
-; Short variable declarations
+; Short variable declarations - capture all identifiers
 (short_var_declaration
   left: (expression_list
-    (identifier) @variable.name)) @variable.definition
+    (identifier) @variable.name)*) @variable.definition
 
 ; Import declarations
 (import_declaration
