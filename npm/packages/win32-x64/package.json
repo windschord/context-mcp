@@ -1,0 +1,29 @@
+{
+  "name": "@context-mcp/win32-x64",
+  "version": "0.1.0",
+  "description": "context-mcp binary for Windows x64",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/windschord/context-mcp.git"
+  },
+  "license": "MIT",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "tree-sitter",
+    "ast",
+    "vector-database"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

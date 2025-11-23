@@ -7,9 +7,7 @@
 - [前提条件](#前提条件)
 - [インストール方法](#インストール方法)
 - [クイックスタート（ゼロコンフィグモード）](#クイックスタートゼロコンフィグモード)
-- [モード選択](#モード選択)
 - [標準モード（Milvus）のセットアップ](#標準モードmilvusのセットアップ)
-- [クラウドモードのセットアップ](#クラウドモードのセットアップ)
 - [環境変数による設定](#環境変数による設定)
 - [設定ファイルによるカスタマイズ](#設定ファイルによるカスタマイズ)
 - [Claude Code統合](#claude-code統合)
@@ -22,20 +20,16 @@
 
 - **Rust**: 1.70以上（推奨: 1.80以降）([rustup](https://rustup.rs/)でインストール推奨)
 - **Protocol Buffers compiler**: protoc ([インストール手順](https://grpc.io/docs/protoc-installation/))
+- **Docker**: 20.10以上（Milvus standalone起動用）
+- **Docker Compose**: v2.0以上
 - **OS**: macOS, Linux, Windows（WSL2推奨）
 - **メモリ**: 最低4GB（推奨: 8GB以上）
 - **ディスク**: 最低5GB以上の空き容量
 
-### モード別の追加要件
+### 追加要件
 
-#### ローカルモード（デフォルト）
-- **Docker**: 20.10以上
-- **Docker Compose**: v2.0以上
-- **追加メモリ**: Milvus用に2GB以上
-
-#### クラウドモード
-- **API キー**: OpenAI API キーまたはVoyageAI APIキー
-- **ベクターDB アカウント**: Zilliz Cloud
+- **Milvus用追加メモリ**: 2GB以上
+- **ONNX Runtime**: 自動的にインストールされます
 
 ## インストール方法
 
@@ -62,6 +56,19 @@ context-mcp --version
 
 ### 方法2: ソースからビルド（開発者向け）
 
+#### Rustツールチェーンのインストール
+
+```bash
+# rustupのインストール（推奨）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# インストール後、新しいシェルを開くかPATHを更新
+source ~/.cargo/env
+
+# Rustバージョン確認
+rustc --version  # 1.70以上が必要
+```
+
 #### 依存関係のインストール
 
 **Ubuntu/Debian:**
@@ -73,6 +80,13 @@ sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
 **macOS:**
 ```bash
 brew install protobuf
+```
+
+**Windows (WSL2):**
+```bash
+# WSL2内でUbuntu/Debianの手順を実行
+sudo apt-get update
+sudo apt-get install -y protobuf-compiler libssl-dev pkg-config build-essential
 ```
 
 #### リポジトリのクローンとビルド
@@ -101,6 +115,12 @@ cargo test
 # ユニットテストのみ実行
 cargo test --lib
 
+# 統合テストを実行
+cargo test --test '*'
+
+# 詳細出力
+cargo test --verbose
+
 # カバレッジ測定
 cargo install cargo-llvm-cov
 cargo llvm-cov --lib --all-features
@@ -110,7 +130,7 @@ cargo llvm-cov --lib --all-features
 
 ## クイックスタート（ゼロコンフィグモード）
 
-**最も簡単な方法**: 設定ファイル不要で、環境変数のみで即座に使用開始できます。
+最も簡単な方法で、設定ファイル不要、環境変数のみで即座に使用開始できます。
 
 ### ステップ1: Milvus standaloneの起動
 
@@ -136,8 +156,8 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
       "command": "/usr/local/bin/context-mcp",
       "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LOG_LEVEL": "INFO"
+        "MILVUS_ADDRESS": "localhost:19530",
+        "RUST_LOG": "info"
       }
     }
   }
@@ -145,9 +165,9 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
 ```
 
 **補足**:
-- `LSP_MCP_MODE=local`: ローカルモード（デフォルト）
-- `LSP_MCP_VECTOR_ADDRESS`: 省略可（デフォルト: `localhost:19530`）
-- `LSP_MCP_EMBEDDING_PROVIDER`: 省略可（デフォルト: `local` - ONNX Runtime）
+- `MILVUS_ADDRESS`: Milvusの接続アドレス（デフォルト: `localhost:19530`）
+- `RUST_LOG`: ログレベル（`debug`, `info`, `warn`, `error`）
+- すべてデフォルト値で動作するため、環境変数は省略可能です
 
 設定後、**Claude Codeを再起動**してください。
 
@@ -160,44 +180,6 @@ Claude Codeで以下のように指示するだけで、自動的にプロジェ
 ```
 
 これで完了です。より詳細な設定やカスタマイズが必要な場合は、以下のセクションを参照してください。
-
-## モード選択
-
-Context-MCPは2つの動作モードをサポートしています:
-
-| モード | 特徴 | 推奨用途 | 外部通信 | セットアップ難易度 |
-|--------|------|----------|----------|-------------------|
-| **ローカルモード**（デフォルト） | Milvus standalone使用、Transformers.js埋め込み | ほとんどのユースケース、プライバシー重視 | なし | 簡単（Docker必要） |
-| **クラウドモード** | Zilliz Cloud、OpenAI API使用 | 大規模プロジェクト、チーム利用、最高性能 | あり | 中程度（アカウント・APIキー必要） |
-
-### モード選択のフローチャート
-
-```
-どのモードを選択しますか？
-
-プライバシー重視 or Docker環境あり？
-├─ Yes → ローカルモード（推奨）
-│         ・外部通信なし
-│         ・Docker Composeでセットアップ
-│         ・コスト: 無料
-│
-└─ No → クラウドモード
-          ・高速・高精度
-          ・APIキー必要
-          ・コスト: 従量課金（OpenAI、Zilliz Cloud）
-```
-
-### モード別の要件比較
-
-| 項目 | ローカルモード | クラウドモード |
-|-----|-------------|--------------|
-| Docker | 必要 | 不要 |
-| インターネット接続 | 不要（初回モデルDL時のみ） | 必要 |
-| APIキー | 不要 | 必要（OpenAI、Zilliz） |
-| コスト | 無料 | 従量課金 |
-| プライバシー | 完全ローカル | データ送信あり |
-| 検索速度 | 高速 | 最速 |
-| セットアップ時間 | 5分 | 10分（アカウント作成含む） |
 
 ## 標準モード（Milvus）のセットアップ
 
@@ -227,20 +209,14 @@ docker compose version
 cd /path/to/your/project
 
 # Docker Composeファイルをダウンロード
-curl -O https://github.com/milvus-io/milvus/releases/download/v2.4.0/docker-compose.yml
-```
-
-または、Context-MCPが自動ダウンロードします:
-
-```bash
-context-mcp milvus download
+curl -O https://raw.githubusercontent.com/windschord/lsp-mcp/main/docker-compose.yml
 ```
 
 ### ステップ3: Milvusの起動
 
 ```bash
 # Milvus standaloneを起動
-docker compose -f docker-compose.yml up -d
+docker-compose up -d
 
 # 起動確認（3つのコンテナが起動）
 docker ps
@@ -250,36 +226,45 @@ docker ps
 # xxxxx          quay.io/coreos/etcd:latest Up X minutes
 
 # ログ確認
-docker compose -f docker-compose.yml logs -f milvus
+docker-compose logs -f milvus
 # "Milvus Proxy started successfully" が表示されればOK
 ```
 
-### ステップ4: 設定ファイルの作成
+### ステップ4: 設定ファイルの作成（オプション）
 
-```bash
-context-mcp init --mode local
-```
-
-以下の`.context-mcp.json`が生成されます:
+デフォルト設定で動作しますが、カスタマイズしたい場合は`.context-mcp.json`を作成します:
 
 ```json
 {
-  "mode": "local",
-  "vectorStore": {
-    "backend": "milvus",
-    "config": {
-      "address": "localhost:19530",
-      "standalone": true,
-      "dataPath": "./volumes"
-    }
+  "milvus": {
+    "address": "localhost:19530"
   },
   "embedding": {
-    "provider": "transformers",
-    "model": "Xenova/all-MiniLM-L6-v2",
-    "local": true
+    "model_path": "models/all-MiniLM-L6-v2.onnx",
+    "tokenizer_path": "models/tokenizer.json"
   },
-  "privacy": {
-    "blockExternalCalls": true
+  "bm25": {
+    "db_path": "./data/bm25.db"
+  },
+  "indexing": {
+    "languages": ["typescript", "python", "go", "rust"],
+    "exclude_patterns": [
+      "node_modules/**",
+      ".git/**",
+      "dist/**",
+      "build/**",
+      "target/**",
+      "*.min.js",
+      ".env",
+      ".env.*",
+      "credentials.json",
+      "**/secret/**"
+    ],
+    "include_documents": true
+  },
+  "search": {
+    "bm25_weight": 0.3,
+    "vector_weight": 0.7
   }
 }
 ```
@@ -287,7 +272,7 @@ context-mcp init --mode local
 ### ステップ5: 接続確認
 
 ```bash
-# Milvusへの接続テスト
+# Milvusへの接続テスト（今後実装予定）
 context-mcp test-connection
 
 # 成功すると以下が表示されます:
@@ -315,132 +300,28 @@ tar czf milvus-backup-$(date +%Y%m%d).tar.gz volumes/
 
 ```bash
 # 停止
-docker compose -f docker-compose.yml down
+docker-compose down
 
 # 再起動
-docker compose -f docker-compose.yml restart
+docker-compose restart
 
 # 完全削除（データも削除）
-docker compose -f docker-compose.yml down -v
+docker-compose down -v
 rm -rf volumes/
-```
-
-## クラウドモードのセットアップ
-
-大規模プロジェクトやチーム利用に適しています。
-
-### ステップ1: ベクターDBアカウントの作成
-
-#### Zilliz Cloud（推奨）
-
-1. [Zilliz Cloud](https://cloud.zilliz.com/)にサインアップ
-2. クラスターを作成:
-   - **Region**: 最寄りのリージョンを選択
-   - **Cluster Type**: Starter（無料枠あり）または Standard
-3. 接続情報を取得:
-   - **Endpoint**: `xxx-xxx.vectordb.zillizcloud.com:19530`
-   - **Token**: APIトークンを生成
-
-#### Qdrant Cloud（代替）
-
-1. [Qdrant Cloud](https://cloud.qdrant.io/)にサインアップ
-2. クラスターを作成
-3. APIキーを取得
-
-### ステップ2: 埋め込みAPIキーの取得
-
-#### OpenAI（推奨）
-
-1. [OpenAI Platform](https://platform.openai.com/)にサインアップ
-2. APIキーを生成: https://platform.openai.com/api-keys
-3. 使用モデル: `text-embedding-3-small`（推奨）または `text-embedding-ada-002`
-
-#### VoyageAI（代替）
-
-1. [VoyageAI](https://www.voyageai.com/)にサインアップ
-2. APIキーを取得
-3. 使用モデル: `voyage-code-2`（コード特化）
-
-### ステップ3: 環境変数の設定
-
-APIキーは環境変数で管理します（`.context-mcp.json`に直接書かない）:
-
-```bash
-# ~/.bashrc または ~/.zshrc に追加
-export ZILLIZ_TOKEN="your-zilliz-token-here"
-export OPENAI_API_KEY="your-openai-api-key-here"
-
-# 反映
-source ~/.bashrc  # または source ~/.zshrc
-```
-
-### ステップ4: 設定ファイルの作成
-
-```bash
-context-mcp init --mode cloud
-```
-
-以下の`.context-mcp.json`が生成されます:
-
-```json
-{
-  "mode": "cloud",
-  "vectorStore": {
-    "backend": "zilliz",
-    "config": {
-      "address": "xxx-xxx.vectordb.zillizcloud.com:19530",
-      "token": "${ZILLIZ_TOKEN}",
-      "secure": true
-    }
-  },
-  "embedding": {
-    "provider": "openai",
-    "model": "text-embedding-3-small",
-    "apiKey": "${OPENAI_API_KEY}"
-  }
-}
-```
-
-### ステップ5: 接続確認
-
-```bash
-# Zilliz CloudとOpenAI APIへの接続テスト
-context-mcp test-connection
-
-# 成功すると以下が表示されます:
-# ✓ Zilliz Cloud connection successful
-# ✓ OpenAI API connection successful
-```
-
-### コスト見積もり
-
-クラウドモードのコスト例（10,000ファイルのプロジェクト）:
-
-```bash
-# コスト見積もりコマンド
-context-mcp estimate-cost /path/to/project
-
-# 出力例:
-# Estimated costs for indexing this project:
-# - Files to index: 10,000
-# - Estimated tokens: 5,000,000
-# - OpenAI embedding cost: ~$0.50 (text-embedding-3-small)
-# - Zilliz Cloud storage: ~$5/month (Starter plan)
-# Total: ~$0.50 initial + $5/month
 ```
 
 ## 環境変数による設定
 
-LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環境変数のみ**で動作可能なゼロコンフィグ設計を採用しています。
+LSP-MCPは、設定ファイル（`.context-mcp.json`）を作成せずに、環境変数のみで動作可能なゼロコンフィグ設計を採用しています。
 
 ### 設定の優先順位
 
 ```
 優先度（高）
   ↓
-1. 環境変数（LSP_MCP_MODE等）
+1. 環境変数（MILVUS_ADDRESS等）
   ↓
-2. ユーザー設定ファイル（.lsp-mcp.json）
+2. ユーザー設定ファイル（.context-mcp.json）
   ↓
 3. デフォルト設定（src/config/mod.rs）
   ↓
@@ -453,25 +334,21 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 
 | 環境変数 | 説明 | デフォルト値 | 例 |
 |---------|------|------------|-----|
-| `LSP_MCP_MODE` | 動作モード | `local` | `local`, `cloud` |
-| `LSP_MCP_VECTOR_BACKEND` | ベクターDB | `milvus` | `milvus`, `zilliz` |
-| `LSP_MCP_VECTOR_ADDRESS` | ベクターDBアドレス | `localhost:19530` | `localhost:19530` |
-| `LSP_MCP_VECTOR_TOKEN` | ベクターDB認証トークン | なし | Zilliz Cloudトークン |
-| `LSP_MCP_EMBEDDING_PROVIDER` | 埋め込みプロバイダー | `local` | `local`, `openai`, `voyageai` |
-| `LSP_MCP_EMBEDDING_API_KEY` | 埋め込みAPIキー | なし | OpenAI APIキー |
-| `LSP_MCP_EMBEDDING_MODEL` | 埋め込みモデル名 | プロバイダーのデフォルト | `all-MiniLM-L6-v2.onnx` |
-| `LOG_LEVEL` | ログレベル | `INFO` | `DEBUG`, `INFO`, `WARN`, `ERROR` |
+| `MILVUS_ADDRESS` | Milvusサーバーアドレス | `localhost:19530` | `localhost:19530` |
+| `MILVUS_TOKEN` | Milvus認証トークン（Zilliz Cloud用） | なし | Zilliz Cloudトークン |
+| `MODEL_PATH` | ONNXモデルファイルパス | `models/all-MiniLM-L6-v2.onnx` | カスタムモデルパス |
+| `TOKENIZER_PATH` | トークナイザーファイルパス | `models/tokenizer.json` | カスタムトークナイザーパス |
+| `BM25_DB_PATH` | BM25データベースパス | `./data/bm25.db` | カスタムDBパス |
+| `RUST_LOG` | ログレベル | `info` | `debug`, `info`, `warn`, `error` |
 
 詳細は[環境変数リファレンス](ENVIRONMENT_VARIABLES.md)を参照してください。
 
 ### 環境変数ベースセットアップの利点
 
-環境変数による設定は、従来の設定ファイル方式と比較して以下の利点があります:
-
 | 項目 | 環境変数方式 | 設定ファイル方式 |
 |-----|------------|---------------|
 | **セットアップ時間** | 約1分（MCP設定のみ） | 約5分（設定ファイル作成 + MCP設定） |
-| **設定ファイル作成** | 不要 | 必要（`.lsp-mcp.json`） |
+| **設定ファイル作成** | 不要 | 必要（`.context-mcp.json`） |
 | **環境ごとの切り替え** | 容易（環境変数を変更するだけ） | やや面倒（設定ファイルを複数管理） |
 | **CI/CD統合** | 容易（環境変数を設定するだけ） | やや面倒（設定ファイルを配置） |
 | **秘密情報管理** | 安全（環境変数、Git管理外） | 注意が必要（設定ファイルに書かない） |
@@ -489,52 +366,46 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 {
   "mcpServers": {
     "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LOG_LEVEL": "INFO"
+        "RUST_LOG": "info"
       }
     }
   }
 }
 ```
 
-#### 例2: クラウドモード
+#### 例2: Zilliz Cloud使用
 
 ```json
 {
   "mcpServers": {
     "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
-        "LSP_MCP_MODE": "cloud",
-        "LSP_MCP_VECTOR_BACKEND": "zilliz",
-        "LSP_MCP_VECTOR_ADDRESS": "your-instance.zilliz.com:19530",
-        "LSP_MCP_VECTOR_TOKEN": "your-zilliz-token",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
-        "LOG_LEVEL": "INFO"
+        "MILVUS_ADDRESS": "your-instance.zilliz.com:19530",
+        "MILVUS_TOKEN": "your-zilliz-token",
+        "RUST_LOG": "info"
       }
     }
   }
 }
 ```
 
-#### 例3: ハイブリッドモード（ローカルベクターDB + クラウド埋め込み）
+#### 例3: カスタムモデルパス
 
 ```json
 {
   "mcpServers": {
     "context-mcp": {
-      "command": "npx",
-      "args": ["github:windschord/context-mcp"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
-        "LSP_MCP_MODE": "local",
-        "LSP_MCP_EMBEDDING_PROVIDER": "openai",
-        "LSP_MCP_EMBEDDING_API_KEY": "sk-proj-...",
-        "LOG_LEVEL": "INFO"
+        "MODEL_PATH": "/custom/path/model.onnx",
+        "TOKENIZER_PATH": "/custom/path/tokenizer.json",
+        "RUST_LOG": "debug"
       }
     }
   }
@@ -543,28 +414,27 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 
 ## 設定ファイルによるカスタマイズ
 
-環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.lsp-mcp.json`を作成します。
+環境変数だけでなく、プロジェクトごとに詳細な設定をカスタマイズしたい場合は、`.context-mcp.json`を作成します。
 
 ### 設定ファイルの作成
 
-プロジェクトルートに`.lsp-mcp.json`を作成:
+プロジェクトルートに`.context-mcp.json`を作成:
 
 ```json
 {
-  "mode": "local",
-  "vectorStore": {
-    "backend": "milvus",
-    "config": {
-      "address": "localhost:19530"
-    }
+  "milvus": {
+    "address": "localhost:19530"
   },
   "embedding": {
-    "provider": "local",
-    "model": "all-MiniLM-L6-v2.onnx"
+    "model_path": "models/all-MiniLM-L6-v2.onnx",
+    "tokenizer_path": "models/tokenizer.json"
+  },
+  "bm25": {
+    "db_path": "./data/bm25.db"
   },
   "indexing": {
     "languages": ["typescript", "python", "go", "rust"],
-    "excludePatterns": [
+    "exclude_patterns": [
       "node_modules/**",
       ".git/**",
       "dist/**",
@@ -576,52 +446,22 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
       "credentials.json",
       "**/secret/**"
     ],
-    "includeDocuments": true
+    "include_documents": true
   },
   "search": {
-    "bm25Weight": 0.3,
-    "vectorWeight": 0.7
-  },
-  "privacy": {
-    "blockExternalCalls": true
+    "bm25_weight": 0.3,
+    "vector_weight": 0.7
   }
 }
 ```
 
 ### 環境変数と設定ファイルの併用
 
-環境変数と`.lsp-mcp.json`を併用する場合、以下のマージロジックが適用されます：
+環境変数と`.context-mcp.json`を併用する場合、以下のマージロジックが適用されます：
 
 1. デフォルト設定を読み込む
-2. `.lsp-mcp.json`が存在する場合、その内容で上書き
+2. `.context-mcp.json`が存在する場合、その内容で上書き
 3. 環境変数が設定されている場合、その値で上書き（最優先）
-
-### 設定方式の比較
-
-| 方式 | メリット | デメリット | 推奨ユースケース |
-|-----|---------|-----------|----------------|
-| **環境変数のみ** | 簡単、CI/CD対応、Git管理不要 | プロジェクト固有設定に不向き | 個人開発、シンプルな設定 |
-| **設定ファイルのみ** | プロジェクト固有設定、Git管理可能 | 環境ごとの変更に不向き | チーム開発、複雑な設定 |
-| **併用** | 柔軟性最大、環境ごとの上書き可能 | やや複雑 | 複数環境（dev/staging/prod） |
-
-### 従来方式（設定ファイル）との比較
-
-| 項目 | ゼロコンフィグ（環境変数） | 従来方式（設定ファイル） |
-|-----|--------------------------|----------------------|
-| **初回セットアップ時間** | 1分 | 5分 |
-| **設定ファイル作成** | 不要 | 必要（`.lsp-mcp.json`） |
-| **MCP設定の記述量** | 少ない（環境変数のみ） | 多い（設定ファイルパス指定） |
-| **環境間の切り替え** | 容易（環境変数変更） | やや面倒（設定ファイル切り替え） |
-| **秘密情報（APIキー等）** | 安全（環境変数、Git管理外） | 注意が必要（誤コミット防止） |
-| **プロジェクト固有設定** | 不向き | 適している |
-| **チーム共有** | 不向き（各自で環境変数設定） | 適している（Gitで管理） |
-| **複雑な設定** | 不向き | 適している |
-| **推奨ユーザー** | 個人開発者、初学者 | チーム開発、上級者 |
-
-**結論**:
-- **まずはゼロコンフィグで始める**: 環境変数のみで動作させる
-- **必要に応じて設定ファイルを追加**: プロジェクト固有の設定が必要になったら`.lsp-mcp.json`を作成
-- **ハイブリッド運用**: 共通設定は設定ファイル、秘密情報は環境変数で管理
 
 ## Claude Code統合
 
@@ -630,7 +470,10 @@ LSP-MCPは、設定ファイル（`.lsp-mcp.json`）を作成せずに、**環�
 Claude Codeの設定ファイルを開きます:
 
 ```bash
-# macOS/Linux
+# macOS
+nano ~/Library/Application\ Support/Claude/claude_desktop_config.json
+
+# Linux
 nano ~/.config/claude-code/mcp.json
 
 # Windows (WSL2)
@@ -643,18 +486,16 @@ nano /mnt/c/Users/YourUsername/.config/claude-code/mcp.json
 {
   "mcpServers": {
     "context-mcp": {
-      "command": "context-mcp",
-      "args": ["serve"],
+      "command": "/usr/local/bin/context-mcp",
+      "args": [],
       "env": {
-        "ZILLIZ_TOKEN": "your-token-here",
-        "OPENAI_API_KEY": "your-api-key-here"
+        "MILVUS_ADDRESS": "localhost:19530",
+        "RUST_LOG": "info"
       }
     }
   }
 }
 ```
-
-**注意**: クラウドモードの場合のみ`env`に環境変数を設定してください。ローカルモードでは不要です。
 
 ### ステップ3: Claude Codeの再起動
 
@@ -671,7 +512,6 @@ Claude Codeを起動し、以下を試してください:
 期待される応答:
 ```
 Context-MCP is running.
-Mode: local
 Vector Store: milvus (connected)
 Indexed projects: 0
 ```
@@ -680,7 +520,7 @@ Indexed projects: 0
 
 セットアップ完了後、最初にプロジェクトをインデックス化します。
 
-### コマンドラインから
+### コマンドラインから（今後実装予定）
 
 ```bash
 # 現在のディレクトリをインデックス化
@@ -705,24 +545,11 @@ context-mcp index . --verbose
 @context-mcp このプロジェクトをインデックス化してください
 ```
 
-### インデックス化の進捗
-
-```
-Indexing project...
-[████████████████████------------] 67% (6,700/10,000 files)
-- TypeScript: 3,200 files
-- Python: 2,100 files
-- Go: 1,400 files
-- Documents: 500 files
-
-Estimated time remaining: 2m 15s
-```
-
 ## 動作確認
 
 セットアップが正しく完了したか確認します。
 
-### 1. 接続テスト
+### 1. 接続テスト（今後実装予定）
 
 ```bash
 context-mcp test-connection
@@ -731,34 +558,19 @@ context-mcp test-connection
 期待される出力:
 ```
 ✓ Configuration loaded successfully
-✓ Vector Store connection: OK
-✓ Embedding provider: OK
+✓ Milvus connection: OK
+✓ Embedding model loaded: OK
 ✓ File system access: OK
 ✓ All systems operational
 ```
 
-### 2. シンプルな検索テスト
+### 2. シンプルな検索テスト（今後実装予定）
 
 ```bash
 context-mcp search "authentication function"
 ```
 
-期待される出力:
-```
-Search results (3 found):
-
-1. src/auth/login.ts:45 (score: 0.92)
-   async function authenticateUser(username: string, password: string) {
-
-2. docs/API.md:12 (score: 0.87)
-   ## Authentication
-   The authentication function validates user credentials...
-
-3. tests/auth.test.ts:23 (score: 0.81)
-   describe('authentication', () => {
-```
-
-### 3. ステータス確認
+### 3. ステータス確認（今後実装予定）
 
 ```bash
 context-mcp status
@@ -767,9 +579,7 @@ context-mcp status
 期待される出力:
 ```
 Context-MCP Status:
-- Mode: local
-- Vector Store: milvus (connected)
-- Embedding Provider: transformers (local)
+- Milvus: connected
 - Indexed Files: 10,000
 - Last Indexed: 2025-01-15 10:30:00
 - Index Size: 1.2 GB
@@ -781,9 +591,10 @@ Context-MCP Status:
 問題が発生した場合は、[トラブルシューティングガイド](TROUBLESHOOTING.md)を参照してください。
 
 よくある問題:
+- [Rustビルドエラー](TROUBLESHOOTING.md#rustビルドエラー)
+- [Protocol Buffers compilerのエラー](TROUBLESHOOTING.md#protocol-buffers-compilerのエラー)
 - [Milvusが起動しない](TROUBLESHOOTING.md#milvus起動エラー)
-- [埋め込みモデルがダウンロードできない](TROUBLESHOOTING.md#モデルダウンロードエラー)
-- [Claude Codeで認識されない](TROUBLESHOOTING.md#claude-code統合エラー)
+- [ONNX Runtime関連のエラー](TROUBLESHOOTING.md#onnx-runtime関連のエラー)
 - [メモリ不足エラー](TROUBLESHOOTING.md#メモリ不足)
 
 ## 次のステップ
@@ -796,7 +607,7 @@ Context-MCP Status:
 
 ## 参考資料
 
-- [公式ドキュメント](https://github.com/yourusername/context-mcp)
+- [公式ドキュメント](https://github.com/windschord/lsp-mcp)
 - [Milvus公式ドキュメント](https://milvus.io/docs)
-- [Chroma公式ドキュメント](https://docs.trychroma.com/)
+- [ONNX Runtime公式ドキュメント](https://onnxruntime.ai/)
 - [Claude Code MCP統合](https://docs.anthropic.com/claude-code/mcp)

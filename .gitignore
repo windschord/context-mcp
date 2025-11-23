@@ -56,3 +56,10 @@ models/*.bin
 *.tmp
 *.temp
 *.sync-conflict-*
+
+# NPM packages
+npm/packages/*/bin/
+npm/packages/*/node_modules/
+npm/node_modules/
+npm/package-lock.json
+npm/packages/*/package-lock.json

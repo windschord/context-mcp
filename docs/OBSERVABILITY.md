@@ -1,6 +1,10 @@
 # 可観測性ガイド: OpenTelemetryによる監視
 
-Context-MCPは、OpenTelemetryによる包括的な可観測性機能を提供します。トレース、メトリクス、ログの3つの観測シグナルを収集し、Jaeger、Prometheus、Grafanaなどの監視バックエンドと統合できます。
+> **注記**: このドキュメントは将来の機能を説明しています。現在のRust実装（v0.x）では、OpenTelemetryによる可観測性機能は未実装です。基本的なログ出力（`tracing`クレート）は利用可能です。詳細は[実装ロードマップ](./tasks.md#フェーズ9-opentelemetry監視機能実装)を参照してください。
+
+---
+
+Context-MCPは、OpenTelemetryによる包括的な可観測性機能を提供する予定です。トレース、メトリクス、ログの3つの観測シグナルを収集し、Jaeger、Prometheus、Grafanaなどの監視バックエンドと統合できるようになります。
 
 ## 概要
 

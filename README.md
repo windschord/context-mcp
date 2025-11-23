@@ -64,11 +64,43 @@ LSP-MCPは以下の6つのMCPツールを提供します:
 
 ### 前提条件
 
-- **Rust**: 1.70以上 ([rustup](https://rustup.rs/)でインストール推奨)
-- **Protocol Buffers compiler**: protoc ([インストール手順](https://grpc.io/docs/protoc-installation/))
+- **Rust**: 1.70以上 ([rustup](https://rustup.rs/)でインストール推奨) - Rust以外の方法でインストールする場合は不要
 - **Docker & Docker Compose**: Milvus使用時に必要（推奨）
+- **Node.js**: 18.0以上 - NPMでインストールする場合に必要
 
-### バイナリリリースから使用（最も簡単、推奨）
+### 方法1: NPM（最も簡単、推奨）
+
+NPMを使用すると、プラットフォームに応じたバイナリが自動的にダウンロードされ、すぐに使用できます。
+
+```bash
+# npxで直接実行（インストール不要）
+npx @context-mcp/server --version
+
+# またはグローバルインストール
+npm install -g @context-mcp/server
+context-mcp --version
+```
+
+詳細は[NPMインストールガイド](docs/INSTALL_NPM.md)を参照してください。
+
+### 方法2: cargo-binstall
+
+cargo-binstallを使用すると、ビルド済みバイナリを数秒でインストールできます。
+
+```bash
+# 1. cargo-binstallをインストール（初回のみ）
+curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+
+# 2. context-mcpをインストール
+cargo binstall context-mcp
+
+# 3. 動作確認
+context-mcp --version
+```
+
+詳細は[cargo-binstallインストールガイド](docs/INSTALL_CARGO_BINSTALL.md)を参照してください。
+
+### 方法3: バイナリリリースから手動インストール
 
 GitHubリリースページから、お使いのプラットフォーム向けのビルド済みバイナリをダウンロードできます：
 
@@ -89,7 +121,11 @@ sudo mv context-mcp /usr/local/bin/
 context-mcp --version
 ```
 
-### ソースからビルド（開発時）
+### 方法4: ソースからビルド（開発時）
+
+#### 追加の前提条件
+
+- **Protocol Buffers compiler**: protoc ([インストール手順](https://grpc.io/docs/protoc-installation/))
 
 #### 1. 依存関係のインストール
 
@@ -152,22 +188,63 @@ docker ps
 
 #### 方法A: `claude mcp add`コマンド（推奨）
 
+**NPMを使用する場合（最も簡単）:**
+
+```bash
+# Linux/macOS
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=local \
+  --env LOG_LEVEL=INFO \
+  -- npx @context-mcp/server
+
+# Windows
+claude mcp add --transport stdio lsp-mcp \
+  --env LSP_MCP_MODE=local \
+  --env LOG_LEVEL=INFO \
+  -- npx.cmd @context-mcp/server
+```
+
+**cargo-binstallまたは手動インストールの場合:**
+
 ```bash
 claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
   --env LOG_LEVEL=INFO \
-  -- /usr/local/bin/context-mcp
+  -- context-mcp
 ```
+
+注: 手動インストールの場合は、フルパス（例：`/usr/local/bin/context-mcp`）を指定してください。
 
 #### 方法B: JSONファイルを直接編集
 
 Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`）に以下を追加:
 
+**NPMを使用する場合（最も簡単）:**
+
 ```json
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "/usr/local/bin/context-mcp",
+      "command": "npx",
+      "args": ["@context-mcp/server"],
+      "env": {
+        "LSP_MCP_MODE": "local",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+Windowsの場合は、`"command": "npx.cmd"`としてください。
+
+**cargo-binstallまたは手動インストールの場合:**
+
+```json
+{
+  "mcpServers": {
+    "lsp-mcp": {
+      "command": "context-mcp",
       "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
@@ -177,6 +254,8 @@ Claude Codeの設定ファイル（macOS: `~/Library/Application Support/Claude/
   }
 }
 ```
+
+注: 手動インストールの場合は、フルパス（例：`"/usr/local/bin/context-mcp"`）を指定してください。
 
 **補足**:
 - `LSP_MCP_MODE=local`: ローカルモード（デフォルト）
@@ -248,7 +327,7 @@ claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_MODE=local \
   --env LSP_MCP_VECTOR_ADDRESS=localhost:19530 \
   --env LOG_LEVEL=INFO \
-  -- /usr/local/bin/context-mcp
+  -- context-mcp
 ```
 
 **JSONファイル編集**:
@@ -256,7 +335,7 @@ claude mcp add --transport stdio lsp-mcp \
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "/usr/local/bin/context-mcp",
+      "command": "context-mcp",
       "args": [],
       "env": {
         "LSP_MCP_MODE": "local",
@@ -280,7 +359,7 @@ claude mcp add --transport stdio lsp-mcp \
   --env LSP_MCP_EMBEDDING_PROVIDER=openai \
   --env LSP_MCP_EMBEDDING_API_KEY=your-openai-api-key \
   --env LOG_LEVEL=INFO \
-  -- /usr/local/bin/context-mcp
+  -- context-mcp
 ```
 
 **JSONファイル編集**:
@@ -288,7 +367,7 @@ claude mcp add --transport stdio lsp-mcp \
 {
   "mcpServers": {
     "lsp-mcp": {
-      "command": "/usr/local/bin/context-mcp",
+      "command": "context-mcp",
       "args": [],
       "env": {
         "LSP_MCP_MODE": "cloud",
@@ -331,6 +410,8 @@ claude mcp add --transport stdio lsp-mcp \
   }
 }
 ```
+
+注: 開発時はフルパスを指定してください。本番環境では`cargo binstall`でインストールした`context-mcp`を使用することを推奨します。
 
 ### 環境変数リファレンス
 

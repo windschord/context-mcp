@@ -1,0 +1,37 @@
+{
+  "name": "@context-mcp/server",
+  "version": "0.1.0",
+  "description": "Context-MCP: Model Context Protocol plugin for Claude Code with Tree-sitter AST parsing and vector database",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/windschord/context-mcp.git"
+  },
+  "license": "MIT",
+  "author": "Context-MCP Contributors",
+  "main": "bin/context-mcp.js",
+  "bin": {
+    "context-mcp": "bin/context-mcp.js"
+  },
+  "scripts": {
+    "postinstall": "node -e \"console.log('\\ncontext-mcp has been installed successfully!\\nTry running: npx @context-mcp/server --help\\n')\""
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "tree-sitter",
+    "ast",
+    "vector-database",
+    "semantic-search",
+    "code-analysis"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "optionalDependencies": {
+    "@context-mcp/linux-x64": "0.1.0",
+    "@context-mcp/linux-arm64": "0.1.0",
+    "@context-mcp/darwin-x64": "0.1.0",
+    "@context-mcp/darwin-arm64": "0.1.0",
+    "@context-mcp/win32-x64": "0.1.0"
+  }
+}
