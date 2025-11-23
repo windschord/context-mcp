@@ -1,0 +1,35 @@
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Git files
+.git
+.gitignore
+
+# Documentation (except README)
+*.md
+!README.md
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Source files
+src/
+*.ts
+tsconfig.json
+
+# Build artifacts (except the downloaded binary)
+target/
+build/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,29 @@
+{
+  "name": "@context-mcp/linux-x64",
+  "version": "0.1.0",
+  "description": "context-mcp binary for Linux x64",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/windschord/context-mcp.git"
+  },
+  "license": "MIT",
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "scripts": {
+    "postinstall": "node postinstall.js"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "tree-sitter",
+    "ast",
+    "vector-database"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

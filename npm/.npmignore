@@ -1,0 +1,48 @@
+# Development files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Source files (only ship binaries)
+src/
+*.ts
+tsconfig.json
+
+# Build artifacts
+target/
+build/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Package manager
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
